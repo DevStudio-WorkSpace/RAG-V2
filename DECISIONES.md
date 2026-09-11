@@ -1,0 +1,196 @@
+# DECISIONES.md — Evaluador del Buscador
+
+> Ficha 03-C · Sublitex · Fase 1: Entender el problema
+
+---
+
+## P1 · ¿Por qué la medición anterior no sirve?
+
+### Qué se hizo
+
+Las 50 consultas de prueba se generaron con `scripts/generar_consultas_hito2.py`. El script toma **10 imágenes directamente del catálogo** (`data/images_final/`) y a cada una le aplica 5 transformaciones deterministas:
+
+| Versión | Qué hace |
+|---|---|
+| `exacto` | La imagen original tal cual |
+| `sin_marco` | Recorte del contenido (elimina el marco fino) |
+| `recoloreado` | Rotación de matiz +60°, saturación ×1.6, brillo ×1.15 |
+| `recorte` | Recorte central al 55% |
+| `cuerpo` | Mockup sintético: camiseta pegada a una persona dibujada con fondo degradado |
+
+Las 50 consultas son, literalmente, **versiones transformadas de las imágenes que ya están en el índice**.
+
+### Por qué eso hace que el 92% no diga lo que parece
+
+El 92% de SigLIP mide: *"¿el motor puede reconocer sus propias transformaciones?"*. No mide: *"¿el motor encuentra una camiseta real que un usuario sacó con su celular?"*.
+
+**Lo que realmente evalúa esa prueba:**
+- Si el embedding de una imagen recortada al 55% se parece al embedding de la imagen completa
+- Si el embedding de una imagen con colores rotados se parece al embedding original
+- Si el embedding de un mockup sintético se parece al del diseño puro
+
+**Lo que NO evalúa:**
+- Fotos reales con ángulos diferentes, iluminación irregular, fondos ruidosos
+- Usuarios que sacan fotos en tiendas, con personas, muebles, otras camisetas de fondo
+- Imágenes de baja calidad, borrosas, con reflejos
+- Consultas que no existen en el catálogo (el usuario busca algo que no está)
+
+**Ejemplo concreto:** Un buscador que devolviera la imagen con mayor correlación de píxeles sacaría 100% en esta prueba (porque las transformaciones conservan la estructura), pero 0% con usuarios reales porque nunca vería una foto idéntica a las del banco.
+
+### Conclusión
+
+La evaluación anterior es un **test de regresión interno**, no una medición de calidad para el negocio. Sirve para saber si una cambio rompe algo, pero no para decir "el buscador funciona bien para los clientes".
+
+---
+
+## P2 · ¿Qué dice el único dato honesto que hay?
+
+### Qué hay en `data/evaluation.csv`
+
+Son 16 filas. Cada fila es un resultado que un humano clasificó. Las columnas son: `consulta`, `resultado_id`, `posicion`, `score`, `clasificacion_humana`, `observacion`.
+
+### Qué juicio recibieron los resultados en posición 1
+
+| Consulta | Score posición 1 | Clasificación |
+|---|---|---|
+| `q_20260813_204439` | 0.6932 | **Poco similar** |
+| `q_20260820_144502` | 0.7626 | **No relacionado** |
+| `q_20260820_144749` | 0.8006 | **Poco similar** |
+| `q_20260820_145517` | 0.7257 | **No relacionado** |
+
+**Ningún resultado en posición 1 fue clasificado como "Muy similar" o "Similar".** Todos fueron "Poco similar" o "No relacionado".
+
+### Qué conclusión sacar de un score 0.76 marcado "No relacionado"
+
+El score de similitud coseno (0.76) **NO es un porcentaje de probabilidad** de que sea el mismo objeto. Es una medida de distancia en el espacio de embeddings. Un score de 0.76 puede significar:
+
+- Dos camisetas que comparten color dominante pero tienen diseños totalmente distintos
+- Dos imágenes con composición similar (centro oscuro, fondo claro) pero de productos diferentes
+- Dos textiles con textura parecida pero patron diferente
+
+**El umbral a partir del cual un score es "bueno" no se puede fijar sin datos etiquetados.** Mirando estos datos, vemos que 0.76 ya es "No relacionado" y 0.69 es "Poco similar". No hay una línea clara.
+
+### La fila repetida con dos juicios opuestos
+
+La fila 8 y 9 del CSV son **exactamente la misma respuesta**:
+
+```
+q_20260820_144502_3bef9a,AIM-P022-060,2,0.7509,Muy similar,
+q_20260820_144502_3bef9a,AIM-P022-060,2,0.7509,No relacionado,
+```
+
+Mismo `resultado_id`, mismo `score`, misma `posición`, pero **juicios opuestos**. Esto revela que:
+
+1. **La evaluación humana es subjetiva** — dos personas (o la misma persona en momentos diferentes) pueden ver lo mismo y opinar distinto
+2. **No hay criterios claros** — sin definir qué es "Muy similar" vs "No relacionado", cada quien juzga con sus propias reglas
+3. **La herramienta que construyamos DEBE tener criterios fijos** para minimizar esta variabilidad
+
+### Conclusión
+
+El evaluation.csv revela que el buscador actual **no pasa el examen humano**: los Top 1 son "Poco similar" o "No relacionado". El score solo no sirve; hace falta un criterio de juicio definido y una herramienta que lo aplique de forma consistente.
+
+---
+
+## P3 · ¿Qué hay que medir exactamente?
+
+El buscador devuelve 5 resultados. Necesitamos 3 métricas que respondan preguntas de negocio distintas:
+
+### Métrica 1: Precision@1 — *¿El primero es el correcto?*
+
+**Qué mide:** De todas las consultas, ¿cuántas veces el resultado en posición 1 es el diseño que el usuario buscaba?
+
+**Por qué importa:** Si el usuario tiene que revisar los 5 resultados para encontrar el correcto, el buscador no está funcionando. El negocio necesita que el primer resultado sea el bueno — es lo que el vendedor muestra primero al cliente.
+
+**Fórmula:** `consultas donde resultado_1 == correcto / total consultas`
+
+### Métrica 2: Recall@5 — *¿El correcto aparece en algún lugar del Top 5?*
+
+**Qué mide:** De todas las consultas, ¿cuántas veces el diseño correcto aparece en alguno de los 5 resultados (posición 1 a 5)?
+
+**Por qué importa:** A veces el primero no es el correcto, pero el correcto está en el Top 5. Si el vendedor tiene que seguir buscando más allá del Top 5, el sistema no le está sirviendo. Esta métrica captura la **cobertura** del buscador.
+
+**Fórmula:** `consultas donde correcto ∈ Top 5 / total consultas`
+
+### Métrica 3: Utilidad del Top 5 (calidad percibida) — *¿Los resultados 2 al 5 son útiles o son basura?*
+
+**Qué mide:** De los resultados que NO son el correcto (posiciones 2-5), ¿cuántos serían útiles para mostrarle a un cliente como alternativa?
+
+**Por qué importa:** Un vendedor no solo necesita encontrar el diseño exacto; también necesita mostrar **alternativas parecidas** que el cliente pueda aceptar. Si el Top 5 tiene 1 correcto y 4 basura, el vendedor tiene que seguir buscando manualmente. Si tiene 1 correcto y 3-4 alternativas útiles, puede trabajar con eso.
+
+**Cómo se mide:** Cada resultado del Top 5 (excepto el correcto) se clasifica como:
+- **Sirve**: no es el mismo diseño, pero se lo mostrarías al cliente y lo aceptaría
+- **No sirve**: es otro diseño completamente diferente
+
+**Fórmula:** `resultados "Sirve" en posiciones 2-5 / (total consultas × 4)`
+
+### Resumen de las 3 métricas
+
+| Métrica | Pregunta de negocio | Qué captura |
+|---|---|---|
+| Precision@1 | ¿El primero es el bueno? | Eficiencia del vendedor |
+| Recall@5 | ¿El bueno aparece en los 5? | Cobertura del buscador |
+| Utilidad Top 5 | ¿Los otros 4 sirven? | Calidad de las alternativas |
+
+---
+
+## P4 · ¿Qué es un caso de prueba válido?
+
+### De dónde puede salir la foto de consulta
+
+La foto de consulta **NUNCA** puede salir del catálogo (`data/images_normalized/` o `data/images_final/`). Si sale del catálogo, caemos en el mismo problema de la P1: estamos midiendo si el motor reconoce sus propias transformaciones, no si encuentra algo real.
+
+**Fuentes válidas:**
+- Fotos que un usuario sacó con su celular en una tienda
+- Fotos de internet (redes sociales, páginas de proveedores)
+- Mockups de proveedores que no están en el catálogo
+- Fotos con diferentes ángulos, iluminación, fondos
+
+### De dónde NO puede salir nunca
+
+- De `data/images_normalized/` (el banco limpio)
+- De `data/images_final/` (el banco original)
+- De `data/consultas/` (las consultas generadas por el script)
+- De cualquier transformación de las imágenes del catálogo
+
+### Cómo se garantiza que la respuesta correcta existe
+
+Antes de crear un caso de prueba, se debe **verificar manualmente** que el diseño de la consulta existe en el catálogo. Esto significa:
+1. Buscar en `data/products.csv` por nombre o ID
+2. Confirmar que la imagen correspondiente está en `data/images_normalized/`
+3. Anotar el `id_correcto` que será la respuesta esperada
+
+Si la respuesta correcta no existe en el catálogo, el caso no sirve para evaluar el buscador (el buscador no puede encontrar algo que no está indexado).
+
+### Por qué conviene que las 10 fotos sean de tipos distintos
+
+Si las 10 fotos son todas del mismo tipo (por ejemplo, todas mockups de persona), solo estamos midiendo una capacidad del buscador. Para saber si el buscador sirve para el negocio real, necesitamos probar diferentes escenarios:
+
+| Tipo | Qué prueba |
+|---|---|
+| Foto limpia de catálogo | Caso ideal (ya lo sabemos que funciona) |
+| Foto sin marco | ¿El motor maneja la composición? |
+| Foto con colores diferentes | ¿El motor entiende el diseño más allá del color? |
+| Foto recortada | ¿El motor reconoce un patrón parcial? |
+| Foto mockup/persona | ¿El motor maneja fondos ruidosos? |
+| Foto real en tienda | El caso más importante: ¿funciona en la vida real? |
+| Foto de internet | ¿El motor maneja diferentes calidades? |
+| Foto borrosa/baja calidad | ¿El motor es robusto? |
+| Foto con otros productos | ¿El motor distingue entre camisetas? |
+| Foto que NO está en el catálogo | ¿El motor devuelve scores bajos cuando no encuentra? |
+
+**La diversidad es clave.** Un buscador que funciona perfecto con fotos de catálogo pero falla con fotos reales no sirve para el negocio.
+
+---
+
+## Resumen ejecutivo
+
+| Pregunta | Respuesta clave |
+|---|---|
+| P1 | El 92% no sirve porque las consultas son transformaciones del propio catálogo |
+| P2 | Los scores altos (0.76+) corresponden a "No relacionado" humano; el score solo no mide calidad |
+| P3 | Precision@1, Recall@5, Utilidad del Top 5 — cada una responde una pregunta de negocio |
+| P4 | Consultas NUNCA del catálogo; respuestas correctas verificadas; 10 tipos distintos |
+
+---
+
+*DECISIONES.md — Fase 1 completada*
