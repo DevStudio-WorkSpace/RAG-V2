@@ -194,3 +194,28 @@ Si las 10 fotos son todas del mismo tipo (por ejemplo, todas mockups de persona)
 ---
 
 *DECISIONES.md — Fase 1 completada*
+
+---
+
+## 02 · Decidir — Fase 2
+
+### D1 · Interfaz
+**¿Un caso a la vez o todos en una lista? ¿Con mouse o con teclado?**
+
+* **Opción Elegida:** **Un caso a la vez, operado principalmente con atajos de teclado.** La herramienta mostrará la imagen de consulta y los 5 resultados en una sola vista que ocupe la pantalla, permitiendo calificar cada resultado presionando números (ej: 1, 2, 3 para Acierto/Sirve/No sirve).
+* **Opción Descartada:** Mostrar todos los casos en una lista larga (scroll) y requerir clics de mouse en botones de radio o menús desplegables para cada resultado.
+* **Por qué se eligió:** Evaluar 180 casos seguidos con el mouse en una lista interminable es lento y propenso a fatiga ("scrolling fatigue"). Mostrar un caso a la vez mantiene el foco visual constante, y usar el teclado permite generar "memoria muscular", lo que puede ahorrar entre 2 y 3 segundos por caso (unos 6-9 minutos de ahorro total en tedio).
+
+### D2 · Persistencia
+**¿Dónde queda cada juicio? Requisito duro: si el navegador se cierra a la mitad, no se pierde nada, y el archivo se puede abrir sin ustedes.**
+
+* **Opción Elegida:** **Almacenamiento local en el navegador (`localStorage`) en tiempo real, con un botón para "Exportar a CSV" al final.** Cada vez que el evaluador califica un resultado, se guarda inmediatamente en la memoria del navegador.
+* **Opción Descartada:** Requerir un backend con base de datos (ej. SQLite/Postgres) para ir guardando, o mantener todo en memoria RAM (`state` temporal) hasta que el usuario le dé a "Guardar todo".
+* **Por qué se eligió:** El `localStorage` cumple el requisito duro perfectamente: si se cierra la pestaña por accidente, los datos siguen ahí al volver a abrirla. Exportar a CSV cumple el segundo requisito: el evaluador puede bajar el archivo y abrirlo en Excel sin depender de que nosotros o la herramienta estemos disponibles. Nos ahorra la complejidad innecesaria de montar un servidor con base de datos.
+
+### D3 · Entrada
+**¿En qué formato entran los casos? Los 180 de los diseñadores van a llegar después y tienen que entrar por ahí.**
+
+* **Opción Elegida:** **Cargar un archivo `.json` estandarizado desde la interfaz.** La pantalla inicial pedirá al usuario subir un archivo de casos que contenga una lista de las URLs o rutas de las imágenes de consulta.
+* **Opción Descartada:** Harcodear las 180 rutas en el código fuente de la herramienta o ingresarlas manualmente una por una en un campo de texto.
+* **Por qué se eligió:** Separa los datos del código. Cuando los diseñadores terminen sus 180 casos, solo tienen que entregarlos en el formato JSON acordado (que documentaremos en el README), y cualquier persona podrá subirlos a la herramienta sin necesidad de tocar ni una línea de código ni depender de un desarrollador.
