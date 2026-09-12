@@ -12,7 +12,9 @@ from PIL import Image
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sentence_transformers import SentenceTransformer
+from api.evaluacion import router as evaluacion_router, CASOS_DIR
 
 # Asegurar importación del módulo search_engine independientemente del working directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -218,6 +220,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Módulo del Evaluador del Buscador (Grupo A): guardado en tiempo real y estado.
+# Solo consume/escribe sus propios CSV en evaluador/; NO toca índice ni motor.
+app.include_router(evaluacion_router)
+
+# Imágenes de consulta de los casos de evaluación
+app.mount("/casos", StaticFiles(directory=CASOS_DIR), name="casos")
 
 # Parámetros del Hito 2: cuántos candidatos se recuperan en la fase amplia
 # antes de hacer el reranking por color.

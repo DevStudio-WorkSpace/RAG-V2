@@ -149,8 +149,17 @@ export default function Home() {
               <p className="label-title">Resultados</p>
               <h3>Top 5 más parecidos</h3>
             </div>
-            <span className="results-badge">{loading ? "Procesando" : "OK"}</span>
+            <span className={`results-badge ${loading ? "loading" : ""}`}>
+              {loading && <span className="spinner" aria-hidden="true" />}
+              {loading ? "Procesando" : "OK"}
+            </span>
           </div>
+
+          {loading && (
+            <div className="progress-track" aria-hidden="true">
+              <div className="progress-bar" />
+            </div>
+          )}
 
           {error ? (
             <div className="error-box">{error}</div>
