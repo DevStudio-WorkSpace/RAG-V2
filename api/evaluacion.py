@@ -175,6 +175,29 @@ def completar(body: CompletarBody):
     return {"ok": True}
 
 
+@router.get("/veredictos")
+def veredictos():
+    """Veredicto agregado por producto (id_resultado) para la búsqueda web.
+    Devuelve el último juicio guardado para cada id de producto. La página de
+    búsqueda lo usa para ocultar de forma permanente las imágenes marcadas
+    como "no_sirve" (aunque se recargue la página) y para resaltar la
+    calificación previa. Los resultados vuelven a aparecer si se borra el
+    archivo evaluador/resultados.csv."""
+    veredicto_por_id: dict[str, str] = {}
+    for r in _leer_resultados():
+        id_resultado = (r.get("id_resultado") or "").strip()
+        juicio = (r.get("juicio") or "").strip()
+        if id_resultado and juicio:
+            # El CSV se escribe en orden de llegada: el último juicio gana.
+            veredicto_por_id[id_resultado] = juicio
+    return {
+        "veredictos": veredicto_por_id,
+        "rechazados": sorted(
+            k for k, v in veredicto_por_id.items() if v == "no_sirve"
+        ),
+    }
+
+
 @router.get("/estado")
 def estado():
     _garantizar_casos_csv()

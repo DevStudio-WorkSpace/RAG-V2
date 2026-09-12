@@ -1,9 +1,10 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
 const CASE_TOTAL = 10;
 const API_URL = "http://localhost:8000";
+const VEREDICTOS_KEY = "buscador_veredictos";
 
 type ResultItem = {
   id: string;
@@ -14,6 +15,14 @@ type ResultItem = {
   score?: number;
   score_reranking?: number;
 };
+
+type Veredicto = "acierto" | "sirve" | "no_sirve";
+
+const VEREDICTOS = [
+  { value: "acierto", label: "Acierto", icon: "✅" },
+  { value: "sirve", label: "Sirve", icon: "👍" },
+  { value: "no_sirve", label: "No sirve", icon: "❌" },
+] as const;
 
 function buildFallbackImage(text: string, hue = 210) {
   const svg = `
@@ -45,6 +54,15 @@ function toResultImage(result: ResultItem, index: number) {
   return buildFallbackImage(`#${index + 1}`, 200 + index * 25);
 }
 
+function leerVeredictosGuardados(): Record<string, Veredicto> {
+  try {
+    const raw = localStorage.getItem(VEREDICTOS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, Veredicto>) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function Home() {
   const [queryImage, setQueryImage] = useState<string | null>(null);
   const [queryName, setQueryName] = useState("consulta.png");
@@ -52,6 +70,73 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("Sin búsqueda");
+  const [queryId, setQueryId] = useState<string>("");
+  const [veredictos, setVeredictos] = useState<Record<string, Veredicto>>(leerVeredictosGuardados);
+  const [guardandoId, setGuardandoId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const cargarVeredictos = async () => {
+      try {
+        const res = await fetch(`${API_URL}/evaluacion/veredictos`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const v = (data?.veredictos || {}) as Record<string, Veredicto>;
+        setVeredictos(v);
+        localStorage.setItem(VEREDICTOS_KEY, JSON.stringify(v));
+      } catch {
+        // Sin conexión con la API: se usa lo guardado en localStorage.
+      }
+    };
+    cargarVeredictos();
+  }, []);
+
+  const notificarVeredictos = (proximo: Record<string, Veredicto>) => {
+    setVeredictos(proximo);
+    localStorage.setItem(VEREDICTOS_KEY, JSON.stringify(proximo));
+  };
+
+  const guardarVeredicto = async (result: ResultItem, index: number, juicio: Veredicto) => {
+    if (guardandoId === result.id) return;
+
+    const previo = veredictos[result.id];
+    setGuardandoId(result.id);
+    setError(null);
+    notificarVeredictos({ ...veredictos, [result.id]: juicio });
+
+    try {
+      const res = await fetch(`${API_URL}/evaluacion/guardar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          caso: queryId || "web",
+          id_correcto: "",
+          posicion: index + 1,
+          id_resultado: result.id,
+          score: result.score_reranking ?? result.score ?? 0,
+          juicio,
+          quien: "web",
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || "No se pudo guardar el veredicto.");
+      }
+    } catch (err) {
+      setVeredictos((v) => {
+        const copia = { ...v };
+        if (previo === undefined) {
+          delete copia[result.id];
+        } else {
+          copia[result.id] = previo;
+        }
+        localStorage.setItem(VEREDICTOS_KEY, JSON.stringify(copia));
+        return copia;
+      });
+      setError(err instanceof Error ? err.message : "No se pudo guardar el veredicto.");
+    } finally {
+      setGuardandoId(null);
+    }
+  };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -82,6 +167,7 @@ export default function Home() {
 
       const nextResults = Array.isArray(data?.resultados) ? data.resultados : [];
       setResults(nextResults);
+      if (data?.query_id) setQueryId(data.query_id);
       setStatus(`Top 5 · ${data?.modelo || "clip"}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo buscar.");
@@ -92,7 +178,14 @@ export default function Home() {
     }
   };
 
-  const topResults = useMemo(() => results.slice(0, 5), [results]);
+  const ocultas = useMemo(
+    () => results.filter((r) => veredictos[r.id] === "no_sirve").length,
+    [results, veredictos]
+  );
+  const topResults = useMemo(
+    () => results.filter((r) => veredictos[r.id] !== "no_sirve").slice(0, 5),
+    [results, veredictos]
+  );
 
   return (
     <main className="page-shell">
@@ -165,12 +258,19 @@ export default function Home() {
             <div className="error-box">{error}</div>
           ) : null}
 
+          {ocultas > 0 && (
+            <p className="hidden-note">
+              Se ocultaron {ocultas} imagen{ocultas === 1 ? "" : "es"} marcada{ocultas === 1 ? "" : "s"} como No sirve.
+            </p>
+          )}
+
           <div className="results-grid">
             {topResults.length > 0 ? (
               topResults.map((result, index) => {
                 const score = result.score_reranking ?? result.score ?? 0;
                 const ratio = Math.min(Math.max(score * 100, 0), 100);
                 const imageSrc = toResultImage(result, index);
+                const seleccionado = veredictos[result.id];
 
                 return (
                   <article className="result-card" key={`${result.id}-${index}`}>
@@ -196,13 +296,28 @@ export default function Home() {
                           <span style={{ width: `${ratio}%` }} />
                         </div>
                       </div>
+
+                      <div className="veredicto-buttons">
+                        {VEREDICTOS.map((v) => (
+                          <button
+                            key={v.value}
+                            className={`veredicto-btn v-${v.value} ${seleccionado === v.value ? "selected" : ""}`}
+                            disabled={guardandoId === result.id}
+                            onClick={() => guardarVeredicto(result, index, v.value)}
+                          >
+                            {v.icon} {v.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </article>
                 );
               })
             ) : (
               <div className="empty-state">
-                Sube una imagen para consultar la API y ver los resultados realistas del Top 5.
+                {results.length > 0
+                  ? "Todas las imágenes de esta búsqueda fueron marcadas como No sirve."
+                  : "Sube una imagen para consultar la API y ver los resultados realistas del Top 5."}
               </div>
             )}
           </div>

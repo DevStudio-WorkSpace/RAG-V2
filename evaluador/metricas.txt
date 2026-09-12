@@ -1,0 +1,12 @@
+METRICAS DEL BUSCADOR - GRUPO A
+==================================================
+Filas en resultados.csv : 3
+Casos evaluados         : 3
+
+Top 1    (% acierto en posicion 1)        : 0.0%
+Top 5    (% acierto en el top 5)          : 33.3%
+Utilidad (promedio 0-5 de acierto + sirve): 0.33 / 5
+
+Tipo           Casos    Top 1    Top 5   Utilidad
+Total              3     0.0%    33.3%     0.33/5
+desconocido        3     0.0%    33.3%     0.33/5

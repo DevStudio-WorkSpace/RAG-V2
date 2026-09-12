@@ -191,6 +191,7 @@ export default function Evaluacion() {
   }
 
   const nroCaso = current ? pending.findIndex((c) => c.caso === current.caso) : 0;
+  const nroCasoGlobal = current ? casos.findIndex((c) => c.caso === current.caso) : 0;
   const terminado = !loading && casos.length > 0 && pending.length === 0;
 
   return (
@@ -248,7 +249,7 @@ export default function Evaluacion() {
                 <div>
                   <p className="label-title">Consulta · {current.tipo}</p>
                   <h2>
-                    Caso {nroCaso + 1} de {pending.length || casos.length}
+                    Caso {nroCasoGlobal + 1} de {casos.length}
                   </h2>
                 </div>
                 <div className="eval-pill">{current.caso}</div>

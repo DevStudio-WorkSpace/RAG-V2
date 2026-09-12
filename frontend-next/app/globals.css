@@ -390,6 +390,66 @@ input {
   background: linear-gradient(90deg, #3fd0ff 0%, #507dff 100%);
 }
 
+.veredicto-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 12px;
+}
+
+.veredicto-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0.5rem 0.3rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.18s;
+  text-align: center;
+}
+
+.veredicto-btn:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  color: var(--text);
+}
+
+.veredicto-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.veredicto-btn.v-acierto.selected {
+  background: rgba(141, 240, 193, 0.14);
+  border-color: rgba(141, 240, 193, 0.5);
+  color: #aaf5d4;
+}
+
+.veredicto-btn.v-sirve.selected {
+  background: rgba(70, 208, 255, 0.14);
+  border-color: rgba(70, 208, 255, 0.5);
+  color: #c8f2ff;
+}
+
+.veredicto-btn.v-no-sirve.selected {
+  background: rgba(255, 99, 99, 0.14);
+  border-color: rgba(255, 99, 99, 0.5);
+  color: #ffc6c6;
+}
+
+.hidden-note {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 @media (max-width: 1100px) {
   .results-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
