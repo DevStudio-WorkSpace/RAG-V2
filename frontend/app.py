@@ -287,9 +287,86 @@ CSS = """
         border-color: rgba(255,255,255,.08) !important;
     }
 
+    .case-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem; padding: .8rem 1rem; margin: 1.6rem 0 1.2rem;
+        border-radius: 16px; border: 1px solid rgba(0,210,255,.25);
+        background: linear-gradient(135deg, rgba(0,210,255,.12), rgba(58,123,213,.06));
+        box-shadow: 0 18px 55px rgba(0,0,0,.18);
+    }
+    .case-pill {
+        display: inline-flex; align-items: center; gap: .55rem;
+        padding: .4rem .75rem; border-radius: 999px; font-size: .78rem; font-weight: 700;
+        background: rgba(0,210,255,.16); border: 1px solid rgba(0,210,255,.32); color: #c8f3ff;
+    }
+    .case-title {
+        font-size: .85rem; letter-spacing: .14em; text-transform: uppercase; color: #8fb4e8; font-weight: 700; margin: 0;
+    }
+    .query-panel {
+        padding: 1.1rem; border-radius: 22px; border: 1px solid rgba(255,255,255,.09);
+        background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+        box-shadow: 0 26px 80px rgba(0,0,0,.24);
+        margin-bottom: 1.5rem;
+    }
+    .query-panel .query-image-frame {
+        border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.12);
+        min-height: 420px; display: flex; align-items: center; justify-content: center;
+    }
+    .query-panel img {
+        display: block; width: 100%; height: 100%; max-height: 520px; object-fit: cover; border-radius: 18px;
+    }
+    .results-grid {
+        display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem;
+        margin-top: 1rem;
+    }
+    .result-card-featured {
+        height: 100%; border: 1px solid rgba(255,255,255,.09); border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+        backdrop-filter: blur(8px); padding: .85rem; box-shadow: 0 14px 40px rgba(0,0,0,.2);
+        animation: cardIn .45s ease both; transition: transform .2s ease, border-color .2s ease;
+    }
+    .result-card-featured:hover { transform: translateY(-2px); border-color: rgba(0,210,255,.35); }
+    .result-thumb-wrap {
+        position: relative; margin-bottom: .8rem; overflow: hidden; border-radius: 14px; background: rgba(0,0,0,.18);
+        border: 1px solid rgba(255,255,255,.1); height: 210px;
+    }
+    .result-thumb-wrap img {
+        display: block; width: 100%; height: 100%; object-fit: cover;
+    }
+    .result-rank {
+        position: absolute; left: .7rem; top: .7rem; z-index: 1;
+        min-width: 2rem; height: 2rem; border-radius: 999px; display: inline-flex;
+        align-items: center; justify-content: center; font-weight: 800; font-size: .83rem; color: #08151f;
+        background: linear-gradient(135deg, #7fd4ff, #00a8ff); box-shadow: 0 4px 12px rgba(0,168,255,.35);
+    }
+    .result-rank.rank1 {
+        background: linear-gradient(135deg, #ffd76a, #ff9f1c); box-shadow: 0 5px 16px rgba(255,159,28,.45);
+    }
+    .result-name { font-size: .98rem; font-weight: 700; color: #eaf2ff; line-height: 1.35; min-height: 2.6em; }
+    .result-id { color: #7c8bab; font-size: .74rem; margin-top: .18rem; }
+    .result-score {
+        margin-top: .8rem; padding-top: .55rem; border-top: 1px solid rgba(255,255,255,.08);
+        font-size: .76rem; color: #cfe0f5;
+    }
+    .score-pill {
+        display: inline-block; margin-top: .35rem; padding: .28rem .48rem; border-radius: 999px;
+        background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.25); color: #98f0c7; font-weight: 700;
+    }
+    .mini-actions { margin-top: .7rem; display: flex; gap: .5rem; flex-direction: column; }
+    .mini-actions .stDownloadButton > button,
+    .mini-actions button {
+        width: 100%;
+    }
+
+    @media (max-width: 1100px) {
+        .results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
     @media (max-width: 640px) {
         .block-container { padding-top: 1.7rem; }
         div[data-testid="stFileUploader"] section { min-height: 195px; }
+        .case-bar { flex-direction: column; align-items: flex-start; }
+        .query-panel .query-image-frame { min-height: 260px; }
+        .results-grid { grid-template-columns: 1fr; }
         .result-card { padding: .8rem; }
         .result-layout { flex-wrap: wrap; }
     }
@@ -387,6 +464,73 @@ CSS_CLARO = """
     [data-testid="stSidebar"] [data-testid="stExpander"] {
         background: rgba(255,255,255,.6) !important;
         border-color: rgba(20,40,70,.12) !important;
+    }
+    .case-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: .8rem 1rem; margin: 1.4rem 0 1.2rem; border-radius: 16px;
+        background: linear-gradient(135deg, rgba(0,120,220,.08), rgba(0,180,200,.06));
+        border: 1px solid rgba(0,120,220,.18);
+    }
+    .case-pill {
+        display: inline-flex; align-items: center; gap: .55rem; padding: .38rem .7rem;
+        border-radius: 999px; background: rgba(0,120,220,.08); border: 1px solid rgba(0,120,220,.18);
+        color: #0f2440; font-size: .75rem; font-weight: 700;
+    }
+    .case-title {
+        font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: #2c5f9e; font-weight: 700; margin: 0;
+    }
+    .query-panel {
+        padding: 1rem; border-radius: 20px; border: 1px solid rgba(20,40,70,.08);
+        background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(246,250,255,.9));
+        box-shadow: 0 18px 48px rgba(30,60,100,.08); margin-bottom: 1.4rem;
+    }
+    .query-panel .query-image-frame {
+        border-radius: 16px; overflow: hidden; border: 1px solid rgba(20,40,70,.08); background: #edf5ff;
+        min-height: 420px; display: flex; align-items: center; justify-content: center;
+    }
+    .query-panel img {
+        display: block; width: 100%; height: 100%; max-height: 520px; object-fit: cover; border-radius: 16px;
+    }
+    .results-grid {
+        display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem;
+    }
+    .result-card-featured {
+        height: 100%; border: 1px solid rgba(20,40,70,.1); border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff, #f6faff); padding: .8rem; box-shadow: 0 12px 34px rgba(30,60,100,.08);
+    }
+    .result-thumb-wrap {
+        position: relative; margin-bottom: .8rem; overflow: hidden; border-radius: 14px; background: #eff5ff;
+        border: 1px solid rgba(20,40,70,.08); height: 210px;
+    }
+    .result-thumb-wrap img {
+        display: block; width: 100%; height: 100%; object-fit: cover;
+    }
+    .result-rank {
+        position: absolute; left: .7rem; top: .7rem; z-index: 1; min-width: 2rem; height: 2rem;
+        border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: .83rem; color: #08151f; background: linear-gradient(135deg, #7fd4ff, #00a8ff);
+        box-shadow: 0 4px 12px rgba(0,168,255,.25);
+    }
+    .result-rank.rank1 {
+        background: linear-gradient(135deg, #ffd76a, #ff9f1c); box-shadow: 0 5px 16px rgba(255,159,28,.4);
+    }
+    .result-name { font-size: .96rem; font-weight: 700; color: #0f2440; line-height: 1.35; min-height: 2.6em; }
+    .result-id { color: #5b6b84; font-size: .74rem; margin-top: .18rem; }
+    .result-score {
+        margin-top: .8rem; padding-top: .55rem; border-top: 1px solid rgba(20,40,70,.08); font-size: .76rem; color: #35507c;
+    }
+    .score-pill {
+        display: inline-block; margin-top: .35rem; padding: .25rem .5rem; border-radius: 999px;
+        background: rgba(34,153,84,.08); border: 1px solid rgba(34,153,84,.2); color: #0b7a3d; font-weight: 700;
+    }
+    .mini-actions { margin-top: .7rem; display: flex; gap: .5rem; flex-direction: column; }
+    .mini-actions .stDownloadButton > button,
+    .mini-actions button { width: 100%; }
+    @media (max-width: 1100px) { .results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px) {
+        .case-bar { flex-direction: column; align-items: flex-start; }
+        .query-panel .query-image-frame { min-height: 260px; }
+        .results-grid { grid-template-columns: 1fr; }
     }
 </style>
 """
@@ -554,6 +698,79 @@ def listar_consultas():
         for f in os.listdir(CONSULTAS_DIR)
         if f.lower().endswith(EXT_IMAGEN)
     )
+
+
+def render_resultado_card(r, rank, query_name):
+    """Renderiza cada resultado en una tarjeta compacta con imagen, nombre y score."""
+    score = obtener_score(r)
+    pct = max(0.0, min(100.0, score * 100.0))
+    local = ruta_local(r.get("imagen", ""), r.get("id", ""))
+    b64 = imagen_a_b64(local) if local else None
+
+    if b64:
+        nombre_img = esc(r.get("nombre") or "resultado")
+        thumb = f'<img src="data:image/jpeg;base64,{b64}" alt="{nombre_img}" />'
+    elif r.get("url"):
+        nombre_img = esc(r.get("nombre") or "resultado")
+        thumb = f'<img src="{esc(r["url"])}" alt="{nombre_img}" />'
+    else:
+        thumb = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:linear-gradient(135deg,#0f172a,#1e293b);color:#cfe0f5;font-size:0.8rem;">Sin imagen</div>'
+
+    nombre = esc(r.get("nombre") or "Sin nombre")
+    iid = esc(r.get("id") or "—")
+    proveedor = esc(r.get("proveedor") or "Sin proveedor")
+
+    st.markdown(
+        f'''<div class="result-card-featured" style="animation-delay:{rank * 60}ms">
+            <div class="result-thumb-wrap">
+                <span class="result-rank {'rank1' if rank == 1 else ''}">#{rank}</span>
+                {thumb}
+            </div>
+            <div class="result-name">{nombre}</div>
+            <div class="result-id">{iid} · {proveedor}</div>
+            <div class="result-score">
+                <div>Score de similitud</div>
+                <span class="score-pill">{score:.4f}</span>
+                <div style="margin-top:.5rem; height:.45rem; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden;">
+                    <div style="height:100%; width:{pct:.1f}%; border-radius:999px; background:linear-gradient(90deg,#00d2ff,#3a7bd5);"></div>
+                </div>
+            </div>
+        </div>''',
+        unsafe_allow_html=True,
+    )
+
+    if b64:
+        nombre_archivo = f"{r.get('id', 'resultado')}.jpg"
+        bytes_imagen = None
+        if local:
+            with open(local, "rb") as f:
+                bytes_imagen = f.read()
+        if bytes_imagen:
+            st.download_button(
+                "Descargar",
+                data=bytes_imagen,
+                file_name=nombre_archivo,
+                mime="image/jpeg",
+                use_container_width=True,
+            )
+
+    with st.expander("Evaluar", expanded=False):
+        clasificacion = st.selectbox(
+            "Clasificación humana",
+            CLASIFICACIONES,
+            key=f"clasif_{rank}_{query_name}",
+        )
+        observacion = st.text_input("Observación", key=f"obs_{rank}_{query_name}")
+        if st.button("Guardar evaluación", key=f"btn_{rank}_{query_name}", type="primary"):
+            guardar_evaluacion(
+                query_name,
+                r.get("id"),
+                rank,
+                score,
+                clasificacion,
+                observacion,
+            )
+            st.success("Evaluación guardada")
 
 
 if "health_info" not in st.session_state:
@@ -776,282 +993,86 @@ if not resultados:
     st.info("No se encontraron resultados.")
     st.stop()
 
-col_q, col_r = st.columns([1, 2.1], gap="large")
+st.markdown(
+    '<div class="case-bar">'
+    '<div>'
+    '<p class="case-title">Caso</p>'
+    f'<div class="case-pill">Caso {st.session_state.get("caso_actual", 1)} de {st.session_state.get("total_casos", 10)}</div>'
+    '</div>'
+    '<div style="display:flex; gap:.5rem; align-items:center; color:#8fb4e8; font-size:.8rem; font-weight:600;">'
+    f'<span>{esc(data.get("modo", "auto"))}</span><span>·</span><span>{esc(data.get("modelo", "fusion"))}</span>'
+    '</div>'
+    '</div>',
+    unsafe_allow_html=True,
+)
 
-with col_q:
-    st.markdown(
-        f'<div class="section-title">{ICO["search"]} Consulta</div>',
-        unsafe_allow_html=True,
-    )
-    st.image(
-        Image.open(io.BytesIO(datos_imagen)),
-        use_container_width=True,
-        caption="Imagen de consulta",
-    )
+query_name = nombre_imagen or "consulta"
 
-    b64_proc = data.get("imagen_procesada_b64")
-    if b64_proc:
-        try:
-            st.image(
-                Image.open(io.BytesIO(base64.b64decode(b64_proc))),
-                use_container_width=True,
-                caption="Preparada por la API",
-            )
-        except Exception:
-            pass
+st.markdown(
+    '<div class="query-panel">'
+    '<div class="query-image-frame">'
+    f'<img src="data:image/jpeg;base64,{base64.b64encode(datos_imagen).decode("ascii")}" alt="{esc(query_name)}" />'
+    '</div>'
+    '</div>',
+    unsafe_allow_html=True,
+)
 
-    prep = data.get("preprocesamiento") or {}
-    if prep.get("ok"):
-        with st.expander(f"{ICO['wrench']} Detalles del preprocesamiento"):
-            st.markdown(
-                f"**Backend:** `{esc(prep.get('backend'))}` · "
-                f"**Tiempo:** `{prep.get('tiempo_segundos')} s`"
-            )
-            if prep.get("bbox"):
-                st.markdown(f"**BBox:** `{esc(prep.get('bbox'))}`")
-            if prep.get("recorte_pct") is not None:
-                st.markdown(f"**Recorte:** `{prep.get('recorte_pct')}%`")
-            pasos = prep.get("pasos") or []
-            if pasos:
-                st.markdown("**Pasos aplicados:**")
-                for paso in pasos:
-                    st.markdown(f"- {esc(paso)}")
-
-    # --- Identificación por país/equipo ---
-    if PROMPTS_DISPONIBLES:
-        st.markdown(f'<div class="section-title" style="margin-top: 1.2rem;">{ICO["target"]} Identificación</div>', unsafe_allow_html=True)
-
-        # Extraer colores y patrón de los resultados si están disponibles
-        colores_detectados = []
-        patron_detectado = ""
-
-        # Intentar extraer info del primer resultado o del embedding
-        if resultados:
-            primer_resultado = resultados[0]
-            # Buscar colores en los metadatos del resultado
-            modelo_info = primer_resultado.get("modelo_utilizado", "")
-            if "color" in modelo_info.lower():
-                patron_detectado = "multicolor"
-
-        # Usar la función de identificación si tenemos colores
-        if colores_detectados:
-            paises_coincidentes = identificar_pais_equipo(colores_detectados, patron_detectado)
-        else:
-            # Si no detectamos colores, mostrar info general
-            paises_coincidentes = []
-
-        # Mostrar panel de identificación
-        if paises_coincidentes:
-            mejor_pais = paises_coincidentes[0]
-            st.markdown(
-                f'<div style="'
-                f'padding: 0.8rem 1rem; '
-                f'border-radius: 12px; '
-                f'border: 1px solid rgba(52,211,153,0.35); '
-                f'background: rgba(52,211,153,0.08); '
-                f'margin-bottom: 0.5rem;'
-                f'">'
-                f'<div style="font-weight: 700; color: #8ef0c1; font-size: 0.95rem; margin-bottom: 0.3rem;">'
-                f'🌍 {esc(mejor_pais["pais"])} — {esc(mejor_pais["seleccion"])}'
-                f'</div>'
-                f'<div style="font-size: 0.82rem; color: #9aa9c4; line-height: 1.5;">'
-                f'{esc(mejor_pais["descripcion"])}'
-                f'</div>'
-                f'<div style="font-size: 0.78rem; color: #7c8bab; margin-top: 0.3rem;">'
-                f'Colores: {esc(", ".join(mejor_pais["colores"]))} · '
-                f'Coincidencia: {esc(mejor_pais["coincidencia_colores"])} · '
-                f'Score: {mejor_pais["score_coincidencia"]:.2f}'
-                f'</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-
-            # Mostrar equipos asociados
-            if mejor_pais.get("equipos_famosos"):
-                with st.expander(f"📋 Equipos de {esc(mejor_pais['pais'])}"):
-                    for equipo in mejor_pais["equipos_famosos"][:6]:
-                        st.markdown(f"- {esc(equipo)}")
-        else:
-            # Panel genérico cuando no hay identificación
-            st.markdown(
-                '<div style="'
-                'padding: 0.7rem 0.9rem; '
-                'border-radius: 10px; '
-                'border: 1px solid rgba(127,212,255,0.25); '
-                'background: rgba(127,212,255,0.05); '
-                'font-size: 0.82rem; color: #9aa9c4; line-height: 1.5;'
-                '">'
-                'Sube una imagen y el sistema identificará el '
-                '<b>país</b>, <b>equipo</b>, <b>colores</b> y <b>patrón</b> '
-                'de la camiseta automáticamente.'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-
-with col_r:
+if PROMPTS_DISPONIBLES:
     st.markdown(
         '<div class="section-head">'
-        f'<div class="section-title">{ICO["trophy"]} Resultados</div>'
-        f'<div class="section-meta">Top 5 · Modo {esc(data.get("modo"))} · '
-        f'Modelo {esc(data.get("modelo"))} · {data.get("tiempo_segundos")} s</div>'
-        "</div>",
+        f'<div class="section-title">{ICO["target"]} Identificación</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div style="padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid rgba(52,211,153,0.25); background: rgba(52,211,153,0.08); color: #8ef0c1; font-size: 0.82rem; line-height: 1.5;">'
+        'Se detectará color, patrón y equipo más probable para esta consulta.'
+        '</div>',
         unsafe_allow_html=True,
     )
 
-    consulta_id = esc(data.get("query_id")) or nombre_imagen
+st.markdown(
+    '<div class="section-head">'
+    f'<div class="section-title">{ICO["trophy"]} Resultados</div>'
+    f'<div class="section-meta">Top 5 · {data.get("tiempo_segundos", "0")} s</div>'
+    '</div>',
+    unsafe_allow_html=True,
+)
 
-    for rank, r in enumerate(resultados, start=1):
-        score = obtener_score(r)
-        pct = max(0.0, min(100.0, score * 100.0))
-        local = ruta_local(r.get("imagen", ""), r.get("id", ""))
-        b64 = imagen_a_b64(local) if local else None
-        if b64:
-            img_html = f'<img class="result-img" src="data:image/jpeg;base64,{b64}"/>'
-        elif r.get("url"):
-            img_html = f'<img class="result-img" src="{esc(r["url"])}"/>'
-        else:
-            img_html = '<div class="result-img"></div>'
+result_cols = st.columns(5)
+for idx, r in enumerate(resultados[:5]):
+    with result_cols[idx]:
+        render_resultado_card(r, idx + 1, query_name)
 
-        # --- Identificar país/equipo del resultado ---
-        pais_tag = ""
-        if PROMPTS_DISPONIBLES:
-            nombre_producto = (r.get("nombre") or "").lower()
-            id_producto = (r.get("id") or "").lower()
-            texto_busqueda = f"{nombre_producto} {id_producto}"
-
-            # Buscar coincidencias en la base de datos
-            for pais_key, info in PAISES_FUTBOL.items():
-                # Verificar si el nombre del producto contiene el país o equipo
-                if (pais_key in texto_busqueda or
-                    info["nombre_completo"].lower() in texto_busqueda or
-                    info["seleccion"].lower() in texto_busqueda):
-                    pais_tag = (
-                        f'<div style="'
-                        f'display: inline-block; '
-                        f'padding: 0.2rem 0.6rem; '
-                        f'border-radius: 6px; '
-                        f'background: rgba(52,211,153,0.15); '
-                        f'border: 1px solid rgba(52,211,153,0.3); '
-                        f'color: #8ef0c1; '
-                        f'font-size: 0.75rem; '
-                        f'font-weight: 600; '
-                        f'margin-bottom: 0.4rem;'
-                        f'">'
-                        f'🌍 {esc(info["nombre_completo"])} · {esc(info["seleccion"])}'
-                        f'</div>'
-                    )
-                    break
-
-            # Si no se encontró país específico, intentar por colores en el nombre
-            if not pais_tag:
-                for color in ["celeste", "azul", "rojo", "verde", "amarillo", "naranja", "blanco", "negro"]:
-                    if color in texto_busqueda:
-                        # Buscar países con ese color
-                        paises_color = [p for p, info in PAISES_FUTBOL.items() if color in info["colores"]]
-                        if paises_color:
-                            mejor_pais = paises_color[0]
-                            info_pais = PAISES_FUTBOL[mejor_pais]
-                            pais_tag = (
-                                f'<div style="'
-                                f'display: inline-block; '
-                                f'padding: 0.2rem 0.6rem; '
-                                f'border-radius: 6px; '
-                                f'background: rgba(127,212,255,0.12); '
-                                f'border: 1px solid rgba(127,212,255,0.25); '
-                                f'color: #9aa9c4; '
-                                f'font-size: 0.75rem; '
-                                f'margin-bottom: 0.4rem;'
-                                f'">'
-                                f'🎨 Posible: {esc(info_pais["nombre_completo"])}'
-                                f'</div>'
-                            )
-                            break
-
-        meta = []
-        if r.get("score_recuperacion") is not None:
-            ini = r.get("posicion_inicial")
-            fin = r.get("posicion_final")
-            pos = f"#{ini} → #{fin}" if ini is not None and fin is not None else "—"
-            meta.append(f"Recuperación: <code>{r['score_recuperacion']:.4f}</code> · Posición: <code>{pos}</code>")
-        if r.get("modelo_utilizado"):
-            meta.append(f"Modelo: <code>⚡ Fusión</code>")
-
-        link = ""
-        if r.get("url"):
-            link = (
-                f'<div class="meta-line"><a class="api-link" '
-                f'href="{esc(r["url"])}" target="_blank">{ICO["link"]}Abrir imagen original</a></div>'
-            )
-
-        st.markdown(
-            f'<div class="result-card" style="animation-delay:{rank * 70}ms">'
-            '<div class="result-layout">'
-            f"{img_html}"
-            '<div style="flex:1; min-width:0;">'
-            '<div class="result-top">'
-            f'<span class="rank-badge {"rank1" if rank == 1 else ""}">#{rank}</span>'
-            '<div style="min-width:0;">'
-            f'<div class="result-name">{esc(r.get("nombre"))}</div>'
-            f'<div class="result-id">{esc(r.get("id"))} · Proveedor: {esc(r.get("proveedor"))}</div>'
-            f'{pais_tag}'
-            "</div></div>"
-            '<div class="score-wrap">'
-            '<div class="score-label"><span>Score de similitud</span>'
-            f"<span>{score:.4f}</span></div>"
-            f'<div class="bar"><div class="bar-fill" style="width:{pct:.1f}%"></div></div>'
-            "</div>"
-            + ("".join(f'<div class="meta-line">{m}</div>' for m in meta))
-            + link
-            + "</div></div></div>",
-            unsafe_allow_html=True,
+if data.get("imagen_procesada_b64"):
+    st.markdown(
+        '<div class="section-head" style="margin-top: 1.5rem;">'
+        f'<div class="section-title">{ICO["wrench"]} Consulta preparada</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    try:
+        st.image(
+            Image.open(io.BytesIO(base64.b64decode(data["imagen_procesada_b64"]))),
+            use_container_width=True,
+            caption="Versión preparada por la API",
         )
+    except Exception:
+        pass
 
-        if b64:
-            nombre_archivo = f"{r.get('id', 'resultado')}.jpg"
-            bytes_imagen = None
-            if local:
-                with open(local, "rb") as f:
-                    bytes_imagen = f.read()
-            if bytes_imagen:
-                c_d, c_p = st.columns(2)
-                with c_d:
-                    st.download_button(
-                        f"{ICO['download']} Descargar imagen",
-                        data=bytes_imagen,
-                        file_name=nombre_archivo,
-                        mime="image/jpeg",
-                        use_container_width=True,
-                    )
-                with c_p:
-                    components.html(
-                        html_imprimir(b64, nombre_archivo, st.session_state["tema_claro"]),
-                        height=44,
-                        scrolling=False,
-                    )
-            else:
-                components.html(
-                    html_imprimir(b64, nombre_archivo, st.session_state["tema_claro"]),
-                    height=44,
-                    scrolling=False,
-                )
-
-        with st.expander(f"{ICO['edit']} Evaluar resultado #{rank}"):
-            clasificacion = st.selectbox(
-                "Clasificación humana",
-                CLASIFICACIONES,
-                key=f"clasif_{rank}",
-            )
-            observacion = st.text_input(
-                "Observación (opcional)",
-                key=f"obs_{rank}",
-            )
-            if st.button("Guardar evaluación", key=f"btn_{rank}", type="primary"):
-                guardar_evaluacion(
-                    consulta_id,
-                    r.get("id"),
-                    rank,
-                    score,
-                    clasificacion,
-                    observacion,
-                )
-                st.success("Evaluación guardada en data/evaluation.csv")
+prep = data.get("preprocesamiento") or {}
+if prep.get("ok"):
+    with st.expander(f"{ICO['wrench']} Detalles del preprocesamiento"):
+        st.markdown(
+            f"**Backend:** `{esc(prep.get('backend'))}` · "
+            f"**Tiempo:** `{prep.get('tiempo_segundos')} s`"
+        )
+        if prep.get("bbox"):
+            st.markdown(f"**BBox:** `{esc(prep.get('bbox'))}`")
+        if prep.get("recorte_pct") is not None:
+            st.markdown(f"**Recorte:** `{prep.get('recorte_pct')}%`")
+        pasos = prep.get("pasos") or []
+        if pasos:
+            st.markdown("**Pasos aplicados:**")
+            for paso in pasos:
+                st.markdown(f"- {esc(paso)}")
