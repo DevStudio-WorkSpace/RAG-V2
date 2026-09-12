@@ -36,7 +36,7 @@ PROJECT_DIR = BASE_DIR.parent                              # raiz del proyecto
 CASOS_DIR = BASE_DIR / "casos"
 CASOS_CSV = CASOS_DIR / "casos.csv"
 RESULTADOS_CSV = BASE_DIR / "resultados.csv"
-FRONTEND_DIR = BASE_DIR  # frontend estatico en evaluador/ (Andres lo creara)
+FRONTEND_DIR = BASE_DIR / "frontend"  # frontend estatico en evaluador/frontend/
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 EVALUADOR_PORT = int(os.environ.get("EVALUADOR_PORT", "8001"))
@@ -381,9 +381,37 @@ def reset_resultados():
     return {"ok": True, "mensaje": "resultados.csv eliminado. Puedes volver a evaluar."}
 
 
+# ── Endpoint para servir imagenes del catalogo ─────────────────────────────
+
+@app.get("/api/imagen/{nombre}")
+def servir_imagen(nombre: str):
+    """Sirve una imagen del catalogo desde data/images_normalized/.
+    Busca con la extension exacta y tambien probando .jpg, .png, .gif, .webp."""
+    # Buscar con la extension exacta primero
+    ruta = PROJECT_DIR / "data" / "images_normalized" / nombre
+    if ruta.exists():
+        return FileResponse(str(ruta))
+    # Si no tiene extension o no se encontro, probar extensiones comunes
+    base = Path(nombre).stem
+    for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+        ruta = PROJECT_DIR / "data" / "images_normalized" / f"{base}{ext}"
+        if ruta.exists():
+            return FileResponse(str(ruta))
+    raise HTTPException(status_code=404, detail=f"Imagen no encontrada: {nombre}")
+
+
+@app.get("/api/caso-imagen/{nombre}")
+def servir_imagen_caso(nombre: str):
+    """Sirve la imagen de consulta de un caso desde evaluador/casos/."""
+    for ext in ("", ".jpg", ".jpeg", ".png", ".webp"):
+        ruta = CASOS_DIR / f"{nombre}{ext}"
+        if ruta.exists():
+            return FileResponse(str(ruta))
+    raise HTTPException(status_code=404, detail=f"Imagen de caso no encontrada: {nombre}")
+
+
 # ── Frontend estatico ─────────────────────────────────────────────────────
 
-# Servir archivos estaticos del frontend (Andres los creara aqui)
 # Se monta al final para que no tape los endpoints anteriores.
 if FRONTEND_DIR.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")

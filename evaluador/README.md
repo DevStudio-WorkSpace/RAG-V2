@@ -15,6 +15,10 @@ evaluador/
 │   └── casos.csv          # caso, id_correcto, tipo
 ├── backend/
 │   └── server.py          # Backend FastAPI (proxy + juicios + estadisticas)
+├── frontend/
+│   ├── index.html         # Pantalla de evaluacion
+│   ├── app.js             # Logica del frontend
+│   └── styles.css         # Estilos
 ├── metricas.py            # Script standalone de metricas
 └── resultados.csv         # Se crea automaticamente al evaluar
 ```
@@ -102,6 +106,7 @@ python evaluador/metricas.py --csv evaluador/resultados.csv
 
 | Endpoint | Metodo | Que hace |
 |----------|--------|----------|
+| `/` | GET | Sirve el frontend (index.html, app.js, styles.css) |
 | `/health` | GET | Proxy a la API principal |
 | `/api/casos` | GET | Lista los 10 casos |
 | `/api/casos/{n}` | GET | Caso N + resultados del buscador |
@@ -109,6 +114,8 @@ python evaluador/metricas.py --csv evaluador/resultados.csv
 | `/api/resultados` | GET | Exporta resultados.csv |
 | `/api/resultados/csv` | GET | Descarga resultados.csv |
 | `/api/estadisticas` | GET | Calcula Top 1, Top 5, Utilidad |
+| `/api/imagen/{nombre}` | GET | Sirve imagenes del catalogo (busca multiples extensiones) |
+| `/api/caso-imagen/{nombre}` | GET | Sirve fotos de consulta de los casos |
 | `/api/reset` | POST | Limpia resultados.csv |
 
 ## Reglas importantes
