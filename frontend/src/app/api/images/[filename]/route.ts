@@ -41,7 +41,7 @@ export async function GET(
     // Adaptamos el stream nativo de Node.js al ReadableStream web de Next.js
     const webStream = new ReadableStream({
       start(controller) {
-        fileStream.on('data', (chunk: Buffer) => controller.enqueue(chunk));
+        fileStream.on('data', (chunk: Buffer | string) => controller.enqueue(typeof chunk === 'string' ? Buffer.from(chunk) : chunk));
         fileStream.on('end', () => controller.close());
         fileStream.on('error', (err) => controller.error(err));
       },
