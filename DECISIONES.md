@@ -235,3 +235,80 @@ En esta fase se construyó la pantalla de evaluación consumiendo el buscador ex
    - **No sirve**: Es un diseño completamente diferente y no es útil para la consulta. 
 
 Esta estructura garantiza que los datos recolectados sirvan directamente para calcular las métricas definidas (Precision@1, Recall@5 y Utilidad del Top 5).
+
+---
+
+## 04 · Buscarle el error a lo suyo — Fase 4
+
+**Pregunta:** Si alguien quisiera hacer trampa con nuestra herramienta para que el buscador saliera mejor de lo que es, ¿cómo lo haría?
+
+1. **Sesgo de selección en los casos de prueba (Cherry-picking):** 
+   - **Cómo se hace:** Eligiendo como casos de prueba únicamente imágenes limpias, con buena iluminación o que sepamos de antemano que se parecen mucho a las del catálogo (por ejemplo, imágenes recortadas o rotadas del propio catálogo).
+   - **Cómo se detecta:** Revisando la diversidad de las consultas de prueba. Si no hay fotos ruidosas, fotos reales tomadas en tienda, o fotos de baja calidad, el set está sesgado.
+   - **Cómo se evita:** Exigiendo que un porcentaje fijo de las consultas (ej. 30%) provenga de fotos reales sacadas con celular en entornos no controlados, y que ninguna provenga del banco original.
+
+2. **Laxitud intencional en el criterio "Sirve" (Sesgo de indulgencia):**
+   - **Cómo se hace:** Calificando como "Sirve" resultados que visualmente comparten algún color pero que en realidad ningún cliente aceptaría como alternativa, inflando así la métrica de Utilidad del Top 5.
+   - **Cómo se detecta:** Haciendo que una segunda persona (o auditor) vuelva a calificar una muestra aleatoria de 20 casos. Si la tasa de "Sirve" del evaluador original es del 80% pero la del auditor es del 30%, hay un problema de laxitud.
+   - **Cómo se evita:** Incluyendo en la interfaz o en las instrucciones ejemplos visuales muy claros (fotos de referencia) de lo que constituye el límite entre "Sirve" y "No sirve".
+
+3. **Fatiga del evaluador (Click-through rápido):**
+   - **Cómo se hace:** Después del caso número 50, el evaluador se cansa y empieza a presionar rápidamente el atajo para "Acierto" o "Sirve" sin mirar detenidamente, asumiendo que el buscador "generalmente acierta".
+   - **Cómo se detecta:** Registrando el tiempo que tarda entre cada evaluación (timestamp). Si un humano tarda menos de 1 segundo en evaluar 5 imágenes, no las está mirando.
+   - **Cómo se evita:** Implementando pausas obligatorias cada 50 casos en la herramienta, o invalidando calificaciones que ocurran con milisegundos de diferencia.
+
+---
+
+## 06 · Reglas de trabajo
+
+Durante todo el desarrollo de esta herramienta se aplicaron las siguientes reglas no negociables:
+
+1. **La herramienta mide, no modifica.** No se tocó el buscador, el índice vectorial (`embeddings.npy`), el archivo `products.csv` ni ningún embedding. La herramienta es únicamente un cliente HTTP que consume la API existente para registrar juicios humanos.
+
+2. **Las fotos de consulta nunca provienen del catálogo.** Como quedó explicado en la Fase 1 (P1), usar imágenes del propio catálogo —ya sea directamente o transformadas— no mide la calidad real del buscador, sino su capacidad de reconocer sus propias variantes. Todas las consultas de prueba son fotos externas.
+
+3. **Los prompts de IA son el punto de partida, no el resultado final.** Cada respuesta generada por IA fue contrastada con el código real del proyecto antes de ser incorporada al informe. No se aceptó ninguna afirmación de IA que no pudiera verificarse mirando los archivos.
+
+4. **Bloqueo a los 40 minutos.** Si el equipo llevaba más de 40 minutos atascado en el mismo problema sin avanzar, la instrucción era escalar al coordinador con evidencia de lo que se intentó y el error exacto, en lugar de seguir probando a ciegas.
+
+---
+
+## 07 · Informe diario de la sesión
+
+### Qué quedó funcionando hoy
+
+- La herramienta de evaluación en Next.js carga una imagen de consulta, llama al endpoint `POST /search/image` y muestra los 5 resultados con sus imágenes, nombre, ID y score.
+- Los tres botones de juicio fijo (**Acierto / Sirve / No sirve**) funcionan correctamente y persisten en `localStorage` sin necesidad de backend propio.
+- El archivo `DECISIONES.md` documenta las cuatro fases completas: entender el problema (P1–P4), decisiones de diseño (D1–D3), construcción de la pantalla y análisis de sesgos.
+
+### Qué no salió y por qué
+
+- La persistencia automática a CSV desde el navegador no se implementó con descarga automática al finalizar; el evaluador debe hacer clic en "Exportar" manualmente. Esto es una limitación conocida del `localStorage` —el navegador no puede escribir directamente al sistema de archivos sin acción del usuario.
+
+### Qué entendimos hoy que ayer no entendíamos
+
+- La diferencia entre un **test de regresión interno** (medir si el motor reconoce sus propias transformaciones) y una **medición de calidad real** (medir si el motor funciona con fotos reales de usuarios). El 92% de SigLIP era del primer tipo, no del segundo.
+- Que un score de similitud coseno de 0.76 no significa que haya 76% de probabilidad de ser el mismo diseño. Es una distancia en el espacio de embeddings, y su interpretación depende completamente de los datos etiquetados.
+
+### Qué necesitamos de otro para seguir mañana
+
+- Los 10 casos de prueba propios con fotos externas al catálogo, con el `id_correcto` verificado manualmente en `products.csv`, para poder cargarlos en la herramienta y obtener los primeros números reales.
+- Confirmación de que la API sigue corriendo en `http://localhost:8000` antes de la revisión en vivo del lunes.
+
+---
+
+## 08 · Qué sigue después de esto
+
+La herramienta construida en esta ficha tiene una vida útil que va más allá de la entrega del lunes:
+
+- **Si la herramienta pasa la revisión en vivo**, el siguiente paso es incorporar los 180 casos que armarán los diseñadores del equipo. Con ese volumen saldrá el primer número honesto de calidad del buscador para el negocio real.
+
+- **Si el número resultante supera el 70%** (Precision@1 o Utilidad del Top 5), significa que el motor sirve tal como está, y el siguiente paso es cargarlo con los diseños propios de Sublitex para empezar a indexar la biblioteca real.
+
+- **Si el número cae por debajo del 50%**, el motor necesita mejoras. La herramienta —al ser reutilizable y no modificar nada— permite medir exactamente cuánto mejora cada cambio que se haga, en lugar de solo suponer que mejoró.
+
+- **La herramienta no se descarta nunca.** Cada vez que alguien modifique el buscador (cambie el modelo, ajuste el reranking, agregue más imágenes), la evaluación se vuelve a correr con los mismos casos para confirmar que el cambio mejoró y no solo alteró los resultados. Esa es la razón central por la que importó tanto, desde la Fase 4, entender cómo se puede hacer trampa con ella.
+
+---
+
+*DECISIONES.md — Ficha 03-C completa · Sublitex · Versión 1.0 · Entrega: lunes, revisión en vivo*

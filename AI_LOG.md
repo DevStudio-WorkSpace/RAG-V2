@@ -762,3 +762,8 @@ runtime activo (api/, motores, índices, descriptores, validador) sin referencia
 a images_final; images_normalized intacto (15.272 archivos) tras la eliminación.
 **Pendiente:** la regeneración del banco vía consolidar.py entregará ahora tarjetas
 tal cual (sin normalización); normalizar_imagenes.py quedó como referencia.
+
+### Prompt Fase 4 - Evaluación de la Herramienta (Ficha 03-C)
+
+**Prompt:**
+`Estoy construyendo una herramienta donde una persona evalúa manualmente los resultados de un buscador y de ahí sale una métrica de calidad. Dime de qué formas esa métrica se puede inflar sin mentir explícitamente: sesgos del evaluador, sesgo de selección en los casos de prueba, orden de presentación, y cualquier otro que se te ocurra. Para cada uno dime cómo se detecta y cómo se evita.`

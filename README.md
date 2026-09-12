@@ -126,16 +126,16 @@ curl -X POST -F "file=@data/images_normalized/AIM-P001-001.jpg" http://localhost
 ### 6. Levantar la interfaz (Sala 2)
 
 ```bash
-streamlit run frontend/app.py
+cd frontend
+npm install
+npm run dev
 ```
 
-Abre `http://localhost:8501` en el navegador:
-1. En el sidebar verifica "API OK · 1000 productos · 1000 embeddings".
-2. Elige el **modo de búsqueda** en el sidebar (auto / procesada / original / completo / legacy).
-3. Sube una imagen (JPG/JPEG/PNG).
-4. Revisa la vista **antes/después** (consulta original vs preparada por Sala 2) y el Top 5 (imagen, ID, nombre, proveedor, URL, score).
-5. En los modos con preparación, compara los rankings **Hito 1 vs Hito 2**.
-6. Clasifica cada resultado (**Correcto / Útil, pero no duplicado / Incorrecto**) y guarda la evaluación → `data/evaluation.csv`.
+Abre `http://localhost:3000` en el navegador:
+1. Sube una imagen (JPG/JPEG/PNG) o arrástrala a la zona de carga.
+2. La herramienta consultará la API (`POST /search/image` en modo auto) automáticamente.
+3. Revisa la vista con los 5 resultados devueltos (imagen, ID, nombre, URL, score).
+4. Clasifica cada resultado con los botones de juicio fijo (**Acierto / Sirve / No sirve**). Las decisiones se procesan sin recargar la página.
 
 ### 7. Normalizar el banco de imágenes (Sala 1 — Hito 2)
 
