@@ -491,19 +491,21 @@ def buscar_en_indice_normalizado(
     query_embedding,
     top_k: int = 5,
     modelo: str = "clip",
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Búsqueda por similitud coseno contra el índice del Hito 2
     (imágenes normalizadas, Sala 4) del modelo indicado. Contrato de
     respuesta idéntico al del Hito 1: id, nombre, imagen, url, proveedor,
     score.
+    Puede excluir productos específicos si se provee una lista `exclude_ids`.
     """
     indice = cargar_indice_normalizado(modelo=modelo)
     if indice is None:
         # Sin índice de Sala 4 para este modelo: cae al índice del Hito 1
         # (embeddings.npy). Los descriptores visuales SIEMPRE se calculan
         # sobre images_normalized/ (carpeta única de búsqueda).
-        return search_similar(query_embedding, top_k=top_k)
+        return search_similar(query_embedding, top_k=top_k, exclude_ids=exclude_ids)
 
     embeddings, ids, df, valido = indice
     v_query = np.array(query_embedding, dtype=np.float32).flatten()
@@ -520,6 +522,12 @@ def buscar_en_indice_normalizado(
     scores = np.dot(embeddings, v_query)
     # Excluir filas inválidas (vectores nulos) del ranking
     scores[~valido] = -np.inf
+    # Excluir IDs evaluados por el usuario (feedback dinámico)
+    if exclude_ids:
+        exclude_set = set(str(eid) for eid in exclude_ids)
+        for i, cid in enumerate(ids):
+            if str(cid) in exclude_set:
+                scores[i] = -np.inf
     top_idx = np.argsort(scores)[::-1][:top_k]
 
     resultados = []
@@ -744,6 +752,7 @@ def search_similar_reranked(
     top_k: int = 5,
     candidatos_iniciales: int = 30,
     modelo: str = "clip",
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Búsqueda visual con reranking (Hito 2) con un solo modelo de embeddings.
@@ -758,9 +767,12 @@ def search_similar_reranked(
     SIEMPRE se calculan sobre data/images_normalized/ (carpeta única de
     búsqueda de imágenes).
     Paso 3: umbral dinámico que permite devolver menos de top_k resultados.
+    Los IDs en `exclude_ids` se excluyen matemáticamente (score -inf) antes
+    de la recuperación, por lo que nunca llegan al reranking.
     """
     candidatos = buscar_en_indice_normalizado(
-        query_embedding, top_k=candidatos_iniciales, modelo=modelo
+        query_embedding, top_k=candidatos_iniciales, modelo=modelo,
+        exclude_ids=exclude_ids,
     )
     return _rerank_candidatos(candidatos, query_image, etiqueta_modelo=modelo)
 
@@ -769,6 +781,7 @@ def recuperacion_fusion(
     query_embeddings: dict,
     top_k: int = 100,
     modelos=("clip", "openclip", "siglip"),
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Recuperación amplia robusta fusionando varios modelos de embeddings.
@@ -843,6 +856,12 @@ def recuperacion_fusion(
 
     # Los productos con TODOS los modelos inválidos quedan fuera
     scores_totales = np.where(np.isnan(scores_totales), -np.inf, scores_totales)
+    # Excluir IDs evaluados por el usuario (feedback dinámico)
+    if exclude_ids:
+        exclude_set = set(str(eid) for eid in exclude_ids)
+        for i, cid in enumerate(ids_uso):
+            if str(cid) in exclude_set:
+                scores_totales[i] = -np.inf
     top_idx = np.argsort(scores_totales)[::-1][:top_k]
 
     resultados = []
@@ -865,6 +884,7 @@ def search_similar_reranked_fusion(
     top_k: int = 5,
     candidatos_iniciales: int = 100,
     modelos=("clip", "openclip", "siglip"),
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Motor Hito 2 robusto a oclusiones: recuperación amplia por FUSIÓN de
@@ -875,9 +895,12 @@ def search_similar_reranked_fusion(
     tolera que un "punto grande" u otro elemento tape parte del diseño: si
     un recorte contiene el punto, los demás lo compensan. Luego el reranking
     visual de `_rerank_candidatos` ordena el Top 5 final.
+    Los IDs en `exclude_ids` se excluyen matemáticamente (score -inf) antes
+    de la recuperación, por lo que nunca llegan al reranking.
     """
     candidatos = recuperacion_fusion(
-        query_embeddings, top_k=candidatos_iniciales, modelos=modelos
+        query_embeddings, top_k=candidatos_iniciales, modelos=modelos,
+        exclude_ids=exclude_ids,
     )
     etiqueta = "+".join(modelos)
     return _rerank_candidatos(candidatos, query_image, etiqueta_modelo=etiqueta)

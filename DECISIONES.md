@@ -219,3 +219,19 @@ Si las 10 fotos son todas del mismo tipo (por ejemplo, todas mockups de persona)
 * **Opción Elegida:** **Cargar un archivo `.json` estandarizado desde la interfaz.** La pantalla inicial pedirá al usuario subir un archivo de casos que contenga una lista de las URLs o rutas de las imágenes de consulta.
 * **Opción Descartada:** Harcodear las 180 rutas en el código fuente de la herramienta o ingresarlas manualmente una por una en un campo de texto.
 * **Por qué se eligió:** Separa los datos del código. Cuando los diseñadores terminen sus 180 casos, solo tienen que entregarlos en el formato JSON acordado (que documentaremos en el README), y cualquier persona podrá subirlos a la herramienta sin necesidad de tocar ni una línea de código ni depender de un desarrollador.
+
+---
+
+## 03 · Construir — Fase 3
+
+### Implementación de la Herramienta de Evaluación
+
+En esta fase se construyó la pantalla de evaluación consumiendo el buscador existente mediante HTTP (`POST /search/image`). La interfaz fue diseñada estrictamente bajo las directrices del encargo:
+
+1. **Estructura Visual**: Se presenta la imagen de consulta en la parte superior para mantener el contexto visual, seguida de los 5 resultados recuperados por el motor en la parte inferior. Al final se muestran las métricas o números correspondientes.
+2. **Criterios de Juicio Fijos**: Para estandarizar la evaluación y evitar la subjetividad detectada en la Fase 1, la herramienta integra obligatoriamente tres botones de calificación por cada resultado. El evaluador no decide los criterios, simplemente aplica los siguientes:
+   - **Acierto**: Representa el mismo diseño (aunque varíe el color, el año, el escudo o el sponsor).
+   - **Sirve**: No es el mismo diseño exacto, pero visualmente es una alternativa válida que se le podría ofrecer al cliente.
+   - **No sirve**: Es un diseño completamente diferente y no es útil para la consulta. 
+
+Esta estructura garantiza que los datos recolectados sirvan directamente para calcular las métricas definidas (Precision@1, Recall@5 y Utilidad del Top 5).

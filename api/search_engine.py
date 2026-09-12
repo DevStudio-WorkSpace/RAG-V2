@@ -95,10 +95,11 @@ def cargar_indice():
     return df, embeddings_norm, ids
 
 
-def search_similar(query_embedding, top_k: int = 5) -> list[dict]:
+def search_similar(query_embedding, top_k: int = 5, exclude_ids: list = None) -> list[dict]:
     """
     Recibe un embedding de consulta (list o np.ndarray) y devuelve el top_k de productos más similares.
     Contrato de respuesta: list de objetos con keys: id, nombre, imagen, url, proveedor, score.
+    Puede excluir productos específicos si se provee una lista `exclude_ids`.
     """
     if df is None or embeddings_norm is None:
         cargar_indice()
@@ -118,6 +119,13 @@ def search_similar(query_embedding, top_k: int = 5) -> list[dict]:
 
     # Producto punto con la matriz normalizada L2 para similitud coseno
     scores = np.dot(embeddings_norm, v_query)
+    
+    if exclude_ids:
+        exclude_set = set(str(eid) for eid in exclude_ids)
+        for i, cid in enumerate(ids):
+            if str(cid) in exclude_set:
+                scores[i] = -np.inf
+
     top_k_idx = np.argsort(scores)[::-1][:top_k]
 
     resultados = []

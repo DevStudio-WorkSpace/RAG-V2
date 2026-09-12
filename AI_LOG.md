@@ -2,6 +2,22 @@
 
 > Requisito del supervisor: registrar cada prompt de IA usado en el proyecto.
 
+## Fecha: 2026-09-12 — Re-búsqueda dinámica con feedback (Hito 2)
+
+### Prompt — Bucle de retroalimentación con exclusión dinámica de IDs
+**Propósito:** Al calificar un resultado (Acierto / Sirve / No sirve), el card desaparece
+y el sistema hace una nueva búsqueda silenciosa ignorando los IDs ya evaluados, trayendo
+un candidato nuevo con animación al final de la lista.
+**Archivos modificados:**
+- `api/search_engine_hito2.py`: `exclude_ids: list = None` añadido a
+  `buscar_en_indice_normalizado`, `recuperacion_fusion`, `search_similar_reranked` y
+  `search_similar_reranked_fusion`. Los IDs excluidos reciben score `-inf`.
+- `frontend/src/app/page.tsx`: nuevo estado `excludeIds`, `handleFeedback` async,
+  envío de `exclude_ids` CSV, badge "Nuevo" y animación `newCardIn`.
+**Resultado:** El usuario puede explorar infinitamente nuevos candidatos sin recargar.
+
+---
+
 ## Fecha: 2026-08-07 (rama sala-2-v2)
 
 ### Prompt 1 - Interfaz como cliente puro de API

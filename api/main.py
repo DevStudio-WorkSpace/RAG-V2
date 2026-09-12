@@ -228,7 +228,7 @@ CANDIDATOS_INICIALES = 30
 CANDIDATOS_INICIALES_FUSION = 200
 
 
-def _motor_reranked(embedding, query_image, modelo: str):
+def _motor_reranked(embedding, query_image, modelo: str, exclude_ids: list = None):
     """Despacha al motor Hito 2 según el modelo elegido. `embedding` es un
     vector para clip/openclip y un dict {modelo: vector} para fusion."""
     if modelo == "fusion":
@@ -237,6 +237,7 @@ def _motor_reranked(embedding, query_image, modelo: str):
             query_image=query_image,
             top_k=5,
             candidatos_iniciales=CANDIDATOS_INICIALES_FUSION,
+            exclude_ids=exclude_ids,
         )
     return search_similar_reranked(
         embedding,
@@ -244,6 +245,7 @@ def _motor_reranked(embedding, query_image, modelo: str):
         top_k=5,
         candidatos_iniciales=CANDIDATOS_INICIALES,
         modelo=modelo,
+        exclude_ids=exclude_ids,
     )
 
 # Tamaño mínimo (px por lado) para aceptar una imagen de consulta. Por debajo
@@ -322,6 +324,7 @@ async def search_image(
     file: UploadFile = File(...),
     modo: str = Form("auto"),
     modelo: str = Form("clip"),
+    exclude_ids: str = Form(""),
 ):
     """
     Recibe una imagen (JPG/PNG) y devuelve los 5 productos más parecidos.
@@ -388,18 +391,20 @@ async def search_image(
             content={"error": f"Error al cargar el modelo CLIP: {str(e)}"}
         )
 
+    exclude_list = [x.strip() for x in exclude_ids.split(",") if x.strip()] if exclude_ids else None
+
     try:
         t0 = time.perf_counter()
         etiqueta_modelo = MODELOS_ETIQUETA[modelo]
         if modo == "legacy":
             embedding = _encodificar(imagen, "clip")
-            return search_similar(embedding, top_k=5)
+            return search_similar(embedding, top_k=5, exclude_ids=exclude_list)
 
         if modo == "original":
             # Hito 1 con la consulta tal cual llega, sin preprocesar (ruta
             # rápida usada por la comparación Hito 1 vs Hito 2).
             embedding = _encodificar(imagen, "clip")
-            res_original = search_similar(embedding, top_k=5)
+            res_original = search_similar(embedding, top_k=5, exclude_ids=exclude_list)
             return {
                 "query_id": f"q_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}",
                 "modo": "original",
@@ -424,8 +429,8 @@ async def search_image(
         if modelo == "clip":
             emb_original = _encodificar(imagen, modelo)
             emb_procesada = _encodificar(procesada, modelo)
-            res_original = search_similar(emb_original, top_k=5)
-            res_procesada = search_similar(emb_procesada, top_k=5)
+            res_original = search_similar(emb_original, top_k=5, exclude_ids=exclude_list)
+            res_procesada = search_similar(emb_procesada, top_k=5, exclude_ids=exclude_list)
         else:
             emb_procesada = _encodificar(procesada, modelo)
 
@@ -437,16 +442,16 @@ async def search_image(
             # La respuesta incluye resultados_original/procesada para comparar
             # (solo en modo clip: son comparaciones contra el índice del Hito 1).
             modo_usado = "completo"
-            resultados = _motor_reranked(emb_procesada, procesada, modelo)
+            resultados = _motor_reranked(emb_procesada, procesada, modelo, exclude_ids=exclude_list)
         elif modo == "clasico":
             # Hito 1 con el preprocesamiento de Sala 2 (sin reranking)
             modo_usado = "clasico"
-            resultados = search_similar(_encodificar(procesada, "clip"), top_k=5)
+            resultados = search_similar(_encodificar(procesada, "clip"), top_k=5, exclude_ids=exclude_list)
         else:
             # "procesada", "auto" y cualquier modo no reconocido: motor Hito 2
             # sobre la consulta preparada (recuperación amplia + reranking).
             modo_usado = "procesada" if modo == "procesada" else "completo"
-            resultados = _motor_reranked(emb_procesada, procesada, modelo)
+            resultados = _motor_reranked(emb_procesada, procesada, modelo, exclude_ids=exclude_list)
 
         return {
             "query_id": query_id,
@@ -488,6 +493,7 @@ async def search_image(
 async def search_image_v2(
     file: UploadFile = File(...),
     modelo: str = Form("clip"),
+    exclude_ids: str = Form(""),
 ):
     """
     Hito 2: Motor mejorado con reranking por color HSV.
@@ -539,10 +545,12 @@ async def search_image_v2(
             content={"error": f"Error al cargar el modelo CLIP: {str(e)}"}
         )
 
+    exclude_list = [x.strip() for x in exclude_ids.split(",") if x.strip()] if exclude_ids else None
+
     try:
         t0 = time.perf_counter()
         embedding = _encodificar(imagen, modelo)
-        resultados = _motor_reranked(embedding, imagen, modelo)
+        resultados = _motor_reranked(embedding, imagen, modelo, exclude_ids=exclude_list)
         tiempo_segundos = round(time.perf_counter() - t0, 4)
         return {
             "resultados": resultados,
