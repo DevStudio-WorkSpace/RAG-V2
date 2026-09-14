@@ -168,14 +168,22 @@ if curr_res_idx < len(results):
         if os.path.exists(res_img_path):
             st.image(res_img_path, use_container_width=True)
         else:
-            st.warning("Imagen del resultado no encontrada")
+            base_name = os.path.splitext(current_res['imagen'])[0]
+            jpg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "images_normalized", f"{base_name}.jpg")
+            png_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "images_normalized", f"{base_name}.png")
+            if os.path.exists(jpg_path):
+                st.image(jpg_path, use_container_width=True)
+            elif os.path.exists(png_path):
+                st.image(png_path, use_container_width=True)
+            else:
+                st.warning(f"Imagen del resultado no encontrada: {current_res['imagen']}")
             
         st.write("---")
         st.markdown("### ¿Qué puntaje le das?")
         
         # Botones de votación
         b1, b2, b3 = st.columns(3)
-        if b1.button("1 - Acierto (3)", use_container_width=True, type="primary"):
+        if b1.button("1 - Acierto (3)", use_container_width=True):
             save_vote(img_path, true_id, current_res['id'], curr_res_idx + 1, "Acierto", 3)
             st.rerun()
         b1.caption("Es el mismo diseño, aunque cambie el color, el año, el escudo o el sponsor.")
