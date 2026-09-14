@@ -71,6 +71,17 @@ input {
   margin-bottom: 28px;
 }
 
+.brand-title {
+  width: fit-content;
+  margin-bottom: 18px;
+  color: #f4fbff;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .eyebrow,
 .label-title {
   text-transform: uppercase;

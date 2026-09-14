@@ -192,6 +192,7 @@ export default function Home() {
       <div className="app-frame">
         <header className="topbar">
           <div>
+            <p className="brand-title">Sublitex</p>
             <p className="eyebrow">Búsqueda visual</p>
             <h1>Encuentra camisetas visualmente similares</h1>
           </div>
