@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -13,19 +14,30 @@
 
     <!-- ENCABEZADO -->
     <header class="header">
+
         <div class="brand">
-            <div class="brand-logo">S</div>
+
+            <div class="brand-logo">
+                S
+            </div>
 
             <div>
                 <h1>SUBLITEX</h1>
                 <span>Evaluador de búsqueda visual</span>
             </div>
+
         </div>
 
         <div class="save-status">
+
             <span class="status-dot"></span>
-            Guardado
+
+            <span id="save-status-text">
+                Guardado
+            </span>
+
         </div>
+
     </header>
 
 
@@ -36,14 +48,22 @@
         <section class="top-section">
 
             <div>
-                <p class="section-label">EVALUACIÓN DE BÚSQUEDA</p>
+
+                <p class="section-label">
+                    EVALUACIÓN DE BÚSQUEDA
+                </p>
 
                 <h2>
-                    Caso <span id="case-number">01</span>
-                    <span class="case-total">/ 10</span>
-                </h2>
-            </div>
+                    Caso
+                    <span id="case-number">01</span>
 
+                    <span class="case-total">
+                        /
+                        <span id="case-total">10</span>
+                    </span>
+                </h2>
+
+            </div>
 
         </section>
 
@@ -51,28 +71,54 @@
         <!-- ÁREA DE EVALUACIÓN -->
         <section class="evaluation">
 
+
             <!-- IMAGEN DE CONSULTA -->
             <div class="query-panel">
 
                 <div class="panel-header">
+
                     <div>
-                        <span class="panel-label">IMAGEN DE CONSULTA</span>
-                        <h3>C_01_Barcelona.jpg</h3>
+
+                        <span class="panel-label">
+                            IMAGEN DE CONSULTA
+                        </span>
+
+                        <h3 id="query-name">
+                            C_01_Barcelona.jpg
+                        </h3>
+
                     </div>
+
                 </div>
 
 
                 <div class="query-image">
-                    <div class="placeholder-image">
-                        <span>IMAGEN</span>
-                        <small>Consulta</small>
-                    </div>
+
+                    <!-- SELECCIONAR IMAGEN DESDE LA COMPUTADORA -->
+                    <input
+                        type="file"
+                        id="input-imagen"
+                        accept="image/*"
+                    >
+
+                    <img
+                        id="query-image"
+                        alt="Imagen de consulta"
+                    >
+
                 </div>
 
 
                 <div class="query-info">
-                    <span>CASO DE PRUEBA</span>
-                    <strong>C_01_Barcelona.jpg</strong>
+
+                    <span>
+                        CASO DE PRUEBA
+                    </span>
+
+                    <strong id="query-file">
+                        C_01_Barcelona.jpg
+                    </strong>
+
                 </div>
 
             </div>
@@ -84,8 +130,15 @@
                 <div class="results-header">
 
                     <div>
-                        <span class="panel-label">RESULTADOS DEL BUSCADOR</span>
-                        <h3>Evalúa cada resultado</h3>
+
+                        <span class="panel-label">
+                            RESULTADOS DEL BUSCADOR
+                        </span>
+
+                        <h3>
+                            Evalúa cada resultado
+                        </h3>
+
                     </div>
 
                     <span class="results-count">
@@ -93,242 +146,115 @@
                     </span>
 
                 </div>
-                <div class="resultados-box">
 
-                    <!-- RESULTADO 1 -->
-                    <article class="result-card">
 
-                        <div class="result-image">
-                            <div class="placeholder-image small">
-                                <span>IMG</span>
-                            </div>
-                        </div>
-
-                        <div class="result-content">
-
-                            <div class="result-title">
-                                <span class="position">01</span>
-
-                                <div>
-                                    <span class="result-label">CÓDIGO DEL DISEÑO</span>
-                                    <strong>AIM-P000-001</strong>
-                                </div>
-                            </div>
-
-
-                            <div class="judgment-buttons">
-
-                                <button class="judgment success">
-                                    <span>✓</span>
-                                    Acierto
-                                </button>
-
-                                <button class="judgment useful">
-                                    <span>●</span>
-                                    Sirve
-                                </button>
-
-                                <button class="judgment wrong">
-                                    <span>×</span>
-                                    No sirve
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-                    <!-- RESULTADO 2 -->
-                    <article class="result-card">
-
-                        <div class="result-image">
-                            <div class="placeholder-image small">
-                                <span>IMG</span>
-                            </div>
-                        </div>
-
-                        <div class="result-content">
-
-                            <div class="result-title">
-                                <span class="position">02</span>
-
-                                <div>
-                                    <span class="result-label">CÓDIGO DEL DISEÑO</span>
-                                    <strong>AIM-P000-002</strong>
-                                </div>
-                            </div>
-
-
-                            <div class="judgment-buttons">
-
-                                <button class="judgment success">
-                                    <span>✓</span>
-                                    Acierto
-                                </button>
-
-                                <button class="judgment useful">
-                                    <span>●</span>
-                                    Sirve
-                                </button>
-
-                                <button class="judgment wrong">
-                                    <span>×</span>
-                                    No sirve
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-                    <!-- RESULTADO 3 -->
-                    <article class="result-card">
-
-                        <div class="result-image">
-                            <div class="placeholder-image small">
-                                <span>IMG</span>
-                            </div>
-                        </div>
-
-                        <div class="result-content">
-
-                            <div class="result-title">
-                                <span class="position">03</span>
-
-                                <div>
-                                    <span class="result-label">CÓDIGO DEL DISEÑO</span>
-                                    <strong>AIM-P000-003</strong>
-                                </div>
-                            </div>
-
-
-                            <div class="judgment-buttons">
-
-                                <button class="judgment success">
-                                    <span>✓</span>
-                                    Acierto
-                                </button>
-
-                                <button class="judgment useful">
-                                    <span>●</span>
-                                    Sirve
-                                </button>
-
-                                <button class="judgment wrong">
-                                    <span>×</span>
-                                    No sirve
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-                    <!-- RESULTADO 4 -->
-                    <article class="result-card">
-
-                        <div class="result-image">
-                            <div class="placeholder-image small">
-                                <span>IMG</span>
-                            </div>
-                        </div>
-
-                        <div class="result-content">
-
-                            <div class="result-title">
-                                <span class="position">04</span>
-
-                                <div>
-                                    <span class="result-label">CÓDIGO DEL DISEÑO</span>
-                                    <strong>AIM-P000-004</strong>
-                                </div>
-                            </div>
-
-
-                            <div class="judgment-buttons">
-
-                                <button class="judgment success">
-                                    <span>✓</span>
-                                    Acierto
-                                </button>
-
-                                <button class="judgment useful">
-                                    <span>●</span>
-                                    Sirve
-                                </button>
-
-                                <button class="judgment wrong">
-                                    <span>×</span>
-                                    No sirve
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-                    <!-- RESULTADO 5 -->
-                    <article class="result-card">
-
-                        <div class="result-image">
-                            <div class="placeholder-image small">
-                                <span>IMG</span>
-                            </div>
-                        </div>
-
-                        <div class="result-content">
-
-                            <div class="result-title">
-                                <span class="position">05</span>
-
-                                <div>
-                                    <span class="result-label">CÓDIGO DEL DISEÑO</span>
-                                    <strong>AIM-P000-005</strong>
-                                </div>
-                            </div>
-
-
-                            <div class="judgment-buttons">
-
-                                <button class="judgment success">
-                                    <span>✓</span>
-                                    Acierto
-                                </button>
-
-                                <button class="judgment useful">
-                                    <span>●</span>
-                                    Sirve
-                                </button>
-
-                                <button class="judgment wrong">
-                                    <span>×</span>
-                                    No sirve
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </article>
+                <!--
+                    AQUÍ JAVASCRIPT CREARÁ
+                    LOS 5 RESULTADOS
+                -->
+                <div
+                    class="resultados-box"
+                    id="resultados"
+                >
                 </div>
 
             </div>
 
+
+            <!-- RESULTADOS DE EVALUACIÓN -->
             <div class="top-imagen">
+
+
                 <div class="resultados-evaluacion">
-                    <h3>Resultados de Evaluacion</h3>
+
+                    <h3>
+                        Resultados de Evaluación
+                    </h3>
+
+
+                    <div class="metricas">
+
+                        <div class="metrica">
+
+                            <span>
+                                TOP 1
+                            </span>
+
+                            <strong id="top1">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="metrica">
+
+                            <span>
+                                TOP 5
+                            </span>
+
+                            <strong id="top5">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="metrica">
+
+                            <span>
+                                UTILIDAD
+                            </span>
+
+                            <strong id="utilidad">
+                                -
+                            </strong>
+
+                        </div>
+
+                    </div>
+
                 </div>
+
+
                 <div class="tipo-foto">
-                    <h3>Por tipo de foto</h3>
+
+                    <h3>
+                        Por tipo de foto
+                    </h3>
+
+
+                    <div class="tipo-metricas">
+
+                        <div>
+
+                            <span>
+                                Clubes
+                            </span>
+
+                            <strong id="clubes-metricas">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Selecciones
+                            </span>
+
+                            <strong id="selecciones-metricas">
+                                -
+                            </strong>
+
+                        </div>
+
+                    </div>
+
                 </div>
+
             </div>
 
         </section>
@@ -337,28 +263,47 @@
         <!-- NAVEGACIÓN -->
         <section class="navigation">
 
-            <button class="nav-button secondary">
+            <button
+                class="nav-button secondary"
+                id="btn-anterior"
+                type="button"
+            >
                 ← Anterior
             </button>
 
-            <span class="navigation-info">
+
+            <span
+                class="navigation-info"
+                id="navigation-info"
+            >
                 Caso 1 de 10
             </span>
 
-            <button class="nav-button primary">
+
+            <button
+                class="nav-button primary"
+                id="btn-siguiente"
+                type="button"
+            >
                 Siguiente caso →
             </button>
 
         </section>
-
 
     </main>
 
 
     <!-- PIE -->
     <footer>
+
         Sublitex · Evaluador de búsqueda visual · Ficha 03-B
+
     </footer>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="app.js"></script>
 
 </body>
 </html>
+```
