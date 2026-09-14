@@ -9,8 +9,8 @@ st.set_page_config(page_title="Evaluador RAG", layout="wide")
 
 # Config
 API_URL = "http://localhost:8000/search/image"
-CASOS_FILE = "casos_prueba.csv"
-RESULTADOS_FILE = "resultados_evaluacion.csv"
+CASOS_FILE = os.path.join(os.path.dirname(__file__), "casos_prueba.csv")
+RESULTADOS_FILE = os.path.join(os.path.dirname(__file__), "resultados_evaluacion.csv")
 
 # Load cases
 @st.cache_data
