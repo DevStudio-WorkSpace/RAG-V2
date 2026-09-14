@@ -9,7 +9,32 @@ function App() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
 
-  const seleccionarImagen = (e) => {
+  const cargarEvaluacionesGuardadas = async (nombreArchivo) => {
+    try {
+      const respuesta = await fetch(
+        `http://127.0.0.1:8001/evaluaciones/${encodeURIComponent(nombreArchivo)}`
+      );
+
+      if (!respuesta.ok) {
+        throw new Error("No se pudieron cargar las evaluaciones guardadas.");
+      }
+
+      const data = await respuesta.json();
+
+      const evaluacionesRecuperadas = {};
+
+      data.evaluaciones.forEach((item) => {
+        evaluacionesRecuperadas[item.resultado_id] = item.evaluacion;
+      });
+
+      setEvaluaciones(evaluacionesRecuperadas);
+    } catch (error) {
+      console.error(error);
+      setError("No se pudieron recuperar las evaluaciones anteriores.");
+    }
+  };
+
+  const seleccionarImagen = async (e) => {
     const imagen = e.target.files[0];
 
     if (!imagen) return;
@@ -19,6 +44,8 @@ function App() {
     setResultados([]);
     setEvaluaciones({});
     setError("");
+
+    await cargarEvaluacionesGuardadas(imagen.name);
   };
 
   const buscarSimilares = async () => {
@@ -31,7 +58,6 @@ function App() {
       setCargando(true);
       setError("");
       setResultados([]);
-      setEvaluaciones({});
 
       const formData = new FormData();
 
@@ -48,9 +74,7 @@ function App() {
       );
 
       if (!respuesta.ok) {
-        throw new Error(
-          "Error al buscar imágenes similares."
-        );
+        throw new Error("Error al buscar imágenes similares.");
       }
 
       const data = await respuesta.json();
@@ -58,12 +82,11 @@ function App() {
       console.log("Respuesta API:", data);
 
       setResultados(data.resultados || []);
+
+      await cargarEvaluacionesGuardadas(archivo.name);
     } catch (error) {
       console.error(error);
-
-      setError(
-        "No se pudo realizar la búsqueda."
-      );
+      setError("No se pudo realizar la búsqueda.");
     } finally {
       setCargando(false);
     }
@@ -102,17 +125,12 @@ function App() {
       );
 
       if (!respuesta.ok) {
-        throw new Error(
-          "No se pudo guardar la evaluación."
-        );
+        throw new Error("No se pudo guardar la evaluación.");
       }
 
       const data = await respuesta.json();
 
-      console.log(
-        "Evaluación guardada:",
-        data
-      );
+      console.log("Evaluación guardada:", data);
 
       setEvaluaciones((anteriores) => ({
         ...anteriores,
@@ -120,10 +138,7 @@ function App() {
       }));
     } catch (error) {
       console.error(error);
-
-      setError(
-        "La evaluación no pudo guardarse."
-      );
+      setError("La evaluación no pudo guardarse.");
     }
   };
 
@@ -132,8 +147,7 @@ function App() {
       <h1>Evaluador del buscador</h1>
 
       <p className="descripcion">
-        Selecciona uno de los casos de prueba
-        y evalúa los resultados.
+        Selecciona uno de los casos de prueba y evalúa los resultados.
       </p>
 
       <section className="buscador">
@@ -163,9 +177,7 @@ function App() {
           disabled={!archivo || cargando}
           className="boton-buscar"
         >
-          {cargando
-            ? "Buscando..."
-            : "Buscar similares"}
+          {cargando ? "Buscando..." : "Buscar similares"}
         </button>
 
         {error && (
@@ -181,11 +193,9 @@ function App() {
 
           <div className="lista-resultados">
             {resultados.map((resultado, index) => {
-              const evaluacion =
-                evaluaciones[resultado.id];
+              const evaluacion = evaluaciones[resultado.id];
 
-              const bloqueado =
-                Boolean(evaluacion);
+              const bloqueado = Boolean(evaluacion);
 
               return (
                 <div
@@ -200,17 +210,13 @@ function App() {
                     src={`/images/${resultado.id}.jpg`}
                     alt={resultado.nombre}
                     onError={(e) => {
-                      const imagenActual =
-                        e.currentTarget.src;
+                      const imagenActual = e.currentTarget.src;
 
-                      if (
-                        imagenActual.endsWith(".jpg")
-                      ) {
+                      if (imagenActual.endsWith(".jpg")) {
                         e.currentTarget.src =
                           `/images/${resultado.id}.png`;
                       } else {
-                        e.currentTarget.style.display =
-                          "none";
+                        e.currentTarget.style.display = "none";
                       }
                     }}
                   />
@@ -286,8 +292,7 @@ function App() {
 
                   {evaluacion && (
                     <p className="seleccion">
-                      Evaluación guardada:{" "}
-                      {evaluacion}
+                      Evaluación guardada: {evaluacion}
                     </p>
                   )}
                 </div>
