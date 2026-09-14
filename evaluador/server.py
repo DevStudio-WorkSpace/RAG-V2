@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
 import csv
 import os
-from datetime import datetime
 
+from datetime import datetime
 
 # ==========================================
 # CREAR APLICACIÓN FASTAPI
@@ -14,7 +15,6 @@ app = FastAPI(
     title="Servidor del Evaluador",
     version="1.0"
 )
-
 
 # ==========================================
 # CONFIGURACIÓN CORS
@@ -31,7 +31,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # ==========================================
 # RUTA DEL ARCHIVO CSV
 # ==========================================
@@ -42,7 +41,6 @@ ARCHIVO_CSV = os.path.join(
     BASE_DIR,
     "resultados.csv"
 )
-
 
 # ==========================================
 # MODELO DE DATOS
@@ -55,7 +53,6 @@ class Evaluacion(BaseModel):
     posicion: int
     score: float
     evaluacion: str
-
 
 # ==========================================
 # CREAR CSV SI NO EXISTE
@@ -84,7 +81,6 @@ def crear_csv_si_no_existe():
                 "evaluacion"
             ])
 
-
 # ==========================================
 # RUTA PRINCIPAL
 # ==========================================
@@ -96,7 +92,6 @@ def inicio():
         "status": "ok",
         "mensaje": "Servidor del evaluador funcionando"
     }
-
 
 # ==========================================
 # GUARDAR EVALUACIÓN
@@ -133,6 +128,45 @@ def guardar_evaluacion(evaluacion: Evaluacion):
         "evaluacion": evaluacion.evaluacion
     }
 
+# ==========================================
+# OBTENER EVALUACIONES DE UNA CONSULTA
+# ==========================================
+
+@app.get("/evaluaciones/{consulta}")
+def obtener_evaluaciones(consulta: str):
+
+    crear_csv_si_no_existe()
+
+    evaluaciones = []
+
+    with open(
+        ARCHIVO_CSV,
+        "r",
+        newline="",
+        encoding="utf-8"
+    ) as archivo:
+
+        lector = csv.DictReader(archivo)
+
+        for fila in lector:
+
+            if fila["consulta"] == consulta:
+
+                evaluaciones.append({
+                    "fecha": fila["fecha"],
+                    "consulta": fila["consulta"],
+                    "resultado_id": fila["resultado_id"],
+                    "nombre": fila["nombre"],
+                    "posicion": int(fila["posicion"]),
+                    "score": float(fila["score"]),
+                    "evaluacion": fila["evaluacion"]
+                })
+
+    return {
+        "consulta": consulta,
+        "total": len(evaluaciones),
+        "evaluaciones": evaluaciones
+    }
 
 # ==========================================
 # EJECUTAR DIRECTAMENTE

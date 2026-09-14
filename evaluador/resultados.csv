@@ -42,3 +42,8 @@ fecha,consulta,resultado_id,nombre,posicion,score,evaluacion
 2026-09-13T23:31:00.940712,caso-010.jpg,AIM-P001-049,ELITE FUTBOL FEMENINO,3,0.4836,No sirve
 2026-09-13T23:31:01.325221,caso-010.jpg,AIM-P001-050,Electricos FC,4,0.4657,No sirve
 2026-09-13T23:31:01.693098,caso-010.jpg,AIM-P001-028,OLIMPIADAS ECUADOR,5,0.4607,No sirve
+2026-09-14T10:20:38.624595,caso-001.jpg,AIM-P001-035,Liverpool Tercera Equipación 2026-27,1,0.4978,No sirve
+2026-09-14T10:34:39.153663,caso-001.jpg,AIM-P001-053,Textura Sports Colors,2,0.4882,No sirve
+2026-09-14T10:34:39.686490,caso-001.jpg,AIM-P001-058,Costa De Marfil,3,0.4836,No sirve
+2026-09-14T10:34:48.407170,caso-001.jpg,AIM-P001-050,Electricos FC,4,0.4751,Acierto
+2026-09-14T10:34:49.125505,caso-001.jpg,AIM-P001-031,Envinadas,5,0.4697,No sirve
