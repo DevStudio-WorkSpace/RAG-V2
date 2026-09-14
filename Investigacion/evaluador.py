@@ -5,7 +5,7 @@ import os
 import streamlit.components.v1 as components
 import numpy as np
 
-st.set_page_config(page_title="Evaluador RAG", layout="wide")
+st.set_page_config(page_title="Evaluador RAG", layout="centered")
 
 # Config
 API_URL = "http://localhost:8000/search/image"
