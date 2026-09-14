@@ -1,0 +1,395 @@
+/* =========================================
+   CONFIGURACIÓN GENERAL
+========================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f5f5f5;
+  color: #222;
+}
+
+.contenedor {
+  width: 90%;
+  max-width: 1200px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+
+/* =========================================
+   TÍTULO
+========================================= */
+
+h1 {
+  margin-bottom: 8px;
+}
+
+.descripcion {
+  color: #666;
+  margin-bottom: 25px;
+}
+
+
+/* =========================================
+   PROGRESO DEL CASO
+========================================= */
+
+.progreso-caso {
+  margin-bottom: 20px;
+}
+
+.progreso-caso h2 {
+  margin-bottom: 5px;
+}
+
+.progreso-caso p {
+  margin-top: 0;
+  color: #666;
+}
+
+
+/* =========================================
+   ZONA DE BÚSQUEDA
+========================================= */
+
+.buscador {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+}
+
+
+/* =========================================
+   IMAGEN DEL CASO
+========================================= */
+
+.preview {
+  display: block;
+
+  width: 220px;
+  height: 260px;
+
+  max-width: 100%;
+
+  object-fit: contain;
+
+  margin: 15px auto 20px;
+
+  border-radius: 8px;
+
+  background: #f7f7f7;
+}
+
+
+/* =========================================
+   BOTÓN BUSCAR
+========================================= */
+
+button {
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.boton-buscar {
+  display: block;
+  margin: 15px auto 0;
+
+  background: #222;
+  color: white;
+
+  padding: 12px 22px;
+
+  border-radius: 7px;
+
+  font-size: 14px;
+}
+
+.boton-buscar:hover:not(:disabled) {
+  background: #444;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   MENSAJES DE ERROR
+========================================= */
+
+.error {
+  color: #d32f2f;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+
+/* =========================================
+   RESULTADOS
+========================================= */
+
+.resultados {
+  margin-top: 35px;
+}
+
+.resultados h2 {
+  margin-bottom: 20px;
+}
+
+
+/* =========================================
+   GRID DE RESULTADOS
+========================================= */
+
+.lista-resultados {
+  display: grid;
+
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+
+  gap: 15px;
+
+  align-items: stretch;
+}
+
+
+/* =========================================
+   TARJETA DE RESULTADO
+========================================= */
+
+.resultado {
+  background: white;
+
+  padding: 15px;
+
+  border-radius: 10px;
+
+  border: 1px solid #e5e5e5;
+
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+
+/* =========================================
+   IMAGEN DEL RESULTADO
+========================================= */
+
+.resultado > img {
+  width: 100%;
+  height: 170px;
+
+  object-fit: contain;
+
+  background: #f8f8f8;
+
+  border-radius: 6px;
+
+  margin-bottom: 10px;
+}
+
+
+/* =========================================
+   INFORMACIÓN DEL RESULTADO
+========================================= */
+
+.posicion {
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.resultado h3 {
+  font-size: 15px;
+
+  margin: 8px 0;
+
+  min-height: 36px;
+}
+
+.resultado p {
+  font-size: 13px;
+}
+
+.id {
+  color: #555;
+
+  overflow-wrap: anywhere;
+}
+
+.score {
+  font-weight: bold;
+}
+
+
+/* =========================================
+   BOTONES DE EVALUACIÓN
+========================================= */
+
+.botones-evaluacion {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.boton-evaluacion {
+  width: 100%;
+
+  padding: 9px 5px;
+
+  border-radius: 6px;
+
+  background: #eeeeee;
+  color: #222;
+
+  font-size: 13px;
+}
+
+.boton-evaluacion:hover:not(:disabled) {
+  background: #dddddd;
+}
+
+
+/* =========================================
+   BOTÓN SELECCIONADO
+========================================= */
+
+.boton-evaluacion.activo {
+  background: #222;
+  color: white;
+
+  opacity: 1;
+}
+
+
+/* =========================================
+   TEXTO EVALUACIÓN GUARDADA
+========================================= */
+
+.seleccion {
+  margin-top: 10px;
+
+  padding: 8px;
+
+  background: #f2f2f2;
+
+  border-radius: 5px;
+
+  font-weight: bold;
+}
+
+
+/* =========================================
+   NAVEGACIÓN DE CASOS
+========================================= */
+
+.navegacion-casos {
+  margin-top: 35px;
+  margin-bottom: 50px;
+}
+
+.boton-siguiente {
+  background: #222;
+  color: white;
+
+  padding: 13px 25px;
+
+  border-radius: 7px;
+
+  font-size: 15px;
+}
+
+.boton-siguiente:hover:not(:disabled) {
+  background: #444;
+}
+
+.boton-siguiente:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   EVALUACIÓN FINALIZADA
+========================================= */
+
+.evaluacion-finalizada {
+  background: white;
+
+  padding: 25px;
+
+  border-radius: 10px;
+
+  border: 1px solid #ddd;
+}
+
+.evaluacion-finalizada h2 {
+  margin-top: 0;
+}
+
+.evaluacion-finalizada p {
+  margin-bottom: 0;
+
+  color: #555;
+}
+
+
+/* =========================================
+   RESPONSIVE - TABLET
+========================================= */
+
+@media (max-width: 1000px) {
+
+  .lista-resultados {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+
+/* =========================================
+   RESPONSIVE - CELULAR
+========================================= */
+
+@media (max-width: 600px) {
+
+  .contenedor {
+    width: 94%;
+    margin: 20px auto;
+  }
+
+  .buscador {
+    padding: 15px;
+  }
+
+  .preview {
+    width: 200px;
+    height: 240px;
+  }
+
+  .lista-resultados {
+    grid-template-columns: 1fr;
+  }
+
+  .resultado > img {
+    height: 220px;
+  }
+
+}
