@@ -30,6 +30,14 @@ Plataforma de búsqueda visual de camisetas deportivas basada en **embeddings CL
 
 Desde la raíz del proyecto:
 
+### En Arch Linux (familia `pacman`)
+
+```bash
+sudo pacman -Syu python python-pip python-virtualenv opencv libgl
+```
+
+> `opencv` y `libgl` evitan que `pip install -r requirements.txt` falle al compilar/importar OpenCV en Arch-based (los wheels de `opencv-python` esperan la librería `libGL.so` del sistema). Instala también `git` (`sudo pacman -S git`) si clonaste el repo.
+
 ```bash
 # 1) (Opcional) Entorno virtual
 python -m venv venv

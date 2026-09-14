@@ -22,10 +22,10 @@ COLUMNAS = [
 ]
 
 # Si todavía no hay evaluador/casos/, usamos las imágenes que ya existen en
-# data/Search-10 (los 10 casos del grupo). Cuando se cree evaluador/casos/
+# proyectoA/Search-10 (los 10 casos del grupo). Cuando se cree evaluador/casos/
 # con la nomenclatura caso-XXX.jpg, se usa esa carpeta en su lugar.
 if not os.path.isdir(CASOS_DIR):
-    CASOS_DIR = os.path.join(BASE_DIR, "data", "Search-10")
+    CASOS_DIR = os.path.join(BASE_DIR, "proyectoA", "Search-10")
 
 _lock = threading.Lock()
 

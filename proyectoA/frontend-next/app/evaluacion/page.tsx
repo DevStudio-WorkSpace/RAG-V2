@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Search10Entrenar from "../search10/Search10Entrenar";
 import "./evaluacion.css";
 
 const API_URL = "http://localhost:8000";
+
+type Tab = "evaluador" | "search10";
 
 type ResultItem = {
   id: string;
@@ -50,6 +53,7 @@ function resultImage(result: ResultItem) {
 }
 
 export default function Evaluacion() {
+  const [tab, setTab] = useState<Tab>("evaluador");
   const [quien, setQuien] = useState("");
   const [casos, setCasos] = useState<CasoMeta[]>([]);
   const [current, setCurrent] = useState<CasoMeta | null>(null);
@@ -197,6 +201,25 @@ export default function Evaluacion() {
   return (
     <main className="page-shell">
       <div className="app-frame">
+        <nav className="eval-tabs" aria-label="Secciones">
+          <button
+            className={`eval-tab ${tab === "evaluador" ? "active" : ""}`}
+            onClick={() => setTab("evaluador")}
+          >
+            📋 Evaluador
+          </button>
+          <button
+            className={`eval-tab ${tab === "search10" ? "active" : ""}`}
+            onClick={() => setTab("search10")}
+          >
+            🎯 Search-10 · Entrenar
+          </button>
+        </nav>
+
+        {tab === "search10" ? (
+          <Search10Entrenar />
+        ) : (
+        <>
         <header className="topbar">
           <div>
             <p className="eyebrow">Evaluador del buscador</p>
@@ -325,6 +348,8 @@ export default function Evaluacion() {
           </>
         ) : (
           <section className="empty-state">No hay casos cargados en evaluador/casos/.</section>
+        )}
+        </>
         )}
       </div>
     </main>

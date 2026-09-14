@@ -19,7 +19,7 @@ python -m uvicorn api.main:app --port 8000
 **2) La interfaz de evaluación:**
 
 ```bash
-cd frontend-next
+cd proyectoA/frontend-next
 npm install        # solo la primera vez
 npm run dev        # abre http://localhost:3000/evaluacion
 ```
@@ -27,7 +27,7 @@ npm run dev        # abre http://localhost:3000/evaluacion
 El frontend también corre en modo producción con `npm run build && npm start`.
 
 > La página busca en la API en `http://localhost:8000`. Si la cambiaste de
-> puerto, edita `API_URL` en `frontend-next/app/evaluacion/page.tsx`.
+> puerto, edita `API_URL` en `proyectoA/frontend-next/app/evaluacion/page.tsx`.
 
 ---
 
@@ -36,7 +36,7 @@ El frontend también corre en modo producción con `npm run build && npm start`.
 1. Pon las fotos de consulta (reales, de internet, **nunca del catálogo**) en
    `evaluador/casos/` con nombres `caso-001.jpg` … `caso-010.jpg`.
    - Si todavía no existe `evaluador/casos/`, la herramienta usa las imágenes
-     de prueba de `data/Search-10/`.
+     de prueba de `proyectoA/Search-10/`.
 2. Completa `evaluador/casos.csv` con las columnas
    `caso,id_correcto,tipo`:
 

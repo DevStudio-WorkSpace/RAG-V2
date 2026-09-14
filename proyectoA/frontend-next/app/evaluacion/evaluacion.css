@@ -1,3 +1,34 @@
+.eval-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+
+.eval-tab {
+  cursor: pointer;
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  border: 1px solid rgba(148, 179, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  transition: 0.18s;
+}
+
+.eval-tab:hover {
+  border-color: rgba(70, 208, 255, 0.45);
+  color: var(--text);
+}
+
+.eval-tab.active {
+  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+  border-color: transparent;
+  color: #06131e;
+  box-shadow: 0 12px 30px rgba(70, 208, 255, 0.3);
+}
+
 .eval-bar {
   display: flex;
   align-items: center;

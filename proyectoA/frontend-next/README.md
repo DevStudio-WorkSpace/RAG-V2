@@ -3,18 +3,23 @@
 Interfaz web moderna del **RAG visual de camisetas deportivas** construida con
 **[Next.js](https://nextjs.org) (App Router) + React 19 + TypeScript**.
 
-Consume la API FastAPI (`http://localhost:8000`) y ofrece dos pantallas:
+Consume la API FastAPI (`http://localhost:8000`) y ofrece tres pantallas:
 
 | Ruta | Pantalla | Qué hace |
 |---|---|---|
 | `/` | **Búsqueda visual** | Sube una imagen, la API devuelve el Top 5 y puedes calificar cada resultado con **✅ Acierto / 👍 Sirve / ❌ No sirve**. Los veredictos se guardan en la API (CSV) y las imágenes marcadas "No sirve" **no vuelven a aparecer aunque recargues**. |
 | `/evaluacion` | **Evaluador del buscador** | Recorre los casos de prueba, muestra la consulta + el Top 5 y permite calificar los 5 resultados. Botón **Siguiente →** y contador **"Caso X de Y"**. Cada clic se guarda al instante en `evaluador/resultados.csv`. |
+| `/search10` | **Search-10 · Entrenar** | Bucle de entrenamiento con feedback sobre `proyectoA/Search-10/`: elige una consulta, ranking real, y califica **✅ Correcto / 👍 Sirve / ❌ Incorrecto**. Lo marcado Incorrecto queda **excluido de forma persistente** para esa consulta. **Usa su propio backend en `:8400`** (ver §5). |
+
+> **`/search10` NO usa la API `:8000`.** Tiene su backend dedicado:
+> `python -m uvicorn backend.main:app --port 8400` desde `proyectoA/`
+> (ver `proyectoA/README.md`).
 
 ---
 
 ## 1 · Requisitos previos
 
-- **Node.js 18.18+** (probado con Node 20/22). npm se incluye con Node.
+- **Node.js 20.9+** (requerido por Next.js 16; probado con Node 20/22). npm se incluye con Node.
 - La **API FastAPI corriendo** en `http://localhost:8000`
   (`python -m uvicorn api.main:app --port 8000` desde la raíz del repositorio).
   Sin la API, la interfaz se abre pero las búsquedas fallan.
@@ -22,7 +27,7 @@ Consume la API FastAPI (`http://localhost:8000`) y ofrece dos pantallas:
 Verifica Node y npm:
 
 ```bash
-node -v   # v18.18.0 o mayor
+node -v   # v20.9.0 o mayor
 npm -v
 ```
 
@@ -43,6 +48,19 @@ nvm use 20
 sudo apt update
 sudo apt install -y nodejs npm
 ```
+
+> ⚠️ Los repositorios de Ubuntu <24.10 y Debian estable traen Node **18**, que no
+> cumple el requisito de Next.js 16 (>=20.9). Verifica con `node -v` y, si hace
+> falta, usa **nvm** (arriba) o el repositorio [NodeSource](https://github.com/nodesource/distributions).
+
+**Linux — Arch / Manjaro / EndeavourOS (pacman):**
+
+```bash
+sudo pacman -Syu nodejs npm
+```
+
+> Arch trae las últimas versiones de Node/npm en sus repositorios oficiales, así
+> que cumple el requisito de Next.js 16 sin pasos extra. Verifica con `node -v`.
 
 **Windows:**
 
@@ -69,10 +87,10 @@ nvm use 20
 ## 2 · Instalación
 
 Los comandos son idénticos en los tres sistemas: abre una terminal en la
-carpeta `frontend-next/` del proyecto y ejecuta:
+carpeta `proyectoA/frontend-next/` del proyecto y ejecuta:
 
 ```bash
-cd frontend-next
+cd proyectoA/frontend-next
 npm install
 ```
 
@@ -86,8 +104,45 @@ ESLint) y crea `node_modules/` + `package-lock.json`.
 
 ## 3 · Cómo correr el programa
 
+> 💡 **Página `/search10`:** usa un backend **propio** en el puerto **8400**
+> (`cd /home/satanic/RAG-V2/proyectoA && ../venv/bin/python -m uvicorn backend.main:app --port 8400`),
+> no la API de `:8000`. Ver `proyectoA/README.md`.
+
+> ### ⚠️ MUY IMPORTANTE: `npm run dev` NO es suficiente
+>
+> `npm run dev` solo abre la interfaz en **http://localhost:3000**, pero **NO
+> levanta la API**. La búsqueda visual depende al 100% de la **API FastAPI** en
+> `http://localhost:8000`: si la API no está corriendo, la página se abre pero
+> cada búsqueda falla (no aparece el Top 5).
+>
+> **Pasos correctos (dos terminales):**
+>
+> ```bash
+> # Terminal 1 — la API (desde la RAIZ del repositorio, NO en frontend-next/)
+> cd /home/satanic/RAG-V2
+> python -m uvicorn api.main:app --port 8000
+>
+> # Terminal 2 — la interfaz
+> cd /home/satanic/RAG-V2/proyectoA/frontend-next
+> npm run dev
+> ```
+>
+> **Antes de buscar, verifica que la API responde:**
+>
+> ```bash
+> curl http://localhost:8000/health
+> # debe devolver JSON con {"status":"ok", ...} — si no, la búsqueda fallará.
+> ```
+
 Los comandos de **Next.js son iguales en Linux, Windows y macOS** (también en
 PowerShell o CMD de Windows).
+
+### 3.0 · Comprobar el estado (qué probar para saber que todo funciona)
+
+1. `curl http://localhost:8000/health` → la API responde **ok**.
+2. Abre **http://localhost:3000** → la página carga.
+3. Sube una imagen y pulsa buscar → aparece el **Top 5**. Si aquí falla, la API
+   no está corriendo (revisa la terminal 1).
 
 ### 3.1 · Modo desarrollo (recomendado para trabajar)
 
@@ -96,7 +151,8 @@ npm run dev
 ```
 
 Abre **http://localhost:3000** en tu navegador. Los cambios a los archivos de
-`app/` se reflejan al instante (hot reload).
+`app/` se reflejan al instante (hot reload). Recuerda: la API desde la raíz del
+repositorio (`python -m uvicorn api.main:app --port 8000`) debe estar corriendo.
 
 ### 3.2 · Modo producción (build + servidor)
 
@@ -130,7 +186,7 @@ reinicies `npm run dev`.
 ## 4 · Estructura del proyecto (árbol)
 
 ```text
-frontend-next/
+proyectoA/frontend-next/
 ├── app/                        # App Router de Next.js
 │   ├── layout.tsx              # Layout raíz (fuente Geist + globals.css)
 │   ├── globals.css             # Estilos globales y de la página de búsqueda
@@ -139,6 +195,9 @@ frontend-next/
 │   ├── evaluacion/
 │   │   ├── page.tsx            # 🏠 Página del evaluador: casos, Top 5 por caso, Siguiente, contador
 │   │   └── evaluacion.css      # Estilos del evaluador
+│   ├── search10/
+│   │   ├── page.tsx            # 🏠 Search-10 · Entrenar: ranking real + feedback persistente (backend :8400)
+│   │   └── search10.css        # Estilos de la vista de entrenamiento
 │   └── favicon.ico
 ├── public/                     # SVGs estáticos de create-next-app
 ├── next.config.ts              # Config de Next (reactCompiler: true)
@@ -162,6 +221,10 @@ evaluador/
 ├── completados.json            # Casos terminados (no vuelven a aparecer)
 ├── calcular.py                 # Métricas: Top 1, Top 5, Utilidad (total y por tipo)
 └── README.md                   # Guía del evaluador
+
+# Backend autocontenido del módulo Search-10 (puerto 8400, NO toca api/)
+proyectoA/backend/
+└── main.py                     # POST /search10/buscar, /feedback, /feedback/limpiar + static
 ```
 
 ---
@@ -178,13 +241,19 @@ evaluador/
    `GET /evaluacion/veredictos` y oculta para siempre (también tras recargar) los
    productos marcados "No sirve". Cache local en `localStorage`.
 4. **Evaluador del buscador** — `app/evaluacion/page.tsx` recorre los casos de
-   `data/Search-10` (o `evaluador/casos/`), consulta la API por cada uno y
+   `proyectoA/Search-10` (o `evaluador/casos/`), consulta la API por cada uno y
    permite calificar los 5 resultados con definiciones en pantalla.
 5. **Navegación entre casos** — botón **Siguiente →** + contador
    **"Caso X de Y"** con avance global; un caso avanza solo cuando se califican
    todos sus resultados.
 6. **Persistencia real** — cada clic escribe una fila en
    `evaluador/resultados.csv` al instante (sobrevive al cierre del navegador).
+7. **Search-10 · Entrenar (`/search10`)** — bucle de entrenamiento con backend
+   propio (`proyectoA/backend/main.py`, puerto **8400**): lista las 14 consultas
+   de `proyectoA/Search-10/`, lanza el ranking real en vivo, y cada resultado se
+   califica con **✅ Correcto / 👍 Sirve / ❌ Incorrecto**. Lo marcado Incorrecto
+   queda **excluido de forma persistente** (`.feedback/feedback.json`) y la
+   re-búsqueda lo omite rellenando con la siguiente alternativa válida.
 
 ---
 
