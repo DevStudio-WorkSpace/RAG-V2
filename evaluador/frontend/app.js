@@ -2,6 +2,7 @@ let API_URL = 'http://localhost:8001';
 
 let casoActual = null;
 let juiciosLocales = {};
+let juiciosEnviados = {};
 let indiceCaso = 0;
 let todosLosCasos = [];
 let totalResultadosActual = 0;
@@ -17,26 +18,39 @@ async function cargarCasoActual() {
             const data = await res.json();
             todosLosCasos = data.casos || [];
 
-            // Retomar progreso: buscar cuales casos ya tienen 5 juicios
             const resPrev = await fetch(`${API_URL}/api/resultados`);
             const dataPrev = await resPrev.json();
             if (dataPrev.resultados && dataPrev.resultados.length > 0) {
-                const conteo = {};
+                const posicionesUnicas = {};
                 for (const r of dataPrev.resultados) {
                     const c = r.caso;
-                    conteo[c] = (conteo[c] || 0) + 1;
+                    if (!posicionesUnicas[c]) posicionesUnicas[c] = new Set();
+                    posicionesUnicas[c].add(r.posicion);
                 }
-                // En el primer caso que no tenga 5 juicios, ahi retomamos
+
+                let encontrado = false;
                 for (let i = 0; i < todosLosCasos.length; i++) {
                     const nombre = todosLosCasos[i].caso;
-                    if (!conteo[nombre] || conteo[nombre] < 5) {
-                        indiceCaso = i;
-                        break;
+                    const evaluadas = posicionesUnicas[nombre] ? posicionesUnicas[nombre].size : 0;
+
+                    try {
+                        const resCaso = await fetch(`${API_URL}/api/casos/${i + 1}`);
+                        const dataCaso = await resCaso.json();
+                        const totalResultados = (dataCaso.resultados || []).length;
+
+                        if (totalResultados === 0) continue;
+                        if (evaluadas >= totalResultados) continue;
+                    } catch (e) {
+                        continue;
                     }
-                    // Si todos tienen 5, quedamos en el ultimo (se mostrara pantalla final)
-                    if (i === todosLosCasos.length - 1) {
-                        indiceCaso = todosLosCasos.length;
-                    }
+
+                    indiceCaso = i;
+                    encontrado = true;
+                    break;
+                }
+
+                if (!encontrado) {
+                    indiceCaso = todosLosCasos.length;
                 }
             }
         }
@@ -50,6 +64,7 @@ async function cargarCasoActual() {
 
         casoActual = todosLosCasos[indiceCaso];
         juiciosLocales = {};
+        juiciosEnviados = {};
         totalResultadosActual = 0;
         document.getElementById('btn-siguiente').disabled = true;
         document.getElementById('progreso').innerText = `Caso ${indiceCaso + 1} de ${todosLosCasos.length}`;
@@ -85,7 +100,7 @@ function renderizadoResultados(resultados) {
 
         card.innerHTML = `
             <img class="img-resultado" src="${API_URL}/api/imagen/${res.imagen}" alt="${res.id}">
-            <h4>ID: ${res.id}</h4>
+            <h4>${res.nombre || res.id}</h4>
             <div class="score">Score: ${res.score.toFixed(4)}</div>
             <div class="botones-juicio">
                 <button class="btn-acierto" onclick="registrarJuicio(${posicion}, '${res.id}', ${res.score}, 'Acierto', this)">Acierto</button>
@@ -103,6 +118,14 @@ async function registrarJuicio(posicion, idResultado, score, juicio, boton) {
     boton.classList.add('seleccionado');
     juiciosLocales[posicion] = juicio;
 
+    if (juiciosEnviados[posicion]) {
+        if (Object.keys(juiciosLocales).length === totalResultadosActual && totalResultadosActual > 0) {
+            document.getElementById('btn-siguiente').disabled = false;
+        }
+        return;
+    }
+    juiciosEnviados[posicion] = true;
+
     try {
         const formData = new URLSearchParams();
         formData.append('caso', casoActual.caso);
@@ -111,7 +134,8 @@ async function registrarJuicio(posicion, idResultado, score, juicio, boton) {
         formData.append('id_resultado', idResultado);
         formData.append('score', score);
         formData.append('juicio', juicio);
-        formData.append('quien', 'Andres y Samir');
+        const quienValor = document.getElementById('quien-input').value || 'Anonimo';
+        formData.append('quien', quienValor);
 
         await fetch(`${API_URL}/api/juicios`, {
             method: 'POST',
@@ -139,20 +163,60 @@ function mostrarPantallaFinal(metricas) {
     pFinal.classList.remove('oculto');
     document.getElementById('progreso').innerText = "Evaluacion Completada";
 
+    const total = metricas.total_casos_evaluados || 0;
+
     document.getElementById('metricas-generales').innerHTML = `
-        <h3>Metricas de Desempeno Obtenidas</h3>
-        <p><strong>Top 1:</strong> ${(metricas.top1 || 0).toFixed(1)}%</p>
-        <p><strong>Top 5:</strong> ${(metricas.top5 || 0).toFixed(1)}%</p>
-        <p><strong>Utilidad:</strong> ${(metricas.utilidad || 0).toFixed(2)} / 5.00</p>
+        <div class="metrica-card">
+            <h3>Resultados de la Evaluacion</h3>
+            <p style="color:#7c8bab; font-size:.85rem; margin-bottom:16px;">Se evaluaron <strong style="color:#e0eaff;">${total}</strong> casos de prueba</p>
+            <div class="metrica-numeros">
+                <div class="metrica-item">
+                    <div class="valor top1">${(metricas.top1 || 0).toFixed(1)}%</div>
+                    <div class="etiqueta">Top 1</div>
+                    <div class="desc">El resultado #1 fue "Acierto"</div>
+                </div>
+                <div class="metrica-item">
+                    <div class="valor top5">${(metricas.top5 || 0).toFixed(1)}%</div>
+                    <div class="etiqueta">Top 5</div>
+                    <div class="desc">Hubo un "Acierto" en alguno de los 5</div>
+                </div>
+                <div class="metrica-item">
+                    <div class="valor util">${(metricas.utilidad || 0).toFixed(2)}</div>
+                    <div class="etiqueta">Utilidad</div>
+                    <div class="desc">Promedio de resultados utiles (0-5)</div>
+                </div>
+            </div>
+        </div>
     `;
 
+    let html = '';
     if (metricas.por_tipo && Object.keys(metricas.por_tipo).length > 0) {
-        let html = '<h3>Desglose por tipo de foto</h3><table border="1" cellpadding="6" style="border-collapse:collapse; margin-top:10px;">';
+        html += '<div class="metrica-card">';
+        html += '<h3>Desglose por tipo de foto</h3>';
+        html += '<p style="color:#7c8bab; font-size:.82rem; margin-bottom:12px;">Donde falla el buscador — la parte mas util del trabajo</p>';
+        html += '<table class="tabla-tipo">';
         html += '<tr><th>Tipo</th><th>Casos</th><th>Top 1</th><th>Top 5</th><th>Utilidad</th></tr>';
         for (const [tipo, datos] of Object.entries(metricas.por_tipo)) {
-            html += `<tr><td>${tipo}</td><td>${datos.total}</td><td>${datos.top1}%</td><td>${datos.top5}%</td><td>${datos.utilidad}/5</td></tr>`;
+            html += `<tr>
+                <td style="font-weight:600; color:#e0eaff;">${tipo}</td>
+                <td>${datos.total}</td>
+                <td>${datos.top1}%</td>
+                <td>${datos.top5}%</td>
+                <td>${datos.utilidad}/5</td>
+            </tr>`;
         }
-        html += '</table>';
-        document.getElementById('metricas-desglose').innerHTML = html;
+        html += '</table></div>';
     }
+
+    html += '<div style="text-align:center; margin-top:20px;">';
+    html += '<button id="btn-reiniciar">Volver a empezar</button>';
+    html += '</div>';
+
+    document.getElementById('metricas-desglose').innerHTML = html;
+
+    document.getElementById('btn-reiniciar').addEventListener('click', async () => {
+        if (!confirm('Esto borrara todos los resultados. Estas seguro?')) return;
+        await fetch(`${API_URL}/api/reset`, { method: 'POST' });
+        window.location.reload();
+    });
 }

@@ -1,53 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluador del Buscador</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
     <header>
         <h1>Evaluador del Buscador</h1>
         <div id="progreso">Cargando progreso...</div>
+        <div id="quien-box">
+            <label for="quien-input">Evalua:</label>
+            <input type="text" id="quien-input" placeholder="Tu nombre" value="Andres y Samir">
+        </div>
     </header>
 
-<!--CRITERIOS-->
     <section class="criterios-box">
         <h3>Criterios de Evaluación</h3>
         <ul>
-            <li><strong>Acierto:</strong>Es el mismo diseño, aunque cambie el color, el año, el escudo o el sponsor.</li>
-            <li><strong>Sirve:</strong>No es el mismo, pero se lo mostrarías al cliente y lo aceptaría.</li>
-            <li><strong>No sirve:</strong>Es otro diseño.</li>
+            <li><strong>Acierto:</strong> Es el mismo diseño, aunque cambie el color, el año, el escudo o el sponsor.</li>
+            <li><strong>Sirve:</strong> No es el mismo, pero se lo mostrarías al cliente y lo aceptaría.</li>
+            <li><strong>No sirve:</strong> Es otro diseño.</li>
         </ul>
     </section>
 
     <main id="pantalla-evaluacion">
-        <!--FOTO DE CONSULTA-->
         <section class="consulta-section">
             <h2>Foto de consulta</h2>
             <img id="foto-consulta" src="" alt="Imagen de consulta" class="img-grande">
         </section>
 
-<!--5-RESULTADOS-->
         <section class="resultado-section">
-            <h2>Resultado del Buscador</h2>
-            <div id="contenedor-resultados" class="grid-resultados">
-                <!--SE GENRA CON JS-->
-            </div>
+            <h2>Resultados del Buscador</h2>
+            <div id="contenedor-resultados" class="grid-resultados"></div>
         </section>
 
         <div class="nav-buttons">
-            <button id="btn-siguiente" disabled>Siguiente caso → </button>
+            <button id="btn-siguiente" disabled>Siguiente caso</button>
         </div>
     </main>
-<!--PANTALLA FINAL DE METRICAS-->
+
     <section id="pantalla-final" class="oculto">
-        <h2>Resultados de la Evaluación</h2>
         <div id="metricas-generales"></div>
         <div id="metricas-desglose"></div>
     </section>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=3"></script>
 </body>
 </html>

@@ -24,10 +24,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # ── Configuracion ──────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent          # evaluador/
@@ -217,7 +218,7 @@ def health():
             content={
                 "status": "error",
                 "detail": f"No se pudo conectar a la API en {API_BASE_URL}. "
-                          "Levanta la API con: uvicorn api.main:app --host 0.0.0.0 --port 8000",
+                          "Levanta la API con: python -m uvicorn api.main:app --host 0.0.0.0 --port 8000",
             },
         )
     except Exception as e:
@@ -440,6 +441,6 @@ if __name__ == "__main__":
     except Exception:
         print(f"[AVISO] No se pudo conectar a la API en {API_BASE_URL}")
         print("        La API del buscador debe estar corriendo para evaluar.")
-        print("        Levantala con: uvicorn api.main:app --host 0.0.0.0 --port 8000")
+        print("        Levantala con: python -m uvicorn api.main:app --host 0.0.0.0 --port 8000")
 
     uvicorn.run(app, host="0.0.0.0", port=EVALUADOR_PORT, reload=False)

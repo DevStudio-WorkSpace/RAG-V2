@@ -1,122 +1,79 @@
 # AI_LOG.md — Evaluador (Ficha 03-A)
 
-Registro de prompts y decisiones de IA utilizadas en la construccion del Evaluador.
-Ambos integrantes deben poder explicar cada decision documentada aqui.
-
----
+> Registro de asistencia de IA utilizada en la construccion del Evaluador.
+> Ambos integrantes deben poder explicar cada decision documentada aqui.
 
 ## Fecha: 2026-09-11
 
-### Prompt 1 — Analisis de requisitos
+### Prompt 1 - Analisis de requisitos y plan de trabajo
 
-**Prompt usado**: "Analiza la Ficha 03-A del grupo A y genera un plan de trabajo que divida las tareas entre dos integrantes: uno para backend y datos, otro para frontend y experiencia de usuario. Incluye estructura de carpetas, contrato de datos, y endpoints necesarios."
+**Propósito:** Comprender la Ficha 03-A y dividir el trabajo entre dos integrantes.
+**Resultado:** Plan de trabajo con responsabilidades claras: Integrante 1 (backend: `server.py`, `metricas.py`, `casos/casos.csv`, `README.md`), Integrante 2 (frontend: `index.html`, `app.js`, `styles.css`).
 
-**Que se genero**: Plan de trabajo con division clara de responsabilidades:
-- Integrante 1 (backend): server.py, metricas.py, casos.csv, README.md
-- Integrante 2 (frontend): index.html, app.js, styles.css
+### Prompt 2 - Implementacion del backend
 
-### Prompt 2 — Implementacion del backend
-
-**Prompt usado**: "Implementa el backend del evaluador en Python con FastAPI. Debe exponer los siguientes endpoints: listar casos, obtener caso con resultados de la API principal, guardar juicios en CSV, calcular estadisticas. Usa el contrato de datos: casos.csv con columnas caso,id_correcto,tipo y resultados.csv con columnas caso,id_correcto,posicion,id_resultado,score,juicio,quien,fecha. El backend solo consume la API principal, no busca nada localmente."
-
-**Que se implemento**:
-- `server.py`: FastAPI con 10 endpoints
-- `metricas.py`: script standalone de metricas
-- `casos/casos.csv`: 10 casos de prueba
-- `README.md`: documentacion completa
-
-### Decisiones de arquitectura (Backend)
-
-1. **Backend con FastAPI**: se eligio por consistencia con la API principal del proyecto. Permite CORS automatico, validacion de tipos, y documentacion en /docs.
-
-2. **Proxy a la API**: el evaluador NO busca nada directamente. Llama a `POST /search/image` de la API principal para obtener los resultados. Esto garantiza que siempre se mida el motor real.
-
-3. **Guardado inmediato**: cada clic se guarda con `csv.DictWriter` en modo append (`"a"`). Si el navegador se cierra, lo que se guardo sigue en disco.
-
-4. **Metricas en dos sitios**: el endpoint `/api/estadisticas` calcula en tiempo real, y `metricas.py` es un script standalone que puede correrse sin el servidor.
+**Propósito:** Crear el servidor FastAPI que sirve de proxy entre el frontend y la API del buscador.
+**Resultado:** `server.py` con 10 endpoints (listar casos, obtener caso con resultados, guardar juicios, estadisticas, servir imagenes, proxy de health). `metricas.py` como script standalone que lee `resultados.csv` y calcula Top 1, Top 5 y Utilidad. `casos/casos.csv` con 10 casos de prueba.
 
 ---
 
 ## Fecha: 2026-09-12
 
-### Prompt 3 — Verificacion del frontend del compañero
+### Prompt 3 - Verificacion del frontend del compañero
 
-**Prompt usado**: "Analiza los archivos frontend/index.html, frontend/app.js y frontend/styles.css que construyo el segundo integrante. Verifica que se comuniquen correctamente con los endpoints del backend server.py. Identifica cualquier desajuste en URLs de endpoints, formato de envio de datos, o nombres de campos."
+**Propósito:** Verificar que los archivos del frontend se comuniquen correctamente con los endpoints del backend.
+**Resultado:** Se encontraron 7 errores que impedían el funcionamiento: endpoint `/api/guardar-juicio` no existente (cambiado a `/api/juicios`), envio de JSON en vez de form-data, campo `who` no coincidente (cambiado a `quien`), llamada a `/api/siguiente-caso` inexistente (eliminada), carga de resultados desde `/api/casos` (cambiado a `/api/casos/{n}`), URLs de imagenes incorrectas (corregidas a `/api/imagen/{res.imagen}`), y `FRONTEND_DIR` apuntando a ruta incorrecta en `server.py`.
 
-**Que se encontro**: 7 errores que impedian el funcionamiento:
-- Endpoint incorrecto para guardar juicios
-- Formato de envio incompatible (JSON vs Form Data)
-- Nombres de campos diferentes
-- Endpoint inexistente
-- Carga incorrecta de resultados
-- URLs de imagenes rotas
-- Metricas consultadas en endpoint equivocado
+### Prompt 4 - Endpoints para imagenes
 
-### Prompt 4 — Correccion del frontend con minimos cambios
+**Propósito:** Las imagenes de consulta y del catalogo no se estaban sirviendo correctamente.
+**Resultado:** Se agregaron dos endpoints: `GET /api/imagen/{nombre}` para imagenes del catalogo desde `data/images_normalized/` con busqueda multi-extension, y `GET /api/caso-imagen/{nombre}` para fotos de consulta desde `evaluador/casos/`.
 
-**Prompt usado**: "Corrige los errores encontrados en el frontend realizando los cambios minimos necesarios. Manten la estructura y estilo que ya existia. Solo ajusta la logica de comunicacion con el backend para que funcione correctamente."
+### Prompt 5 - Boton Siguiente dinamico
 
-**Correcciones realizadas**:
+**Propósito:** El boton "Siguiente" solo se habilitaba con 5 clics fijos, pero la API a veces devuelve menos de 5 resultados.
+**Resultado:** Se agrego la variable `totalResultadosActual` que se actualiza con la cantidad real de resultados devueltos por la API. El boton verifica contra esa variable en vez de un numero fijo.
 
-| Archivo | Cambio | Justificacion |
-|---------|--------|---------------|
-| `app.js` | Endpoint `/api/guardar-juicio` → `/api/juicios` | Alineacion con el backend existente |
-| `app.js` | `JSON.stringify` → `URLSearchParams` | El backend espera form-data |
-| `app.js` | Campo `who` → `quien` | Alineacion de nombres de campos |
-| `app.js` | Eliminar `POST /api/siguiente-caso` | Endpoint inexistente |
-| `app.js` | Cargar resultados con `GET /api/casos/{n}` | El endpoint `/api/casos` solo devuelve metadata |
-| `app.js` | URL de imagenes → `/api/imagen/{res.imagen}` | Las imagenes del catalogo estan en `data/images_normalized/` |
-| `server.py` | `FRONTEND_DIR` apunta a `evaluador/frontend/` | Correccion de ruta estatica |
+### Prompt 6 - Retomar progreso tras cerrar navegador
 
-### Prompt 5 — Adicion de endpoints para imagenes
+**Propósito:** Si el usuario cierra el navegador a mitad de la evaluacion, debe poder continuar donde quedo.
+**Resultado:** En `cargarCasoActual()`, se piden los resultados existentes (`GET /api/resultados`), se cuentan los juicios por caso, y se busca el primer caso que no tenga todos sus juicios para continuar desde ahi.
 
-**Prompt usado**: "Las imagenes de consulta y del catalogo no se estan sirviendo correctamente. Agrega los endpoints necesarios en server.py para servir tanto las imagenes de consulta (ubicadas en evaluador/casos/) como las imagenes del catalogo (ubicadas en data/images_normalized/)."
+---
 
-**Endpoints agregados**:
-- `GET /api/imagen/{nombre}`: sirve imagenes del catalogo con busqueda multi-extension
-- `GET /api/caso-imagen/{nombre}`: sirve fotos de consulta de los casos
+## Fecha: 2026-09-14
 
-### Prompt 6 — Boton Siguiente dinamico
+### Prompt 7 - Correccion de tipos en casos.csv
 
-**Prompt usado**: "El boton Siguiente solo se habilita cuando hay 5 clics, pero la API a veces devuelve menos de 5 resultados. Modifica la logica para que el boton se habilite cuando se evaluen todos los resultados visibles, no siempre 5."
+**Propósito:** Los 10 casos tenian todos el tipo "persona", lo que hacia inutil el desglose por tipo de foto.
+**Resultado:** Se redistribuyo la distribucion: casos 001-003 persona, 004-006 producto, 007-008 captura, 009-010 dificil.
 
-**Solucion**: Se agrego la variable `totalResultadosActual` que se actualiza con la cantidad real de resultados devueltos por la API. El boton verifica contra esa variable en vez de un valor fijo.
+### Prompt 8 - Mostrar nombre del diseno en resultados
 
-### Prompt 7 — Imagenes en blanco
+**Propósito:** El frontend solo mostraba el ID de cada resultado, no el nombre. La Ficha pide "imagen, nombre y score".
+**Resultado:** Se cambio `<h4>ID: ${res.id}</h4>` por `<h4>${res.nombre || res.id}</h4>` en el `innerHTML` de cada tarjeta.
 
-**Prompt使用权**: "Algunas imagenes de resultados aparecen en blanco en el navegador. Verifica que todas las imagenes referenciadas por la API existan en data/images_normalized/ y corrige el endpoint para que las encuentre."
+### Prompt 9 - Campo "quien" editable
 
-**Causa**: la API del buscador devuelve nombres como `AIM-P254-033.png` pero el archivo real es `AIM-P254-033.jpg`.
+**Propósito:** El campo `quien` estaba hardcodeado como "Andres y Samir". Quien evalua debe poder escribir su nombre.
+**Resultado:** Se agrego un `<input>` en el HTML con id `quien-input`, y se envia ese valor en cada juicio via `document.getElementById('quien-input').value`.
 
-**Solucion**: el endpoint `/api/imagen/{nombre}` ahora busca automaticamente con otras extensiones (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`) si el nombre exacto no existe.
+### Prompt 10 - Prevencion de juicios duplicados
 
-### Prompt 8 — Retomar progreso tras cerrar navegador
+**Propósito:** El usuario podia apretar el mismo boton multiples veces, creando filas duplicadas en `resultados.csv`.
+**Resultado:** Se agrego la variable `juiciosEnviados` que registra que posiciones ya se enviaron al backend. Si ya se envio, solo se actualiza la seleccion visual sin hacer otro POST.
 
-**Prompt usado**: "Implementa la funcionalidad de retomar el progreso cuando se cierra y reabre el navegador. Al cargar la pagina, debe buscar en resultados.csv que casos ya tienen juicios y continuar desde el primer caso pendiente."
+### Prompt 11 - Correccion de la logica de reanudacion
 
-**Solucion**: en `cargarCasoActual()`, se piden los resultados existentes (`GET /api/resultados`), se cuentan los juicios por caso, y se busca el primer caso que no tenga todos sus juicios para continuar desde ahi.
+**Propósito:** La reanudacion mostraba la pantalla final cuando quedaban casos por evaluar.
+**Resultado:** Se corrige para contar posiciones unicas usando `Set`, y se verifica contra el total real de resultados que devuelve la API (no contra 5 fijo).
 
-### Decisiones de arquitectura (Frontend)
+### Prompt 12 - Anti-cache en el navegador
 
-1. **HTML/CSS/JS puro**: se uso la tecnologia que el segundo integrante ya conocia, sin frameworks complejos.
+**Propósito:** El navegador guardaba versiones viejas de `app.js` y `styles.css`, causando que los cambios no se vieran.
+**Resultado:** Query parameters `?v=3` en las referencias del HTML y middleware `NoCacheMiddleware` en `server.py` que agrega headers `Cache-Control: no-cache` a archivos `.js`, `.css` y `.html`.
 
-2. **Criterios en pantalla**: los botones y sus definiciones estan escritos en el HTML para que quien evaluce los tenga a la vista.
+### Prompt 13 - Mejora visual del evaluador
 
-3. **Guardado por clic**: cada boton envia `POST /api/juicios` inmediatamente. No se espera a que termine el caso.
-
-4. **Retomar progreso**: al cerrar y reabrir el navegador, se buscan los casos ya evaluados en el CSV y se salta ahi.
-
-### Validaciones
-
-- `server.py`: verificado con `python -m py_compile` (sin errores)
-- `app.js`: verificado con `node -c` (sin errores)
-- Todos los endpoints probados con peticiones HTTP:
-  - `GET /` → 200 OK
-  - `GET /api/casos` → 200 OK (10 casos)
-  - `GET /api/casos/1` → 200 OK (5 resultados)
-  - `GET /api/caso-imagen/caso-001.jpg` → 200 OK
-  - `GET /api/imagen/AIM-P170-053.jpg` → 200 OK
-  - `POST /api/juicios` → 200 OK (guarda en CSV)
-  - `GET /api/resultados` → 200 OK
-  - `GET /api/estadisticas` → 200 OK
-  - `GET /health` → 200 OK
+**Propósito:** Mejorar la apariencia del evaluador manteniendo la estructura del compañero, con toques sutiles del estilo RAG-V2.
+**Resultado:** Gradientes sutiles en el fondo, texto del titulo con gradiente azul, progreso con forma de pastilla, tarjetas con bordes suaves y hover con sombra, botones con gradientes, pantalla final con tarjetas de metricas (Top 1, Top 5, Utilidad), tabla por tipo, y boton "Volver a empezar". Responsive: 5 columnas a 3 a 2 segun ancho de pantalla.
