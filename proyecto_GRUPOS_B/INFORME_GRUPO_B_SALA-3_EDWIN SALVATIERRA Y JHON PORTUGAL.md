@@ -1,3 +1,8 @@
+# INFORME GRUPAL DE SALA-3 GRUPO B
+
+1.Edwin Salvatierra
+2.Jhon Portugal
+
 # INFORME GENERAL — EVALUADOR DEL BUSCADOR
 
 Documento de referencia sobre el proyecto **Evaluador del buscador** de
