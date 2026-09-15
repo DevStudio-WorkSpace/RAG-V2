@@ -1,38 +1,86 @@
 # Evaluador del Buscador — Ficha 03-A
 
-**Sublitex · Ficha 03-A · Programación · Entrega: lunes**
+**Sublitex · Biblioteca visual · Ficha 03-A · Evaluador · Versión 1.0**
 
-Herramienta para que una persona califique los resultados del buscador visual y el sistema saque el número. La herramienta no busca nada: le pregunta al buscador (API) y muestra lo que responde.
+**Grupo A — Pareja:** Samir Ochoa y Andrés Quispe
 
-## Qué se construyó
+**Estado:** ✅ Completado al 100%
 
-Una pantalla donde se ve una foto arriba, los cinco resultados del buscador abajo, y tres botones en cada resultado. Al final, un número.
+---
 
-| Componente | Qué hace | Archivo |
+## Objetivo
+
+Construir la herramienta con la que una persona califica los resultados del buscador y el sistema saca el número. La herramienta no busca nada: le pregunta al buscador (API) y muestra lo que responde.
+
+**Frase de validación:** «Una pantalla donde se ve una foto arriba, los cinco resultados del buscador abajo, y tres botones en cada resultado. Al final, un número.»
+
+---
+
+## Estado de avance
+
+| Requisito (Ficha 03-A) | Estado | Ubicación |
 |---|---|---|
-| **Backend FastAPI** | Proxy a la API del buscador, sirve casos, guarda juicios en disco, calcula estadísticas | `backend/server.py` |
-| **Frontend HTML/JS/CSS** | Interfaz de evaluación con botones Acierto/Sirve/No sirve, pantalla de métricas | `frontend/index.html`, `app.js`, `styles.css` |
-| **Script de métricas** | Calcula Top 1, Top 5 y Utilidad desde la terminal | `metricas.py` |
-| **10 casos de prueba** | Fotos reales de camisetas con su ID correcto y tipo | `casos/` |
+| Pantalla con foto arriba, 5 resultados abajo | ✅ Hecho | `frontend/index.html` |
+| Tres botones por resultado: Acierto / Sirve / No sirve | ✅ Hecho | `frontend/app.js` |
+| Criterio de botones visible en la pantalla | ✅ Hecho | `frontend/index.html` (sección criterios) |
+| Botón "Siguiente" para avanzar al siguiente caso | ✅ Hecho | `frontend/app.js` |
+| Indicador de progreso ("caso 7 de 10") | ✅ Hecho | `frontend/app.js` |
+| Guardar cada clic en `resultados.csv` al momento del clic | ✅ Hecho | `backend/server.py` → endpoint `POST /api/juicios` |
+| Columnas del CSV: caso, id_correcto, posicion, id_resultado, score, juicio, quien, fecha | ✅ Hecho | `backend/server.py` |
+| Retomar progreso si se cierra el navegador | ✅ Hecho | `frontend/app.js` → `cargarCasoActual()` |
+| Pantalla final con Top 1, Top 5 y Utilidad | ✅ Hecho | `frontend/app.js` + `backend/server.py` → `GET /api/estadisticas` |
+| Desglose por tipo de foto (persona, producto, captura, difícil) | ✅ Hecho | `backend/server.py` + `metricas.py` |
+| Script standalone de métricas | ✅ Hecho | `metricas.py` |
+| Botón "Volver a empezar" (re-evaluar) | ✅ Hecho | `frontend/app.js` + `POST /api/reset` |
+| No tocar embeddings, products.csv ni el motor | ✅ Cumplido | Solo consumo de API vía `POST /search/image` |
+| 10 casos de prueba con fotos externas | ✅ Hecho | `casos/caso-001.jpg` a `caso-010.jpg` + `casos.csv` |
+| README con instrucciones para otra persona | ✅ Hecho | Este archivo |
+| AI_LOG.md con cada prompt documentado | ✅ Hecho | `AI_LOG.md` |
 
-## Qué ya existe y no hay que construir
+---
 
-El buscador ya está hecho y funcionando. Tu herramienta solo consume la API.
+## División de trabajo
 
-| Campo | Valor | Por qué |
-|---|---|---|
-| API que ya existe | `POST /search/image` | Le mandas una imagen y te devuelve los 5 diseños más parecidos |
-| Comprobar que está viva | `GET /health` | Si esto no responde, la API no está levantada |
-| Lo que devuelve cada resultado | `id · nombre · imagen · url · score` | 5 resultados en un arreglo JSON, del más parecido al menos parecido |
+### Samir Ochoa — Backend y pipeline de datos
 
-## Estructura
+- Definición del contrato de datos (`casos.csv` y `resultados.csv`).
+- Implementación de `server.py`:
+  - Proxy a la API del buscador (`GET /health`, `POST /search/image`).
+  - Endpoints para listar casos, obtener caso con resultados, guardar juicios, exportar CSV, estadísticas, servir imágenes.
+  - Guardado inmediato en disco (append al CSV al momento del clic).
+  - Manejo de errores (API caída, imagen no encontrada, IDs desalineados).
+  - Desglose de métricas por tipo de foto.
+  - Endpoint `POST /api/reset` para re-evaluar.
+- Implementación de `metricas.py` (script standalone).
+- Obtención de los 10 casos de prueba (fotos reales de internet, no del catálogo).
+- Creación de `casos.csv` con distribución: 3 persona, 3 producto, 2 captura, 2 difícil.
+- Coordinación y redacción del README.
+
+### Andrés Quispe — Frontend y experiencia de usuario
+
+- Construcción de la pantalla de evaluación (`index.html`, `app.js`, `styles.css`):
+  - Foto de consulta arriba, 5 resultados abajo en grid.
+  - Tres botones por resultado con criterios visibles.
+  - Botón "Siguiente" dinámico (se habilita solo al evaluar todos los resultados del caso).
+  - Indicador de progreso arriba a la derecha.
+  - Pantalla de métricas al terminar (Top 1, Top 5, Utilidad + tabla por tipo).
+  - Botón "Volver a empezar".
+- Guardado inmediato de cada clic vía `POST /api/juicios`.
+- Retomar progreso tras cerrar navegador (busca el primer caso sin evaluar).
+- Prevención de juicios duplicados (misma posición no se envía dos veces).
+- Diseño visual elegante con estilo consistente al proyecto RAG-V2.
+
+---
+
+## Estructura del evaluador
 
 ```
 evaluador/
-├── README.md              # Este archivo
-├── AI_LOG.md              # Registro de asistencia de IA
+├── README.md              # Este informe de avance
+├── AI_LOG.md              # Registro de cada prompt de IA utilizado
 ├── casos/
-│   ├── caso-001.jpg       # 10 fotos externas de camisetas
+│   ├── caso-001.jpg       # Fotos reales de camisetas (NO son del catálogo)
+│   ├── caso-002.jpg
 │   ├── ...
 │   ├── caso-010.jpg
 │   └── casos.csv          # caso, id_correcto, tipo
@@ -46,117 +94,84 @@ evaluador/
 └── resultados.csv         # Se crea automáticamente al evaluar
 ```
 
-## Requisitos previos
+---
 
-1. **Python 3.10+**
-2. La **API del buscador** debe estar corriendo en `http://127.0.0.1:8000` antes de levantar el evaluador.
+## Cómo funciona
 
-## Cómo levantar
-
-### Paso 1: Levantar la API del buscador y comprobar que responde
-
-```powershell
-cd C:\Users\SAMIR\RAG-V2
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
-```
-
-Abrir `http://127.0.0.1:8000/health` en el navegador. Tienes que ver un JSON que dice cuántos productos y cuántos embeddings tiene cargados. Si no son iguales entre sí, avisa al coordinador y no sigas: el índice está roto.
-
-### Paso 2: Levantar el evaluador
-
-```powershell
-# Opción 1: directo
-python evaluador\backend\server.py
-
-# Opción 2: con uvicorn
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
-
-# Opción 3: con variable de entorno para la API
-$env:API_BASE_URL="http://127.0.0.1:8000"
-python evaluador\backend\server.py
-```
-
-El evaluador corre en `http://127.0.0.1:8001`.
-
-**IMPORTANTE**: No usar `0.0.0.0` en el navegador. Usar siempre `127.0.0.1` o `localhost`.
-
-## Los 10 casos de prueba
-
-Los casos están en `evaluador/casos/`. Cada caso es una foto real de una camiseta sacada de internet (NO es la imagen del catálogo). El archivo `casos.csv` define:
+### Flujo de ejecución
 
 ```
-caso,id_correcto,tipo
-caso-001,AIM-P001-001,persona
-caso-002,AIM-P001-002,persona
-...
-caso-010,AIM-P001-010,dificil
+Terminal 1: API del buscador (puerto 8000)
+         ↓
+Terminal 2: Evaluador (puerto 8001)
+         ↓
+Navegador: http://127.0.0.1:8001
+         ↓
+Caso 1 → Foto de consulta → API devuelve 5 resultados → Usuario califica → Se guarda en CSV
+         ↓
+Caso 2 → ... → Caso 10 → Pantalla de métricas
 ```
 
-| Tipo | Cantidad | Qué significa |
-|---|---|---|
-| `persona` | 3 | Foto con persona usando la camiseta |
-| `producto` | 3 | Foto tipo catálogo/producto |
-| `captura` | 2 | Captura de pantalla o foto informal |
-| `dificil` | 2 | Foto difícil (mala calidad, ángulo raro, etc.) |
+### Cómo se guarda cada clic
 
-## Cómo evaluar
-
-1. Abrir `http://127.0.0.1:8001` en el navegador.
-2. Escribir el nombre de quien evalúa en el campo "Evalúa:" (arriba a la derecha).
-3. Se muestra el caso 1 de 10: la foto de consulta arriba, los resultados abajo.
-4. Para cada resultado, apretar uno de tres botones:
-   - **Acierto**: es el mismo diseño, aunque cambie color, año, escudo o sponsor.
-   - **Sirve**: no es el mismo, pero se lo mostrarías al cliente y lo aceptarías.
-   - **No sirve**: es otro diseño.
-5. Apretar "Siguiente" para pasar al siguiente caso.
-6. El avance se muestra arriba a la derecha: "Caso 7 de 10".
-7. Si se cierra el navegador, al reabrir se retoma donde quedó.
-8. Al terminar todos los casos, sale la pantalla de métricas con Top 1, Top 5 y Utilidad.
-
-## Dónde queda el CSV
-
-Los juicios se guardan en `evaluador/resultados.csv` con columnas:
+Cuando el usuario aprieta un botón (Acierto / Sirve / No sirve), el frontend envía un `POST /api/juicios` al backend. El backend escribe una fila inmediatamente en `resultados.csv`:
 
 ```
 caso, id_correcto, posicion, id_resultado, score, juicio, quien, fecha
-```
-
-Se guarda **al momento del clic**, no al final. Si el navegador se cierra a la mitad, lo evaluado hasta ahí sigue estando.
-
-Ejemplo de fila:
-
-```
 caso-001,AIM-P001-001,1,AIM-P001-001,0.9234,Acierto,Andres y Samir,2026-09-15 14:30:00
 ```
 
-## Las tres métricas
+Si el navegador se cierra, al reabrir se lee el CSV existente y se retoma en el primer caso que tenga juicios pendientes.
 
-| Número | Cómo se calcula |
+### Cómo se calculan las métricas
+
+| Número | Fórmula |
 |---|---|
-| **Top 1** | De todos los casos, en qué porcentaje el resultado de la posición 1 recibió "Acierto". |
-| **Top 5** | De todos los casos, en qué porcentaje hubo un "Acierto" en cualquiera de las 5 posiciones. |
-| **Utilidad** | Promedio de cuántos de los 5 resultados recibieron "Acierto" o "Sirve". Va de 0 a 5. |
+| **Top 1** | `casos_con_acierto_en_posicion_1 / total_casos * 100` |
+| **Top 5** | `casos_con_algun_acierto_en_5_posiciones / total_casos * 100` |
+| **Utilidad** | `suma_de_resultados_utiles_entre_todos_los_casos / total_casos` |
 
-Los tres números también se dividen por **tipo de foto** (persona, producto, captura, difícil). Esa división es la que dice dónde falla el buscador, y es la parte más útil de todo el trabajo.
+Donde "resultado útil" = recibió "Acierto" o "Sirve".
 
-### Ver métricas
+Los tres números se dividen por tipo de foto (persona, producto, captura, difícil) para identificar dónde falla el buscador.
 
-```powershell
-# Opción 1: desde el backend (API)
-try { (Invoke-WebRequest -Uri "http://127.0.0.1:8001/api/estadisticas" -UseBasicParsing).Content } catch { "Error" }
+---
 
-# Opción 2: script standalone
-python evaluador\metricas.py
+## La API del buscador (qué ya existía)
 
-# Opción 3: con ruta custom
-python evaluador\metricas.py --csv evaluador\resultados.csv
-```
+| Endpoint | Qué devuelve |
+|---|---|
+| `GET /health` | JSON con `products`, `embeddings`, `model` |
+| `POST /search/image` | Top 5 con `id`, `nombre`, `imagen`, `url`, `score` |
+
+El evaluador solo consume estos dos endpoints. No toca embeddings, products.csv, ni el motor de búsqueda.
+
+---
+
+## Los 10 casos de prueba
+
+| Caso | ID correcto | Tipo |
+|---|---|---|
+| caso-001 | AIM-P001-001 | persona |
+| caso-002 | AIM-P001-002 | persona |
+| caso-003 | AIM-P001-003 | persona |
+| caso-004 | AIM-P001-004 | producto |
+| caso-005 | AIM-P001-005 | producto |
+| caso-006 | AIM-P001-006 | producto |
+| caso-007 | AIM-P001-007 | captura |
+| caso-008 | AIM-P001-008 | captura |
+| caso-009 | AIM-P001-009 | dificil |
+| caso-010 | AIM-P001-010 | dificil |
+
+Las imágenes son fotos reales de internet, NO son las imágenes del catálogo. La foto no puede ser la imagen del catálogo porque si la pregunta y la respuesta son la misma imagen, la medición no vale nada.
+
+---
 
 ## Endpoints del backend
 
 | Endpoint | Método | Qué hace |
 |---|---|---|
-| `/` | GET | Sirve el frontend (index.html, app.js, styles.css) |
+| `/` | GET | Sirve el frontend |
 | `/health` | GET | Proxy a la API principal |
 | `/api/casos` | GET | Lista los 10 casos |
 | `/api/casos/{n}` | GET | Caso N + resultados del buscador |
@@ -164,54 +179,43 @@ python evaluador\metricas.py --csv evaluador\resultados.csv
 | `/api/resultados` | GET | Exporta resultados.csv |
 | `/api/resultados/csv` | GET | Descarga resultados.csv |
 | `/api/estadisticas` | GET | Calcula Top 1, Top 5, Utilidad |
-| `/api/imagen/{nombre}` | GET | Sirve imágenes del catálogo (busca múltiples extensiones) |
+| `/api/imagen/{nombre}` | GET | Sirve imágenes del catálogo |
 | `/api/caso-imagen/{nombre}` | GET | Sirve fotos de consulta de los casos |
 | `/api/reset` | POST | Limpia resultados.csv para re-evaluar |
 
-## Reglas importantes
+---
 
-- **[Nunca]** No tocar el buscador ni el índice. Ni los embeddings, ni products.csv, ni el motor de búsqueda. La herramienta solo consume la API.
-- **[Nunca]** No inventar casos con imágenes del propio catálogo. Es el error que ya arruinó la evaluación anterior.
-- **[Con IA]** Se usó IA y se anotó cada prompt en `AI_LOG.md`.
-- **[Si se traban]** Más de 40 minutos atascados en lo mismo: escribir al coordinador.
+## Cómo levantar
 
-## Verificación (cómo la revisa el coordinador)
+```powershell
+# Terminal 1 — API del buscador
+cd C:\Users\SAMIR\RAG-V2
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 
-El coordinador va a hacer exactamente esto, delante de ustedes:
+# Terminal 2 — Evaluador
+cd C:\Users\SAMIR\RAG-V2
+python evaluador\backend\server.py
 
-1. Seguir solo este README, sin preguntar nada.
-2. Levantar la API y el evaluador.
-3. Cargar los 10 casos y evaluarlos apretando botones.
-4. Cerrar el navegador a la mitad y reabrir. Lo evaluado debe seguir.
-5. Abrir `resultados.csv` y ver filas completas sin duplicados.
-6. Ver los tres números, en total y por tipo de foto.
-7. En la pantalla final, apretar "Volver a empezar" y verificar que se puede re-evaluar.
-8. Preguntar a cada uno de los dos, por separado, cómo se calcula el Top 5. Si uno de los dos no lo sabe explicar, la pareja no aprueba aunque el código funcione.
+# Navegador
+http://127.0.0.1:8001
+```
 
-## Solución de problemas
+---
 
-| Problema | Solución |
-|---|---|
-| El evaluador no carga resultados | Verificar que la API del buscador esté corriendo en puerto 8000 |
-| Las imágenes no se ven | Hacer Ctrl+F5 para limpiar caché del navegador |
-| "Error de conexión" en la pantalla | La API no está levantada. Levantar con `python -m uvicorn api.main:app --port 8000` |
-| El CSV sale vacío | Verificar que los juicios se guardaron (reabrir el navegador y revisar) |
-| No se puede re-evaluar | Usar el botón "Volver a empezar" en la pantalla final, o borrar `resultados.csv` manualmente |
+## Reglas del proyecto
 
-## Informe diario
+- **[Nunca]** No tocar el buscador ni el índice. Solo consumir la API.
+- **[Nunca]** No inventar casos con imágenes del catálogo.
+- **[Con IA]** Usar IA todo lo que se quiera, anotar cada prompt en `AI_LOG.md`. Ambos integrantes deben poder explicar cada parte del código.
+- **[Si se traban]** Más de 40 minutos atascados: escribir al coordinador.
 
-Al final de cada día, cuatro líneas al grupo:
+---
 
-1. Qué quedó funcionando hoy.
-2. Qué no salió y por qué.
-3. Cuánto tiempo se fue en lo que más costó.
-4. Qué necesitan de otro para poder seguir mañana.
+## Próximos pasos
 
-## Qué sigue después
+Si la herramienta funciona el lunes: entran los 180 casos de los diseñadores y sale el primer número honesto del proyecto.
 
-Si la herramienta funciona el lunes: entran los 180 casos de los diseñadores y sale el primer número honesto del proyecto. Esa medición decide todo lo que viene después.
+- Si el número sale sobre 70%: el motor sirve. Siguiente paso: meterle los diseños propios de Sublitex.
+- Si sale bajo 50%: el motor no está listo. Siguiente paso: arreglarlo con la ventaja de que ya tenemos una forma de saber si lo estamos mejorando.
 
-- Si el número sale sobre 70%: el motor sirve. Lo siguiente es meterle los diseños propios de Sublitex.
-- Si sale bajo 50%: el motor no está listo, y lo siguiente es arreglarlo — con la ventaja de que ya tenemos una forma de saber si lo estamos mejorando o solo moviendo.
-
-Esta herramienta no se tira nunca. Cada vez que alguien toque el buscador, se vuelve a pasar el examen con ella. Es el instrumento de medida del proyecto, y por eso importa más que sea confiable a que sea bonita.
+Esta herramienta no se tira nunca. Es el instrumento de medida del proyecto.
