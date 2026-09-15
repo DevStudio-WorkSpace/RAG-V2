@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import ModelSelect, { MODELO_DEFAULT, ModelKey, modeloDetalle } from "../components/ModelSelect";
 import "./search10.css";
 
 const API_URL = "http://localhost:8400";
@@ -58,6 +59,7 @@ export default function Search10Entrenar() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [guardandoId, setGuardandoId] = useState<string | null>(null);
+  const [modelo, setModelo] = useState<ModelKey>(MODELO_DEFAULT);
 
   const cargarFeedback = useCallback(async () => {
     try {
@@ -94,7 +96,7 @@ export default function Search10Entrenar() {
         const res = await fetch(`${API_URL}/search10/buscar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imagen: nombre, modelo: "clip", top_k: 5 }),
+          body: JSON.stringify({ imagen: nombre, modelo, top_k: 5 }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "La API respondió con error.");
@@ -189,11 +191,14 @@ export default function Search10Entrenar() {
           <p className="eyebrow">Search-10 · Entrenamiento</p>
           <h1>Ranking real con retroalimentación</h1>
         </div>
-        <div className="status-box">
-          <span className="status-dot" />
-          {totalJuicios === 0
-            ? "Sin feedback guardado"
-            : `${totalJuicios} juicios persistidos`}
+        <div className="topbar-actions">
+          <ModelSelect value={modelo} onChange={setModelo} />
+          <div className="status-box">
+            <span className="status-dot" />
+            {totalJuicios === 0
+              ? "Sin feedback guardado"
+              : `${totalJuicios} juicios persistidos`}
+          </div>
         </div>
       </header>
 
@@ -268,6 +273,9 @@ export default function Search10Entrenar() {
               </div>
 
               <div className="s10-meta-row">
+                <p className="s10-meta">
+                  Modelo: <b>{modeloDetalle(modelo).label}</b> · {modeloDetalle(modelo).detail}
+                </p>
                 {excluidosCount > 0 && (
                   <p className="hidden-note">
                     ❌ Excluidos por feedback previo para <b>{selected}</b>:{" "}

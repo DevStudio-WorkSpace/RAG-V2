@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import ModelSelect, { MODELO_DEFAULT, ModelKey, modeloDetalle } from "./components/ModelSelect";
 
 const CASE_TOTAL = 10;
 const API_URL = "http://localhost:8000";
@@ -71,6 +72,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("Sin búsqueda");
   const [queryId, setQueryId] = useState<string>("");
+  const [modelo, setModelo] = useState<ModelKey>(MODELO_DEFAULT);
   const [veredictos, setVeredictos] = useState<Record<string, Veredicto>>(leerVeredictosGuardados);
   const [guardandoId, setGuardandoId] = useState<string | null>(null);
 
@@ -152,7 +154,7 @@ export default function Home() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("modo", "auto");
-    formData.append("modelo", "clip");
+    formData.append("modelo", modelo);
 
     try {
       const response = await fetch(`${API_URL}/search/image`, {
@@ -168,7 +170,8 @@ export default function Home() {
       const nextResults = Array.isArray(data?.resultados) ? data.resultados : [];
       setResults(nextResults);
       if (data?.query_id) setQueryId(data.query_id);
-      setStatus(`Top 5 · ${data?.modelo || "clip"}`);
+      const usado = modeloDetalle((data?.modelo as string) || modelo).label;
+      setStatus(`Top 5 · ${usado}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo buscar.");
       setResults([]);
@@ -219,8 +222,7 @@ export default function Home() {
               <span>Modo</span>
               <strong>auto</strong>
               <span>•</span>
-              <span>Modelo</span>
-              <strong>clip</strong>
+              <ModelSelect value={modelo} onChange={setModelo} />
             </div>
           </div>
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Search10Entrenar from "../search10/Search10Entrenar";
+import { MODELO_DEFAULT } from "../components/ModelSelect";
 import "./evaluacion.css";
 
 const API_URL = "http://localhost:8000";
@@ -28,12 +29,6 @@ type CasoMeta = {
   tipo: string;
   juicios: Juicios;
   evaluado: boolean;
-};
-
-const JUICIO_LABEL: Record<string, string> = {
-  acierto: "Acierto",
-  sirve: "Sirve",
-  no_sirve: "No sirve",
 };
 
 const JUICIOS = [
@@ -67,46 +62,43 @@ export default function Evaluacion() {
 
   const pending = useMemo(() => casos.filter((c) => !c.evaluado), [casos]);
 
-  const cargarCaso = useCallback(
-    async (meta: CasoMeta) => {
-      setCurrent(meta);
-      setError(null);
+  const cargarCaso = useCallback(async (meta: CasoMeta) => {
+    setCurrent(meta);
+    setError(null);
 
-      if (cacheRef.current[meta.caso]) {
-        setResults(cacheRef.current[meta.caso]);
-        setLoading(false);
-        return;
-      }
+    if (cacheRef.current[meta.caso]) {
+      setResults(cacheRef.current[meta.caso]);
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
-      const formData = new FormData();
-      const blob = await fetch(meta.imagen_url).then((r) => r.blob());
-      formData.append("file", blob, meta.archivo);
-      formData.append("modo", "auto");
-      formData.append("modelo", "clip");
+    setLoading(true);
+    const formData = new FormData();
+    const blob = await fetch(meta.imagen_url).then((r) => r.blob());
+    formData.append("file", blob, meta.archivo);
+    formData.append("modo", "auto");
+    formData.append("modelo", MODELO_DEFAULT);
 
-      try {
-        const res = await fetch(`${API_URL}/search/image`, {
-          method: "POST",
-          body: formData,
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "La API respondió con error.");
+    try {
+      const res = await fetch(`${API_URL}/search/image`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "La API respondió con error.");
 
-        const nextResults = Array.isArray(data?.resultados)
-          ? data.resultados.slice(0, 5)
-          : [];
-        cacheRef.current[meta.caso] = nextResults;
-        setResults(nextResults);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "No se pudo buscar este caso.");
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+      const nextResults = Array.isArray(data?.resultados)
+        ? data.resultados.slice(0, 5)
+        : [];
+      cacheRef.current[meta.caso] = nextResults;
+      setResults(nextResults);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo buscar este caso.");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const guardado = localStorage.getItem("evaluador_quien");
@@ -248,8 +240,13 @@ export default function Evaluacion() {
             />
           </label>
 
+          <div className="eval-model-badge">
+            <span>Modelo fijo</span>
+            <strong>Fusión (CLIP + OpenCLIP + SigLIP)</strong>
+          </div>
+
           <div className="legend">
-            <span className="legend-item"><b>Acierto</b> es el mismo diseño (aunque cambie color/año/escudo/sponsor)</span>
+            <span className="legend-item"><b>Acierto</b> es el mismo diseño</span>
             <span className="legend-item"><b>Sirve</b> no es el mismo, pero lo aceptaría un cliente</span>
             <span className="legend-item"><b>No sirve</b> es otro diseño</span>
           </div>
@@ -260,10 +257,7 @@ export default function Evaluacion() {
         {terminado ? (
           <section className="eval-done">
             <h2>¡Los {casos.length} casos ya están evaluados!</h2>
-            <p>
-              Las filas quedaron guardadas en <code>evaluador/resultados.csv</code>.
-              Para ver las métricas, corres el script de métricas sobre ese archivo.
-            </p>
+            <p>Las filas quedaron guardadas en <code>evaluador/resultados.csv</code>.</p>
           </section>
         ) : current ? (
           <>
@@ -338,7 +332,7 @@ export default function Evaluacion() {
 
               <div className="eval-nav">
                 <span className="eval-progress">
-                  {Object.keys(current.juicios).length}/{results.length || 5} resultados de este caso
+                  {Object.keys(current.juicios).length}/{results.length || 5} resultados
                 </span>
                 <button className="next-button" onClick={irAlSiguiente} disabled={nroCaso + 1 >= pending.length}>
                   Siguiente →
