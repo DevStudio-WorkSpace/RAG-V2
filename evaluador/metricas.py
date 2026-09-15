@@ -1,20 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-metricas.py — Calculo de metricas del Evaluador (Ficha 03-A)
-==============================================================
-Lee resultados.csv y calcula:
-
-  Top 1:    % de casos donde el resultado en posicion 1 recibio "Acierto".
-  Top 5:    % de casos donde hubo un "Acierto" en cualquiera de las 5 posiciones.
-  Utilidad: promedio de cuantos de los 5 resultados fueron "Acierto" o "Sirve" (0-5).
-
-Tambien desglosa por tipo de foto (persona, producto, captura, dificil).
-
-Uso:
-    python evaluador/metricas.py
-    python evaluador/metricas.py --csv ruta/resultados.csv
-"""
-
 import csv
 import os
 import sys
