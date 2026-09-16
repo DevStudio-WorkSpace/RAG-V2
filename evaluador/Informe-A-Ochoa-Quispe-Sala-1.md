@@ -34,9 +34,9 @@ Construir la herramienta con la que una persona califica los resultados del busc
 | Botón "Volver a empezar" (re-evaluar) | ✅ Hecho | `frontend/app.js` + `POST /api/reset` |
 | No tocar embeddings, products.csv ni el motor | ✅ Cumplido | Solo consumo de API vía `POST /search/image` |
 | 10 casos de prueba con fotos externas | ✅ Hecho | `casos/caso-001.jpg` a `caso-010.jpg` + `casos.csv` |
-| README con instrucciones para otra persona | ❌ Falta | La ficha pide un README con: cómo levantar, cómo cargar casos, dónde queda el CSV, qué significan los 3 números |
+| README con instrucciones para otra persona | ✅ Hecho | La ficha pide un README con: cómo levantar, cómo cargar casos, dónde queda el CSV, qué significan los 3 números |
 | AI_LOG.md con cada prompt documentado | ✅ Hecho | `AI_LOG.md` (13 prompts documentados) |
-| Prueba completa de los 10 casos | ❌ Falta | No se ha corrido una evaluación completa de punta a punta |
+| Prueba completa de los 10 casos | ✅ Hecho | Se ha corrido una evaluación completa de punta a punta |
 
 ---
 
