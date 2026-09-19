@@ -1,116 +1,74 @@
 {
   "cases": [
     {
-      "id_caso": "c03_cuerpo",
-      "descripcion": "Cuerpo persona - caso c03",
-      "id_correcto": "AIM-P056-001",
+      "id_caso": "C_01",
+      "descripcion": "Cuerpo persona - caso C_01",
+      "id_correcto": "AIM-P001-021",
       "tipo": "cuerpo",
-      "imagen": "c03_cuerpo.jpeg"
+      "imagen": "C_01.jpg"
     },
     {
-      "id_caso": "c03_exacto",
-      "descripcion": "Imagen exacta - caso c03",
-      "id_correcto": "AIM-P056-001",
-      "tipo": "exacta",
-      "imagen": "c03_exacto.jpg"
-    },
-    {
-      "id_caso": "c03_recoloreado",
-      "descripcion": "Recoloreada - caso c03",
-      "id_correcto": "AIM-P056-001",
-      "tipo": "recoloreada",
-      "imagen": "c03_recoloreado.jpeg"
-    },
-    {
-      "id_caso": "c03_recorte",
-      "descripcion": "Recorte parcial - caso c03",
-      "id_correcto": "AIM-P056-001",
-      "tipo": "recortada",
-      "imagen": "c03_recorte.jpg"
-    },
-    {
-      "id_caso": "c04_cuerpo",
-      "descripcion": "Cuerpo persona - caso c04",
-      "id_correcto": "AIM-P076-004",
+      "id_caso": "C_02",
+      "descripcion": "Cuerpo persona - caso C_02",
+      "id_correcto": "AIM-P012-025",
       "tipo": "cuerpo",
-      "imagen": "c04_cuerpo.jpeg"
+      "imagen": "C_02.jpg"
     },
     {
-      "id_caso": "c04_exacto",
-      "descripcion": "Imagen exacta - caso c04",
-      "id_correcto": "AIM-P076-004",
-      "tipo": "exacta",
-      "imagen": "c04_exacto.jpg"
-    },
-    {
-      "id_caso": "c04_recoloreado",
-      "descripcion": "Recoloreada - caso c04",
-      "id_correcto": "AIM-P076-004",
-      "tipo": "recoloreada",
-      "imagen": "c04_recoloreado.jpeg"
-    },
-    {
-      "id_caso": "c04_recorte",
-      "descripcion": "Recorte parcial - caso c04",
-      "id_correcto": "AIM-P076-004",
-      "tipo": "recortada",
-      "imagen": "c04_recorte.jpg"
-    },
-    {
-      "id_caso": "c10_cuerpo",
-      "descripcion": "Cuerpo persona - caso c10",
-      "id_correcto": "AIM-P148-015",
+      "id_caso": "C_03",
+      "descripcion": "Cuerpo persona - caso C_03",
+      "id_correcto": "AIM-P023-006",
       "tipo": "cuerpo",
-      "imagen": "c10_cuerpo.jpeg"
+      "imagen": "C_03.jpg"
     },
     {
-      "id_caso": "c10_exacto",
-      "descripcion": "Imagen exacta - caso c10",
-      "id_correcto": "AIM-P148-015",
-      "tipo": "exacta",
-      "imagen": "c10_exacto.jpg"
-    },
-    {
-      "id_caso": "c10_recoloreado",
-      "descripcion": "Recoloreada - caso c10",
-      "id_correcto": "AIM-P148-015",
-      "tipo": "recoloreada",
-      "imagen": "c10_recoloreado.jpeg"
-    },
-    {
-      "id_caso": "c10_recorte",
-      "descripcion": "Recorte parcial - caso c10",
-      "id_correcto": "AIM-P148-015",
-      "tipo": "recortada",
-      "imagen": "c10_recorte.jpg"
-    },
-    {
-      "id_caso": "c14_cuerpo",
-      "descripcion": "Cuerpo persona - caso c14",
-      "id_correcto": "AIM-P065-046",
+      "id_caso": "C_04",
+      "descripcion": "Cuerpo persona - caso C_04",
+      "id_correcto": "AIM-P013-041",
       "tipo": "cuerpo",
-      "imagen": "c14_cuerpo.jpeg"
+      "imagen": "C_04.jpg"
     },
     {
-      "id_caso": "c14_exacto",
-      "descripcion": "Imagen exacta - caso c14",
-      "id_correcto": "AIM-P065-046",
-      "tipo": "exacta",
-      "imagen": "c14_exacto.jpg"
+      "id_caso": "C_05",
+      "descripcion": "Cuerpo persona - caso C_05",
+      "id_correcto": "AIM-P004-031",
+      "tipo": "cuerpo",
+      "imagen": "C_05.jpg"
     },
     {
-      "id_caso": "c14_recoloreado",
-      "descripcion": "Recoloreada - caso c14",
-      "id_correcto": "AIM-P065-046",
-      "tipo": "recoloreada",
-      "imagen": "c14_recoloreado.jpeg"
+      "id_caso": "C_06",
+      "descripcion": "Cuerpo persona - caso C_06",
+      "id_correcto": "AIM-P255-024",
+      "tipo": "cuerpo",
+      "imagen": "C_06.jpg"
     },
     {
-      "id_caso": "c14_recorte",
-      "descripcion": "Recorte parcial - caso c14",
-      "id_correcto": "AIM-P065-046",
-      "tipo": "recortada",
-      "imagen": "c14_recorte.jpg"
+      "id_caso": "C_07",
+      "descripcion": "Cuerpo persona - caso C_07",
+      "id_correcto": "AIM-P255-023",
+      "tipo": "cuerpo",
+      "imagen": "C_07.jpg"
+    },
+    {
+      "id_caso": "C_08",
+      "descripcion": "Cuerpo persona - caso C_08",
+      "id_correcto": "AIM-P254-005",
+      "tipo": "cuerpo",
+      "imagen": "C_08.jpg"
+    },
+    {
+      "id_caso": "C_09",
+      "descripcion": "Cuerpo persona - caso C_09",
+      "id_correcto": "AIM-P252-057",
+      "tipo": "cuerpo",
+      "imagen": "C_09"
+    },
+    {
+      "id_caso": "C_10",
+      "descripcion": "Cuerpo persona - caso C_10",
+      "id_correcto": "AIM-P247-013",
+      "tipo": "cuerpo",
+      "imagen": "C_10.jpg"
     }
   ]
 }
