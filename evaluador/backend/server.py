@@ -272,7 +272,7 @@ def obtener_caso(n: int):
     try:
         with open(ruta_imagen, "rb") as img_file:
             files = {"file": (ruta_imagen.name, img_file, "image/jpeg")}
-            data = {"modo": "auto", "modelo": "clip"}
+            data = {"modo": "legacy", "modelo": "clip"}
             resp = requests.post(
                 f"{API_BASE_URL}/search/image",
                 files=files,
@@ -281,7 +281,11 @@ def obtener_caso(n: int):
             )
             if resp.status_code == 200:
                 api_data = resp.json()
-                resultados_busqueda = api_data.get("resultados", [])
+                # legacy devuelve lista directa; auto/completo devuelve dict
+                if isinstance(api_data, list):
+                    resultados_busqueda = api_data
+                else:
+                    resultados_busqueda = api_data.get("resultados", [])
                 api_ok = True
             else:
                 error_api = f"API respondio {resp.status_code}: {resp.text[:200]}"
