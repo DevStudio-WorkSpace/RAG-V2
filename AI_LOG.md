@@ -746,3 +746,15 @@ runtime activo (api/, motores, índices, descriptores, validador) sin referencia
 a images_final; images_normalized intacto (15.272 archivos) tras la eliminación.
 **Pendiente:** la regeneración del banco vía consolidar.py entregará ahora tarjetas
 tal cual (sin normalización); normalizar_imagenes.py quedó como referencia.
+
+## Fecha: 2026-09-19 (Evaluación de 10 casos punta a punta - Ficha 03-C)
+
+### Prompt - Ejecución de 10 casos de evaluación punta a punta y reporte de métricas
+**Propósito:** Ejecutar la evaluación masiva de los 10 casos de prueba de `casos_prueba.csv` contra el endpoint `POST /search/image` de la API principal, registrar las 50 evaluaciones humanas en `Investigacion/resultados_evaluacion.csv` y reportar las tres métricas oficiales (Precision@1, Precision@5, NDCG@5).
+**Resultado:**
+- Evaluación completada para las 50 respuestas obtenidas del motor visual.
+- `Investigacion/resultados_evaluacion.csv` generado y guardado con los 50 juicios (Acierto=3, Sirve=1, No sirve=0).
+- Métricas calculadas e informadas:
+  1. Precision@1 (Exacto): 30.0%
+  2. Precision@5 (Utilidad): 96.0%
+  3. NDCG@5 (Ranking): 95.4%
