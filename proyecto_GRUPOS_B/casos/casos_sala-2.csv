@@ -1,0 +1,11 @@
+caso_id,foto,tipo,id_correcto
+caso_01,01.jpg,sin_marco,AIM-P001-007
+caso_02,02.jpg,sin_marco,AIM-P001-010
+caso_03,03.jpg,con_marco,AIM-P001-024
+caso_04,04.jpg,sin_marco,AIM-P001-035
+caso_05,05.jpg,sin_marco,AIM-P001-036
+caso_06,06.jpg,sin_marco,AIM-P001-039
+caso_07,07.jpg,con_marco,AIM-P001-042
+caso_08,08.jpg,con_marco,AIM-P001-045
+caso_09,09.jpg,con_marco,AIM-P001-052
+caso_10,10.jpg,sin_marco,AIM-P001-058
