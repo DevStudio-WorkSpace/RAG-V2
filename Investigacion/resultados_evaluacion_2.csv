@@ -1,0 +1,51 @@
+caso_imagen,id_correcto,resultado_id,posicion,juicio,puntos
+../data/consultas/C_01.jpg,DESCONOCIDO,AIM-P033-029,1,Sirve,1
+../data/consultas/C_01.jpg,DESCONOCIDO,AIM-P042-050,2,Acierto,3
+../data/consultas/C_01.jpg,DESCONOCIDO,AIM-P187-060,3,Sirve,1
+../data/consultas/C_01.jpg,DESCONOCIDO,AIM-P246-042,4,Acierto,3
+../data/consultas/C_01.jpg,DESCONOCIDO,AIM-P121-019,5,Acierto,3
+../data/consultas/C_02.jpg,DESCONOCIDO,AIM-P119-016,1,Acierto,3
+../data/consultas/C_02.jpg,DESCONOCIDO,AIM-P067-009,2,Sirve,1
+../data/consultas/C_02.jpg,DESCONOCIDO,AIM-P062-004,3,No sirve,0
+../data/consultas/C_02.jpg,DESCONOCIDO,AIM-P236-012,4,Sirve,1
+../data/consultas/C_02.jpg,DESCONOCIDO,AIM-P088-034,5,Acierto,3
+../data/consultas/C_03.jpg,DESCONOCIDO,AIM-P023-006,1,Acierto,3
+../data/consultas/C_03.jpg,DESCONOCIDO,AIM-P201-021,2,Sirve,1
+../data/consultas/C_03.jpg,DESCONOCIDO,AIM-P134-014,3,No sirve,0
+../data/consultas/C_03.jpg,DESCONOCIDO,AIM-P231-001,4,Sirve,1
+../data/consultas/C_03.jpg,DESCONOCIDO,AIM-P124-005,5,Sirve,1
+../data/consultas/C_04.jpg,DESCONOCIDO,AIM-P098-008,1,Acierto,3
+../data/consultas/C_04.jpg,DESCONOCIDO,AIM-P048-037,2,Acierto,3
+../data/consultas/C_04.jpg,DESCONOCIDO,AIM-P144-058,3,Acierto,3
+../data/consultas/C_04.jpg,DESCONOCIDO,AIM-P162-018,4,Sirve,1
+../data/consultas/C_04.jpg,DESCONOCIDO,AIM-P077-054,5,Acierto,3
+../data/consultas/C_05.jpg,DESCONOCIDO,AIM-P005-013,1,No sirve,0
+../data/consultas/C_05.jpg,DESCONOCIDO,AIM-P179-027,2,No sirve,0
+../data/consultas/C_05.jpg,DESCONOCIDO,AIM-P088-043,3,No sirve,0
+../data/consultas/C_05.jpg,DESCONOCIDO,AIM-P071-060,4,No sirve,0
+../data/consultas/C_05.jpg,DESCONOCIDO,AIM-P155-051,5,No sirve,0
+../data/consultas/C_06.jpg,DESCONOCIDO,AIM-P134-014,1,Acierto,3
+../data/consultas/C_06.jpg,DESCONOCIDO,AIM-P247-034,2,Sirve,1
+../data/consultas/C_06.jpg,DESCONOCIDO,AIM-P130-017,3,Acierto,3
+../data/consultas/C_06.jpg,DESCONOCIDO,AIM-P134-013,4,Acierto,3
+../data/consultas/C_06.jpg,DESCONOCIDO,AIM-P247-012,5,Acierto,3
+../data/consultas/C_07.jpg,DESCONOCIDO,AIM-P247-034,1,No sirve,0
+../data/consultas/C_07.jpg,DESCONOCIDO,AIM-P130-017,2,No sirve,0
+../data/consultas/C_07.jpg,DESCONOCIDO,AIM-P182-053,3,No sirve,0
+../data/consultas/C_07.jpg,DESCONOCIDO,AIM-P134-014,4,No sirve,0
+../data/consultas/C_07.jpg,DESCONOCIDO,AIM-P206-024,5,No sirve,0
+../data/consultas/C_08.jpg,DESCONOCIDO,AIM-P044-048,1,Sirve,1
+../data/consultas/C_08.jpg,DESCONOCIDO,AIM-P155-051,2,No sirve,0
+../data/consultas/C_08.jpg,DESCONOCIDO,AIM-P123-056,3,No sirve,0
+../data/consultas/C_08.jpg,DESCONOCIDO,AIM-P068-046,4,No sirve,0
+../data/consultas/C_08.jpg,DESCONOCIDO,AIM-P079-051,5,No sirve,0
+../data/consultas/C_09.jpg,DESCONOCIDO,AIM-P008-027,1,Acierto,3
+../data/consultas/C_09.jpg,DESCONOCIDO,AIM-P027-009,2,Acierto,3
+../data/consultas/C_09.jpg,DESCONOCIDO,AIM-P017-057,3,Acierto,3
+../data/consultas/C_09.jpg,DESCONOCIDO,AIM-P173-004,4,Sirve,1
+../data/consultas/C_09.jpg,DESCONOCIDO,AIM-P013-050,5,Acierto,3
+../data/consultas/C_10.jpg,DESCONOCIDO,AIM-P244-060,1,Acierto,3
+../data/consultas/C_10.jpg,DESCONOCIDO,AIM-P117-010,2,Acierto,3
+../data/consultas/C_10.jpg,DESCONOCIDO,AIM-P201-049,3,Sirve,1
+../data/consultas/C_10.jpg,DESCONOCIDO,AIM-P132-034,4,Acierto,3
+../data/consultas/C_10.jpg,DESCONOCIDO,AIM-P168-043,5,Acierto,3
