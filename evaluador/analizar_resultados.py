@@ -1,296 +1,199 @@
-import csv
-from collections import Counter, defaultdict
-from pathlib import Path
+import pandas as pd
+import os
 
-BASE_DIR = Path(__file__).resolve().parent
-CSV_PATH = BASE_DIR / "resultados.csv"
+# ==========================================
+# RUTA DEL CSV
+# ==========================================
 
-# -----------------------------------------------------
-# COMPROBAR ARCHIVO
-# -----------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ARCHIVO_CSV = os.path.join(BASE_DIR, "resultados.csv")
 
-if not CSV_PATH.exists():
-    print("ERROR: No se encontró resultados.csv")
-    raise SystemExit
 
-resultados = []
+# ==========================================
+# VERIFICAR ARCHIVO
+# ==========================================
 
-# -----------------------------------------------------
-# LEER CSV
-# -----------------------------------------------------
+if not os.path.exists(ARCHIVO_CSV):
+    print("❌ No se encontró resultados.csv")
+    exit()
 
-with open(CSV_PATH, "r", encoding="utf-8-sig", newline="") as archivo:
-    lector = csv.DictReader(archivo)
 
-    if lector.fieldnames is None:
-        print("ERROR: El CSV no tiene encabezados.")
-        raise SystemExit
+# ==========================================
+# LEER RESULTADOS
+# ==========================================
 
-    # Limpiar encabezados
-    lector.fieldnames = [
-        campo.strip().replace("*", "").replace("\\", "")
-        for campo in lector.fieldnames
-    ]
+df = pd.read_csv(ARCHIVO_CSV)
 
-    print("Columnas detectadas:", lector.fieldnames)
+if df.empty:
+    print("❌ El archivo resultados.csv está vacío.")
+    exit()
 
-    for fila in lector:
-        # Limpiar claves
-        fila = {
-            clave.strip().replace("*", "").replace("\\", ""): valor
-            for clave, valor in fila.items()
-            if clave is not None
-        }
 
-        if not fila.get("consulta"):
-            continue
+# ==========================================
+# DATOS GENERALES
+# ==========================================
 
-        resultados.append({
-            "fecha": fila.get("fecha", ""),
-            "consulta": fila.get("consulta", ""),
-            "resultado_id": fila.get("resultado_id", ""),
-            "nombre": fila.get("nombre", ""),
-            "posicion": int(fila.get("posicion", 0)),
-            "score": float(fila.get("score", 0)),
-            "evaluacion": fila.get("evaluacion", "").strip(),
-        })
+total_casos = df["consulta"].nunique()
+total_resultados = len(df)
 
-if not resultados:
-    print("ERROR: No se encontraron evaluaciones.")
-    raise SystemExit
+aciertos = len(df[df["evaluacion"] == "Acierto"])
+sirve = len(df[df["evaluacion"] == "Sirve"])
+no_sirve = len(df[df["evaluacion"] == "No sirve"])
 
-# -----------------------------------------------------
-# AGRUPAR POR CASO
-# -----------------------------------------------------
 
-casos = defaultdict(list)
+# ==========================================
+# PORCENTAJES
+# ==========================================
 
-for resultado in resultados:
-    casos[resultado["consulta"]].append(resultado)
+porcentaje_aciertos = (
+    aciertos / total_resultados
+) * 100
 
-# -----------------------------------------------------
-# CONTEO DE EVALUACIONES
-# -----------------------------------------------------
+porcentaje_sirve = (
+    sirve / total_resultados
+) * 100
 
-conteo = Counter(
-    resultado["evaluacion"]
-    for resultado in resultados
+porcentaje_no_sirve = (
+    no_sirve / total_resultados
+) * 100
+
+
+# ==========================================
+# TOP-5 ACCURACY
+#
+# Un caso cuenta como correcto si al menos
+# un resultado fue marcado como "Acierto".
+# ==========================================
+
+casos_con_acierto = (
+    df[df["evaluacion"] == "Acierto"]["consulta"]
+    .nunique()
 )
-
-aciertos = conteo.get("Acierto", 0)
-sirve = conteo.get("Sirve", 0)
-no_sirve = conteo.get("No sirve", 0)
-
-total_casos = len(casos)
-total_resultados = len(resultados)
-
-# -----------------------------------------------------
-# ANALIZAR ACIERTOS POR CASO
-# -----------------------------------------------------
-
-casos_con_acierto = 0
-posiciones_aciertos = []
-reciprocal_ranks = []
-
-detalle_casos = []
-
-for nombre_caso in sorted(casos.keys()):
-
-    lista = casos[nombre_caso]
-
-    encontrados = [
-        resultado
-        for resultado in lista
-        if resultado["evaluacion"] == "Acierto"
-    ]
-
-    if encontrados:
-
-        mejor = min(
-            encontrados,
-            key=lambda x: x["posicion"]
-        )
-
-        casos_con_acierto += 1
-
-        posiciones_aciertos.append(
-            mejor["posicion"]
-        )
-
-        reciprocal_ranks.append(
-            1 / mejor["posicion"]
-        )
-
-        detalle_casos.append({
-            "caso": nombre_caso,
-            "estado": "ACIERTO",
-            "posicion": mejor["posicion"],
-            "producto": mejor["nombre"],
-            "resultados": len(lista),
-        })
-
-    else:
-
-        reciprocal_ranks.append(0)
-
-        detalle_casos.append({
-            "caso": nombre_caso,
-            "estado": "SIN ACIERTO",
-            "posicion": "-",
-            "producto": "-",
-            "resultados": len(lista),
-        })
-
-casos_sin_acierto = total_casos - casos_con_acierto
-
-# -----------------------------------------------------
-# MÉTRICAS
-# -----------------------------------------------------
 
 top5_accuracy = (
-    casos_con_acierto / total_casos * 100
-    if total_casos
-    else 0
-)
-
-mrr = (
-    sum(reciprocal_ranks) / total_casos
-    if total_casos
-    else 0
-)
-
-posicion_promedio = (
-    sum(posiciones_aciertos)
-    / len(posiciones_aciertos)
-    if posiciones_aciertos
-    else 0
-)
-
-score_promedio = (
-    sum(resultado["score"] for resultado in resultados)
-    / total_resultados
-    if total_resultados
-    else 0
-)
-
-# -----------------------------------------------------
-# SCORES POR EVALUACIÓN
-# -----------------------------------------------------
-
-scores = defaultdict(list)
-
-for resultado in resultados:
-    scores[resultado["evaluacion"]].append(
-        resultado["score"]
-    )
+    casos_con_acierto / total_casos
+) * 100
 
 
-def promedio(valores):
-    if not valores:
-        return 0
+# ==========================================
+# POSICIONES DE LOS ACIERTOS
+# ==========================================
 
-    return sum(valores) / len(valores)
+resultados_acertados = df[
+    df["evaluacion"] == "Acierto"
+][
+    [
+        "consulta",
+        "resultado_id",
+        "nombre",
+        "posicion",
+        "score",
+    ]
+].copy()
+
+resultados_acertados["similitud"] = (
+    resultados_acertados["score"] * 100
+).round(2)
 
 
-# -----------------------------------------------------
-# RESULTADOS
-# -----------------------------------------------------
+# ==========================================
+# MOSTRAR REPORTE
+# ==========================================
 
 print()
-print("=" * 60)
-print("   ANÁLISIS DEL EVALUADOR DEL BUSCADOR VISUAL")
-print("=" * 60)
+print("=" * 55)
+print("       REPORTE DE EVALUACIÓN DEL BUSCADOR")
+print("=" * 55)
 
 print()
-print("1. RESUMEN GENERAL")
-print("-" * 60)
+print("RESUMEN GENERAL")
+print("-" * 55)
 
-print(f"Casos evaluados:          {total_casos}")
-print(f"Resultados evaluados:     {total_resultados}")
-print(f"Aciertos:                 {aciertos}")
-print(f"Sirve:                    {sirve}")
-print(f"No sirve:                 {no_sirve}")
+print(f"Casos evaluados:       {total_casos}")
+print(f"Resultados evaluados:  {total_resultados}")
 
 print()
-print("2. RECUPERACIÓN")
-print("-" * 60)
-
-print(f"Casos con acierto:         {casos_con_acierto}")
-print(f"Casos sin acierto:         {casos_sin_acierto}")
-print(f"Top-5 Accuracy:            {top5_accuracy:.2f}%")
-print(f"MRR:                       {mrr:.4f}")
-print(f"Posición promedio acierto: {posicion_promedio:.2f}")
-
-print()
-print("3. SCORES")
-print("-" * 60)
-
-print(f"Score promedio general:    {score_promedio:.4f}")
-print(f"Score promedio Acierto:    {promedio(scores['Acierto']):.4f}")
-print(f"Score promedio Sirve:      {promedio(scores['Sirve']):.4f}")
-print(f"Score promedio No sirve:   {promedio(scores['No sirve']):.4f}")
-
-print()
-print("4. DETALLE POR CASO")
-print("-" * 60)
-
-for detalle in detalle_casos:
-
-    if detalle["estado"] == "ACIERTO":
-
-        print(
-            f"{detalle['caso']:<15} "
-            f"{detalle['resultados']} resultados | "
-            f"ACIERTO posición {detalle['posicion']} | "
-            f"{detalle['producto']}"
-        )
-
-    else:
-
-        print(
-            f"{detalle['caso']:<15} "
-            f"{detalle['resultados']} resultados | "
-            f"SIN ACIERTO"
-        )
-
-print()
-print("5. CONCLUSIÓN")
-print("-" * 60)
+print("CLASIFICACIÓN HUMANA")
+print("-" * 55)
 
 print(
-    f"El buscador recuperó el producto correcto en "
-    f"{casos_con_acierto} de {total_casos} casos."
+    f"Acierto:   {aciertos:>2} "
+    f"({porcentaje_aciertos:.2f}%)"
 )
 
 print(
-    f"La precisión Top-5 obtenida fue de "
-    f"{top5_accuracy:.2f}%."
+    f"Sirve:     {sirve:>2} "
+    f"({porcentaje_sirve:.2f}%)"
 )
 
-if top5_accuracy >= 80:
+print(
+    f"No sirve:  {no_sirve:>2} "
+    f"({porcentaje_no_sirve:.2f}%)"
+)
 
-    print(
-        "El buscador presenta un rendimiento alto "
-        "en las consultas evaluadas."
-    )
+print()
+print("PRECISIÓN DEL BUSCADOR")
+print("-" * 55)
 
-elif top5_accuracy >= 50:
+print(
+    f"Casos con al menos un acierto: "
+    f"{casos_con_acierto}/{total_casos}"
+)
 
-    print(
-        "El buscador presenta un rendimiento intermedio. "
-        "Recupera correctamente varios productos, pero "
-        "todavía existen casos donde el producto esperado "
-        "no aparece entre los primeros resultados."
-    )
+print(
+    f"Top-5 Accuracy: {top5_accuracy:.2f}%"
+)
+
+print()
+print("POSICIÓN DE LOS ACIERTOS")
+print("-" * 55)
+
+if resultados_acertados.empty:
+
+    print("No se encontraron aciertos.")
 
 else:
 
-    print(
-        "El buscador presenta oportunidades de mejora "
-        "en la recuperación visual."
-    )
+    for _, fila in resultados_acertados.iterrows():
+
+        print(
+            f"{fila['consulta']} -> "
+            f"posición {int(fila['posicion'])} | "
+            f"{fila['nombre']} | "
+            f"{fila['similitud']:.2f}%"
+        )
+
+
+# ==========================================
+# RESULTADO POR CADA CASO
+# ==========================================
 
 print()
-print("=" * 60)
-print("ANÁLISIS FINALIZADO")
-print("=" * 60)
+print("RESULTADO POR CASO")
+print("-" * 55)
+
+for consulta, grupo in df.groupby("consulta"):
+
+    tiene_acierto = (
+        grupo["evaluacion"] == "Acierto"
+    ).any()
+
+    cantidad = len(grupo)
+
+    if tiene_acierto:
+        estado = "ACIERTO EN TOP-5"
+    else:
+        estado = "SIN ACIERTO"
+
+    print(
+        f"{consulta}: "
+        f"{estado} "
+        f"({cantidad} resultados)"
+    )
+
+
+print()
+print("=" * 55)
+print("              FIN DEL REPORTE")
+print("=" * 55)
+print()
