@@ -1,0 +1,74 @@
+{
+  "cases": [
+    {
+      "id_caso": "C_01_Barcelona",
+      "descripcion": "Camiseta - caso C_01_Barcelona",
+      "id_correcto": "AIM-P012-025",
+      "tipo": "camiseta",
+      "imagen": "C_01_Barcelona.jpg"
+    },
+    {
+      "id_caso": "C_02_Real-Madrid",
+      "descripcion": "Camiseta - caso C_02_Real-Madrid",
+      "id_correcto": "AIM-P046-001",
+      "tipo": "camiseta",
+      "imagen": "C_02_Real-Madrid.jpg"
+    },
+    {
+      "id_caso": "C_03_Universitario",
+      "descripcion": "Camiseta - caso C_03_Universitario",
+      "id_correcto": "AIM-P061-038",
+      "tipo": "camiseta",
+      "imagen": "C_03_Universitario.jpg"
+    },
+    {
+      "id_caso": "C_04_Alianza-Lima",
+      "descripcion": "Camiseta - caso C_04_Alianza-Lima",
+      "id_correcto": "AIM-P061-012",
+      "tipo": "camiseta",
+      "imagen": "C_04_Alianza-Lima.jpg"
+    },
+    {
+      "id_caso": "C_05_Sporting-Cristal",
+      "descripcion": "Camiseta - caso C_05_Sporting-Cristal",
+      "id_correcto": "AIM-P069-025",
+      "tipo": "camiseta",
+      "imagen": "C_05_Sporting-Cristal.jpg"
+    },
+    {
+      "id_caso": "C_06_Peru",
+      "descripcion": "Camiseta - caso C_06_Peru",
+      "id_correcto": "AIM-P067-001",
+      "tipo": "camiseta",
+      "imagen": "C_06_Peru.jpg"
+    },
+    {
+      "id_caso": "C_07_Brazil",
+      "descripcion": "Camiseta - caso C_07_Brazil",
+      "id_correcto": "AIM-P077-054",
+      "tipo": "camiseta",
+      "imagen": "C_07_Brazil.jpg"
+    },
+    {
+      "id_caso": "C_08_Argentina",
+      "descripcion": "Camiseta - caso C_08_Argentina",
+      "id_correcto": "AIM-P001-021",
+      "tipo": "camiseta",
+      "imagen": "C_08_Argentina.jpg"
+    },
+    {
+      "id_caso": "C_09_Manchester-City",
+      "descripcion": "Camiseta - caso C_09_Manchester-City",
+      "id_correcto": "AIM-P069-025",
+      "tipo": "camiseta",
+      "imagen": "C_09_Manchester-City.jpg"
+    },
+    {
+      "id_caso": "C_10_AC-Milan",
+      "descripcion": "Camiseta - caso C_01_Barcelona",
+      "id_correcto": "AIM-P255-024",
+      "tipo": "camiseta",
+      "imagen": "C_10_AC-Milan.jpg"
+    }
+  ]
+}
