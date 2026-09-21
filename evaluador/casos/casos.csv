@@ -1,11 +1,15 @@
 caso,id_correcto,tipo
-caso-001,AIM-P001-001,persona
-caso-002,AIM-P001-002,persona
-caso-003,AIM-P001-003,persona
-caso-004,AIM-P001-004,producto
-caso-005,AIM-P001-005,producto
-caso-006,AIM-P001-006,producto
-caso-007,AIM-P001-007,captura
-caso-008,AIM-P001-008,captura
-caso-009,AIM-P001-009,dificil
-caso-010,AIM-P001-010,dificil
+BANRURAL,BANRURAL,dificil
+FRANCE,FRANCE,dificil
+LA GUAIRA,LA GUAIRA,dificil
+LISIADOS,LISIADOS,dificil
+LOS INCREDIBLES,LOS INCREDIBLES,dificil
+MBAPE tirado,MBAPE tirado,dificil
+MayasFC,MayasFC,dificil
+SemenoSports,SemenoSports,dificil
+Sports,Sports,dificil
+SportsPatron,SportsPatron,dificil
+YMAL tirado,YMAL tirado,dificil
+cr7 tirado,cr7 tirado,dificil
+hermanoSport,hermanoSport,dificil
+messi,messi,dificil
