@@ -1,1 +1,0 @@
-URL_BASE = "https://designsaimari.com/?pagina={pagina}"

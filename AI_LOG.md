@@ -746,3 +746,25 @@ runtime activo (api/, motores, índices, descriptores, validador) sin referencia
 a images_final; images_normalized intacto (15.272 archivos) tras la eliminación.
 **Pendiente:** la regeneración del banco vía consolidar.py entregará ahora tarjetas
 tal cual (sin normalización); normalizar_imagenes.py quedó como referencia.
+
+## Fecha: 2026-09-21 (limpieza banco viejo para carga nueva)
+
+### Prompt - elimina todo lo que se tiene que eliminar, aun no hagas nada de regenerar
+**Propósito:** Vaciar derivados del banco viejo para cargar banco nuevo, sin regenerar todavía.
+**Resultado:** Eliminados `data/embeddings.npy`, `embeddings_clip/openclip/siglip.npy`, `ids.npy`, `descriptores.json`, `products.csv`, `productos.json`, `metadata.json`, `evaluation.csv`, `comparacion_hito1_hito2.*`, `consultas_test_50.json`, `detalle_*`, `informe_*`, `revision_humana_*`, `revision_contact_sheet*.png`, `tiempos.csv` y contenidos de `data/queries_original/` + `data/queries_procesadas/` (332+332). Conservados código (`api/`, `scripts/`, `frontend/`), `evaluation/`, `CONSULTAS/`, `scraper/`. `data/` queda con carpetas vacías `queries_original/`/`queries_procesadas/`. Sin regeneración (pendiente: consolidar → validate → generar_embeddings → generar_indices_comparativos → precomputar_descriptores → /health).
+
+## Fecha: 2026-09-21 (borrado banco viejo + conexión scraper Aimari)
+
+### Prompt - elimina todo lo que tenga que ver con las antiguas images y consultas, tambien elimina la conexion de la pagina
+**Propósito:** Dejar el repo sin rastros del banco Aimari ni de sus consultas, y sin el scraper de designsaimari.com, para cargar un banco nuevo.
+**Resultado:**
+- Consultas viejas eliminadas: `evaluation/test_images/` (20), `evaluation/consultas_hito2.csv`, `evaluation/consultas_hito2/`, `evaluation/test_plan.csv`. `CONSULTAS/consultas/` (80) y `CONSULTAS/montajes/` (5) ya estaban vacías en disco (borrado externo 08:57); quedan los dirs vacíos. `data/queries_*` ya vacías del paso anterior.
+- Conexión Aimari eliminada: `scraper/` (scraper.py, parser.py, downloader.py), `config/settings.py` (URL_BASE designsaimari.com), `utils/` (helpers, pagination, limits, update), `storage/exporter.py`, `main.py` (runner del scraper). Verificado: nada en `api/`, `scripts/`, `frontend/` importa esos módulos (solo comentarios en `consolidar.py`).
+- Conservado: `scripts/consolidar.py` (constructor del banco nuevo; sus constantes PROVEEDOR_NOMBRE/PREFIJO="Designs Aimari"/"AIM" hay que ajustarlas a la fuente nueva), reportes `.md` históricos, `evaluation/INFORME_SALA2_HITO2.md`+`README.md` como evidencia.
+- Verificado: `py_compile` OK en api, frontend y scripts canónicos.
+
+## Fecha: 2026-09-21 (limpieza .md viejos)
+
+### Prompt - elimina todos los .md que no sirven y que se quede lo importante
+**Propósito:** Quedarse solo con la documentación base para el banco nuevo.
+**Resultado:** Eliminados `REPORTES_HITO1.md`, `REPORTES_HITO2.md`, `REPORTES_HIT3.md`, `REPORTES_HITO3_OPTIMIZACION.md`, `HITO3.md`, `evaluation/README.md`, `evaluation/INFORME_SALA2_HITO2.md` (todos atados al banco Aimari). Conservados `AGENTS.md`, `README.md`, `TRABAJO.md`, `AI_LOG.md`. `evaluation/` queda vacío para la evaluación del banco nuevo.
