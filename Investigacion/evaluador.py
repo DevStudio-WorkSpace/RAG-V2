@@ -53,22 +53,22 @@ document.addEventListener('keydown', function(e) {
 </script>
 """, height=0, width=0)
 
-def fetch_api(img_path):
+def fetch_api(img_path, modo):
     # Call the actual API
     abs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), img_path)
     if not os.path.exists(abs_path):
-        return []
+        return None
     
     with open(abs_path, "rb") as f:
         files = {"file": f}
-        data = {"modo": "original"} # Baseline
+        data = {"modo": modo} 
         try:
             r = requests.post(API_URL, files=files, data=data)
             if r.status_code == 200:
-                return r.json().get("resultados", [])
+                return r.json()
         except:
-            return []
-    return []
+            return None
+    return None
 
 def save_vote(case_img, true_id, res_id, pos, label, score):
     # Save to CSV
@@ -129,6 +129,18 @@ def render_metrics():
         st.rerun()
 
 # Main Flow
+if "modo" not in st.session_state:
+    st.session_state.modo = "original"
+
+st.sidebar.title("Configuración")
+modos_disponibles = ["original", "auto", "clasico", "legacy", "procesada"]
+modo_seleccionado = st.sidebar.selectbox("Modo de búsqueda", modos_disponibles, index=modos_disponibles.index(st.session_state.modo))
+
+if modo_seleccionado != st.session_state.modo:
+    st.session_state.modo = modo_seleccionado
+    st.session_state.api_results = None
+    st.rerun()
+
 if st.session_state.current_case_idx >= len(cases_df):
     render_metrics()
     st.stop()
@@ -138,14 +150,15 @@ img_path = case['ruta_imagen']
 true_id = case['id_correcto']
 
 if st.session_state.api_results is None:
-    with st.spinner("Consultando API..."):
-        res = fetch_api(img_path)
-        if not res:
+    with st.spinner(f"Consultando API en modo {st.session_state.modo}..."):
+        res = fetch_api(img_path, st.session_state.modo)
+        if not res or "resultados" not in res:
             st.error("No se pudieron obtener resultados de la API.")
             st.stop()
         st.session_state.api_results = res
 
-results = st.session_state.api_results
+results = st.session_state.api_results.get("resultados", [])
+img_b64 = st.session_state.api_results.get("imagen_procesada_b64")
 curr_res_idx = st.session_state.current_result_idx
 
 if curr_res_idx < len(results):
@@ -160,6 +173,16 @@ if curr_res_idx < len(results):
         st.markdown("**1. Foto de consulta**")
         abs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), img_path)
         st.image(abs_path, use_container_width=True)
+        if img_b64:
+            import base64
+            from io import BytesIO
+            from PIL import Image
+            try:
+                img_data = base64.b64decode(img_b64)
+                st.markdown("**Recorte de la consulta**")
+                st.image(Image.open(BytesIO(img_data)), use_container_width=True)
+            except:
+                pass
     
     with c2:
         st.markdown(f"**2. Resultado sugerido (ID: {current_res['id']})**")
