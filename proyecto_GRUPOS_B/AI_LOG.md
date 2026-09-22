@@ -148,3 +148,64 @@ la eliminación del `__pycache__`.
 - `proyecto_GRUPOS_B/data/juicios.jsonl` (creado por la app al primer juicio)
 - `__pycache__/app.cpython-310.pyc` (generado por Python, eliminado en la
   corrección final)
+
+---
+
+## Prompt 6 — Migración del almacenamiento activo de JSONL a CSV (posterior)
+
+> **Aviso sobre el carácter de este registro.** Este Prompt 6 se añade
+> **después** de los Prompts 1–5. No reescribe ni contradice los
+> anteriores: sigue siendo cierto que durante la Ronda 1 el archivo
+> activo era `data/juicios.jsonl` y que las decisiones técnicas 1 y 3
+> describen ese momento. La migración a CSV que se describe aquí es
+> posterior y se documenta tal y como se realizó.
+
+Solicitud al modelo (resumen):
+
+> "Necesito migrar el archivo de trabajo activo del evaluador de Ficha
+> 03-B de `data/juicios.jsonl` a `data/juicios.csv`, sin tocar
+> RAG-V2 ni los históricos separados por sala. Cambia únicamente las
+> funciones de lectura/escritura en `app.py`, conserva la lógica de
+> reemplazo por `(caso_id, posicion)` y los siete campos
+> `caso_id,tipo,posicion,id_resultado,juicio,score,timestamp`. Usa
+> escritura atómica (`tmp + os.replace`). Mantén la UI y el cálculo de
+> métricas sin cambios."
+
+Decisiones tomadas durante la ejecución:
+
+- El constante del archivo activo pasó de `JUICIOS_JSONL` a `JUICIOS_CSV`
+  (`app.py` línea 31), apuntando a `data/juicios.csv`.
+- Se añadieron los siete campos canónicos en `JUICIOS_COLS` y se
+  reescribieron `cargar_juicios()` (lector CSV con `csv.DictReader`,
+  `posicion` parseada como entero) y `guardar_juicio()` (escritor CSV
+  con `csv.DictWriter`, estrategia `read-modify-write` igual a la
+  original, escritura atómica con archivo temporal y `os.replace`).
+- La UI, `calcular_metricas`, `calcular_metricas_por_tipo`,
+  `inicializar_estado`, `consultar_rag` y `main` se mantuvieron
+  exactamente igual: su entrada es un `dict` con clave
+  `(caso_id, posicion)`, agnóstico al formato de almacenamiento.
+- El archivo `data/juicios.jsonl` quedó intacto pero vacío
+  (sin uso por `app.py`); los históricos `data/juicios_sala-2.jsonl`
+  y `data/juicios_sala-3.jsonl` permanecieron sin cambios.
+- Se creó `data/juicios.csv` con solo la cabecera. Su contenido equivale
+  1:1 al de los JSONL históricos en los puntos donde coincide (mismos
+  siete campos, mismos juicios, mismos IDs).
+- La documentación se actualizó con criterio conservador: `README.md` y
+  `EXPLICACION_TOP5.md` pasaron a hablar de `juicios.csv`; los informes
+  de Sala 3 conservaron sus textos y añadieron una nota de
+  actualización al inicio; este AI_LOG no reescribe los Prompts 1–5.
+
+Verificaciones realizadas (todas pasaron):
+
+- `python -m py_compile app.py` sin errores.
+- Smoke test: 5 juicios `acierto/sirve/no_sirve/no_sirve/no_sirve`
+  escritos, recargados y modificados por sustitución; métrica esperada
+  `Top 1 = 100 %, Top 5 = 100 %, Utilidad = 2.00/5`, y después del
+  reemplazo en posición 3 `Utilidad = 3.00/5`. La limpieza final dejó
+  `data/juicios.csv` con solo la cabecera.
+- Hashes SHA256 de `juicios.jsonl`, `juicios_sala-2.jsonl`,
+  `juicios_sala-3.jsonl`, `juicios_sala-2.csv` y `juicios_sala-3.csv`
+  inalterados antes y después de la prueba (verificación de
+  inalterabilidad).
+- Inspección estática: 0 referencias funcionales a `juicios.jsonl` en
+  `app.py`; la única constante válida es `JUICIOS_CSV`.

@@ -5,6 +5,23 @@
 1. Edwin Salvatierra
 2. Jhon Portugal
 
+> **Nota de actualización (posterior a la Ronda 2).** Este informe describe
+> el estado del proyecto al cierre de la **Ronda 2 — Intercambio de
+> casos**. Después, el almacenamiento activo de los juicios pasó de
+> `data/juicios.jsonl` a `data/juicios.csv`, manteniendo los mismos siete
+> campos (`caso_id, tipo, posicion, id_resultado, juicio, score, timestamp`)
+> y la misma lógica de reemplazo por `(caso_id, posicion)`. Por esa razón,
+> las menciones a `data/juicios.jsonl` que aparecen más abajo como
+> "archivo de trabajo que consume `app.py`" describen el formato que el
+> proyecto tenía cuando se emitió este informe; el archivo que la
+> aplicación usa **hoy** como almacenamiento activo es `data/juicios.csv`.
+> Los históricos separados por sala (`data/juicios_sala-2.jsonl`,
+> `data/juicios_sala-3.jsonl`, junto a sus réplicas CSV
+> `juicios_sala-2.csv` y `juicios_sala-3.csv`) se conservan por
+> trazabilidad y no han sido modificados. Ningún valor, métrica, hecho ni
+> decisión incluidos en este informe se ha reescrito: solo se aclara el
+> estado vigente del almacenamiento al inicio.
+
 Documento de referencia para la **Ronda 2 — Intercambio de casos y cierre
 de brechas** de la **Ficha 04**, continuación del trabajo de Sala 3 sobre el
 evaluador del buscador descrito en `INFORME_GRUPO_B_SALA-3_EDWIN SALVATIERRA
@@ -102,16 +119,20 @@ proyecto conviven dos tipos de archivos:
 - **Archivos de trabajo que consume `app.py`** cuando se necesita cargar
   un conjunto determinado para ejecutar la herramienta:
 
-  | Recurso de trabajo | Ruta |
-  |---|---|
-  | CSV de casos | `casos/casos.csv` |
-  | Carpeta de fotos | `casos/fotos/` |
-  | Archivo de juicios | `data/juicios.jsonl` |
+  | Recurso de trabajo | Ruta (en el momento de la Ronda 2) | Ruta vigente tras la migración |
+  |---|---|---|
+  | CSV de casos | `casos/casos.csv` | `casos/casos.csv` |
+  | Carpeta de fotos | `casos/fotos/` | `casos/fotos/` |
+  | Archivo de juicios | `data/juicios.jsonl` | `data/juicios.csv` |
 
-  Estos son los archivos que `app.py` lee y escribe de forma directa
-  (constan en `CASOS_CSV` y `JUICIOS_JSONL` del propio código). En el
-  estado actual del repositorio no contienen una evaluación activa: la
-  evidencia histórica de cada sala vive en los archivos
+  Al cierre de la Ronda 2, `app.py` leía y escribía directamente el
+  archivo indicado en la columna izquierda (constaba en las constantes
+  `CASOS_CSV` y `JUICIOS_JSONL` del propio código). Tras la migración
+  posterior a este informe, el archivo de juicios que `app.py` lee y
+  escribe de forma directa es el indicado en la columna derecha
+  (constante `JUICIOS_CSV` en el código). En el estado actual del
+  repositorio estos archivos de trabajo no contienen una evaluación
+  activa: la evidencia histórica de cada sala vive en los archivos
   `_sala-2` y `_sala-3` descritos arriba, y se conservan así a propósito
   para no mezclar ambas rondas ni perder la trazabilidad de cada set.
 
@@ -252,5 +273,6 @@ mide esta ronda, y la diferencia entre ambos sets queda documentada arriba.
   consistente con la fórmula utilizada en la Ronda 1. La separación
   entre archivos históricos por sala (`*_sala-2.*`, `*_sala-3.*`) y
   archivos de trabajo que consume `app.py` (`casos/casos.csv`,
-  `casos/fotos/`, `data/juicios.jsonl`) se mantuvo durante toda la
-  ronda, según se describe en §3.2.
+  `casos/fotos/`, `data/juicios.jsonl` al cierre de la Ronda 2;
+  `data/juicios.csv` tras la migración posterior a este informe) se
+  mantuvo durante toda la ronda, según se describe en §3.2.

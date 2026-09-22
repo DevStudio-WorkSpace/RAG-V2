@@ -14,6 +14,14 @@ proyecto. Cualquier fecha que no pueda derivarse de los archivos se omite.
 > intervalo (los juicios almacenados van del `2026-09-13T23:08:25Z` al
 > `2026-09-14T01:16:32Z`).
 
+> **Nota de actualización.** Este bloque describe el estado al cierre de
+> la jornada indicada. Después, el almacenamiento activo pasó de
+> `data/juicios.jsonl` (formato original de la Ronda 1) a
+> `data/juicios.csv`, manteniendo los mismos siete campos y la misma
+> lógica de reemplazo. Los JSONL históricos (`data/juicios.jsonl`,
+> `data/juicios_sala-2.jsonl`, `data/juicios_sala-3.jsonl`) se conservan
+> por trazabilidad, junto a sus réplicas CSV.
+
 1. **Qué quedó funcionando hoy.**
    El evaluador de la Ficha 03-B levanta con `streamlit run app.py`, consulta
    RAG-V2 por HTTP, presenta los 5 resultados de cada caso, registra juicios
@@ -80,7 +88,8 @@ Métricas por tipo dentro del set recibido:
 1. **Qué quedó funcionando hoy.**
    La herramienta de evaluación de Sala 3 se ejecutó sobre los 10 casos
    recibidos de Sala 2 y registró los 50 juicios completos en
-   `data/juicios.jsonl`. El cálculo de Top 1, Top 5 y Utilidad, tanto global
+   `data/juicios_sala-2.jsonl` (archivo histórico separado por sala, conservado
+   por trazabilidad). El cálculo de Top 1, Top 5 y Utilidad, tanto global
    como separado por tipo (`con_marco` / `sin_marco`), funciona sobre el set
    ajeno sin necesidad de cambios en el código. La comunicación entre salas
    quedó documentada: Sala 3 entregó su set propio a Sala 4 y recibió el set

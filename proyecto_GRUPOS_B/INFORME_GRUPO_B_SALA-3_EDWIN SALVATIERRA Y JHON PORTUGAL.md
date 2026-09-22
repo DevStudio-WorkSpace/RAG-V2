@@ -7,6 +7,22 @@
 
 # INFORME GENERAL — EVALUADOR DEL BUSCADOR
 
+> **Nota de actualización (posterior a la Ronda 1).** Este informe describe
+> el estado del proyecto al cierre de la **Ronda 1**. Después, el
+> almacenamiento activo de los juicios pasó de `data/juicios.jsonl` a
+> `data/juicios.csv`, manteniendo los mismos siete campos
+> (`caso_id, tipo, posicion, id_resultado, juicio, score, timestamp`) y la
+> misma lógica de reemplazo por `(caso_id, posicion)`. Por esa razón, las
+> menciones a `data/juicios.jsonl` que aparecen más abajo describen el
+> formato que el proyecto tenía cuando se emitió este informe; el archivo
+> que la aplicación usa **hoy** como almacenamiento activo es
+> `data/juicios.csv`, y los históricos separados por sala
+> (`data/juicios_sala-2.jsonl`, `data/juicios_sala-3.jsonl`) se conservan
+> por trazabilidad junto a sus réplicas CSV (`juicios_sala-2.csv`,
+> `juicios_sala-3.csv`). Ningún valor, métrica ni decisión incluida en
+> este informe se ha reescrito: solo se aclara el estado vigente del
+> almacenamiento al inicio.
+
 Documento de referencia sobre el proyecto **Evaluador del buscador** de
 Sublitex / Ficha 03-B. Describe el estado real del proyecto en
 `RAG-V2/proyecto_GRUPOS_B/` y su relación con el buscador RAG-V2.
@@ -707,9 +723,11 @@ RAG-V2. La persona carga una foto de una camiseta, el buscador le
 devuelve cinco resultados, y la persona juzga cada uno como Acierto,
 Sirve o No sirve. A partir de esos clics calculamos tres números:
 Top 1, Top 5 y Utilidad, en total y separados por tipo de foto. Todo
-queda guardado en un archivo `juicios.jsonl`, así que si cerramos y
-volvemos a abrir, el progreso se mantiene. El evaluador no toca el
-buscador: solo le pregunta por HTTP."
+queda guardado en un archivo de juicios (al cierre de esta Ronda 1,
+`data/juicios.jsonl`; el archivo activo hoy es `data/juicios.csv` —
+consultar la nota de actualización al inicio de este informe), así que
+si cerramos y volvemos a abrir, el progreso se mantiene. El evaluador no
+ toca el buscador: solo le pregunta por HTTP."
 
 ---
 

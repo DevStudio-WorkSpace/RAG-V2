@@ -155,7 +155,7 @@ métrica dejaría de medir lo que tiene que medir.
 Pasos:
 
 1. Se recorre cada caso evaluado (cada `caso_id` con juicios en
-   `data/juicios.jsonl`).
+   `data/juicios.csv`).
 2. Para cada caso se mira si en sus 5 juicios (`posicion` 1 a 5) hay al
    menos uno con valor `acierto`.
 3. Se cuentan los casos en los que la respuesta a (2) es "sí".

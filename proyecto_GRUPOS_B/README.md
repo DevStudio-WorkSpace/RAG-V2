@@ -120,26 +120,36 @@ Se muestra como `X.XX / 5`.
 Cada juicio se guarda inmediatamente en:
 
 ```
-proyecto_GRUPOS_B/data/juicios.jsonl
+proyecto_GRUPOS_B/data/juicios.csv
 ```
 
-Formato (una línea JSON por juicio):
+Formato CSV con cabecera y una fila por juicio. Los siete campos, en este orden exacto, son:
 
-```json
-{"caso_id": "caso_01", "tipo": "con_marco", "posicion": 1, "id_resultado": "AIM-P001-001", "juicio": "acierto", "score": 0.9608, "timestamp": "2026-09-13T10:30:00Z"}
 ```
+caso_id,tipo,posicion,id_resultado,juicio,score,timestamp
+```
+
+Ejemplo (cabecera + dos filas; los campos no se envuelven en ninguna otra estructura):
+
+```csv
+caso_id,tipo,posicion,id_resultado,juicio,score,timestamp
+caso_01,con_marco,1,AIM-P001-001,acierto,0.9608,2026-09-22T10:30:00Z
+caso_01,con_marco,2,AIM-P001-002,sirve,0.8801,2026-09-22T10:30:18Z
+```
+
+Los valores posibles de `juicio` son exactamente `acierto`, `sirve` o `no_sirve`. `posicion` se almacena como entero entre 1 y 5; `score` es el `score` de similitud devuelto por el buscador para esa posición; `timestamp` es un sello UTC en formato ISO 8601 (`YYYY-MM-DDTHH:MM:SSZ`).
 
 ## Persistencia
 
-Los juicios se guardan en disco. Al cerrar y reabrir Streamlit, el evaluador reconstruye el progreso desde `juicios.jsonl`.
+Los juicios se guardan en disco. Al cerrar y reabrir Streamlit, el evaluador reconstruye el progreso desde `juicios.csv`.
 
-Si un resultado ya fue evaluado, el juicio se actualiza en lugar de duplicarse.
+Si un resultado ya fue evaluado, la fila correspondiente a la misma `(caso_id, posicion)` se reemplaza, no se duplica. La escritura en `juicios.csv` se hace de forma atómica (escritura en un archivo temporal seguido de `os.replace`), de modo que un fallo a mitad de operación no deja el archivo truncado.
 
 ## Comprobar las métricas
 
-Las métricas se calculan automáticamente desde `juicios.jsonl` después de cada juicio y al recargar la página.
+Las métricas se calculan automáticamente desde `juicios.csv` después de cada juicio y al recargar la página.
 
-Para verificar manualmente, abre `juicios.jsonl` con cualquier editor de texto.
+Para verificar manualmente, abre `juicios.csv` con cualquier editor de texto o con una hoja de cálculo. Cada fila es un juicio independiente.
 
 ## Estructura de archivos
 
@@ -156,7 +166,7 @@ proyecto_GRUPOS_B/
 │       ├── 02.jpg
 │       └── ... 10.jpg
 └── data/
-    └── juicios.jsonl
+    └── juicios.csv
 ```
 
 ## Reglas importantes

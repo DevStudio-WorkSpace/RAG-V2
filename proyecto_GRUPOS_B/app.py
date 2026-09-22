@@ -20,6 +20,89 @@ st.set_page_config(
     layout="wide",
 )
 
+
+# =============================================================================
+# ESTILO GLOBAL DE LA INTERFAZ
+# =============================================================================
+st.markdown(
+    """
+    <style>
+        .stApp {
+            background-color: #D6EAF8;
+        }
+        header[data-testid="stHeader"] {
+            background-color: rgba(214, 234, 248, 0.85);
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# =============================================================================
+# ALERTA AMIGABLE PARA ARCHIVOS / IMÁGENES FALTANTES
+# =============================================================================
+def _alerta_archivos_faltantes(tipo, detalle=""):
+    """
+    Muestra una alerta visual cuidada cuando faltan archivos o imágenes
+    locales necesarios para la evaluación. Esta función solo se usa para
+    errores esperables relacionados con la presencia de archivos en
+    disco (casos.csv, fotos de casos, miniaturas del catálogo).
+
+    NO se usa para errores inesperados del sistema ni para fallos del
+    buscador RAG-V2, que deben seguir apareciendo tal cual para que el
+    equipo pueda diagnosticarlos durante el desarrollo.
+
+    Args:
+        tipo: titulo corto de la alerta (ej. "Faltan imagenes para
+            comparar"). Si viene vacio se usa un titulo generico.
+        detalle: una sola frase breve y humana explicando que hacer.
+    """
+    titulo = (tipo or "Faltan imagenes para comparar").strip()
+    if detalle:
+        cuerpo = detalle.strip()
+    else:
+        cuerpo = (
+            "No se encontraron los archivos necesarios para realizar la "
+            "evaluacion. Agrega las imagenes y casos correspondientes a "
+            "la carpeta de casos e intententalo nuevamente."
+        )
+
+    st.markdown(
+        """
+        <style>
+        .grp-alerta {
+            border: 1px solid #f5c6cb;
+            background-color: #fdecea;
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin: 16px 0 24px 0;
+            color: #5b1a1d;
+        }
+        .grp-alerta .grp-titulo {
+            font-size: 1.15em;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .grp-alerta .grp-cuerpo {
+            font-size: 1.0em;
+            line-height: 1.4;
+            color: #5b1a1d;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <div class="grp-alerta">
+            <div class="grp-titulo">⚠️ {titulo}</div>
+            <div class="grp-cuerpo">{cuerpo}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 # =============================================================================
 # RUTAS (calculadas desde la ubicación de app.py)
 # =============================================================================
@@ -28,11 +111,21 @@ RAG_BASE = APP_DIR.parent.resolve()  # RAG-V2 raíz
 CASOS_CSV = APP_DIR / "casos" / "casos.csv"
 CASOS_FOTOS = APP_DIR / "casos" / "fotos"
 CATALOGO_IMAGES = RAG_BASE / "data" / "images_normalized"
-JUICIOS_JSONL = APP_DIR / "data" / "juicios.jsonl"
+JUICIOS_CSV = APP_DIR / "data" / "juicios.csv"
 API_URL = "http://localhost:8000"
 
-# Crear carpeta data/ si no existe (necesario para juicios.jsonl)
+# Crear carpeta data/ si no existe (necesario para juicios.csv)
 (APP_DIR / "data").mkdir(parents=True, exist_ok=True)
+
+JUICIOS_COLS = [
+    "caso_id",
+    "tipo",
+    "posicion",
+    "id_resultado",
+    "juicio",
+    "score",
+    "timestamp",
+]
 
 # =============================================================================
 # RESOLVER RUTA DE IMAGEN DEL CATÁLOGO
@@ -69,54 +162,81 @@ def cargar_casos():
         return list(reader)
 
 # =============================================================================
-# CARGAR JUICIOS DESDE JSONL
+# CARGAR JUICIOS DESDE CSV
 # =============================================================================
 def cargar_juicios():
-    if not JUICIOS_JSONL.exists():
+    if not JUICIOS_CSV.exists():
         return {}
     juicios = {}
-    with open(JUICIOS_JSONL, "r", encoding="utf-8") as f:
-        for linea in f:
-            linea = linea.strip()
-            if not linea:
-                continue
+    with open(JUICIOS_CSV, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
             try:
-                j = json.loads(linea)
-                clave = (j.get("caso_id", ""), j.get("posicion", 0))
-                juicios[clave] = j
-            except json.JSONDecodeError:
+                pos = int(row.get("posicion", "0"))
+            except (TypeError, ValueError):
                 continue
+            clave = (row.get("caso_id", ""), pos)
+            juicio = {
+                "caso_id": row.get("caso_id", ""),
+                "tipo": row.get("tipo", ""),
+                "posicion": pos,
+                "id_resultado": row.get("id_resultado", ""),
+                "juicio": row.get("juicio", ""),
+                "score": row.get("score", ""),
+                "timestamp": row.get("timestamp", ""),
+            }
+            juicios[clave] = juicio
     return juicios
 
 # =============================================================================
-# GUARDAR JUICIO EN JSONL (actualiza si ya existe caso_id + posicion)
+# GUARDAR JUICIO EN CSV (reemplaza si ya existe caso_id + posicion)
+# Escritura atomica: tmp + os.replace
 # =============================================================================
 def guardar_juicio(juicio):
-    juicios = []
+    registros = []
     existe = False
-    if JUICIOS_JSONL.exists():
-        with open(JUICIOS_JSONL, "r", encoding="utf-8") as f:
-            for linea in f:
-                linea = linea.strip()
-                if not linea:
-                    continue
+    if JUICIOS_CSV.exists():
+        with open(JUICIOS_CSV, "r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
                 try:
-                    j = json.loads(linea)
-                    if (j.get("caso_id") == juicio["caso_id"] and
-                        j.get("posicion") == juicio["posicion"]):
-                        juicios.append(juicio)
-                        existe = True
-                    else:
-                        juicios.append(j)
-                except json.JSONDecodeError:
-                    continue
+                    pos = int(row.get("posicion", "0"))
+                except (TypeError, ValueError):
+                    pos = -1
+                if (row.get("caso_id") == juicio["caso_id"] and
+                        pos == juicio["posicion"]):
+                    registros.append(juicio)
+                    existe = True
+                else:
+                    registros.append({
+                        "caso_id": row.get("caso_id", ""),
+                        "tipo": row.get("tipo", ""),
+                        "posicion": pos,
+                        "id_resultado": row.get("id_resultado", ""),
+                        "juicio": row.get("juicio", ""),
+                        "score": row.get("score", ""),
+                        "timestamp": row.get("timestamp", ""),
+                    })
 
     if not existe:
-        juicios.append(juicio)
+        registros.append(juicio)
 
-    with open(JUICIOS_JSONL, "w", encoding="utf-8") as f:
-        for j in juicios:
-            f.write(json.dumps(j, ensure_ascii=False) + "\n")
+    tmp_path = JUICIOS_CSV.with_suffix(JUICIOS_CSV.suffix + ".tmp")
+    with open(tmp_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=JUICIOS_COLS, quoting=csv.QUOTE_MINIMAL)
+        writer.writeheader()
+        for r in registros:
+            row_out = {
+                "caso_id": str(r["caso_id"]),
+                "tipo": str(r["tipo"]),
+                "posicion": str(int(r["posicion"])),
+                "id_resultado": str(r["id_resultado"]),
+                "juicio": str(r["juicio"]),
+                "score": str(r["score"]),
+                "timestamp": str(r["timestamp"]),
+            }
+            writer.writerow(row_out)
+    os.replace(tmp_path, JUICIOS_CSV)
 
 # =============================================================================
 # CONSULTAR RAG-V2 POR HTTP
@@ -292,7 +412,11 @@ def main():
     st.title("EVALUADOR FICHA 03-B")
 
     if not casos:
-        st.error(f"No se encontró casos.csv en: {CASOS_CSV}")
+        _alerta_archivos_faltantes(
+            "Faltan imagenes para comparar",
+            "No se encontraron los casos de prueba. Agrega las imagenes "
+            "correspondientes a la carpeta de casos e intententalo nuevamente.",
+        )
         st.stop()
 
     if caso_actual >= len(casos):
@@ -326,7 +450,11 @@ def main():
     if foto_path.exists():
         st.image(str(foto_path), caption=f"Foto del caso: {foto_nombre}", width=300)
     else:
-        st.error(f"Falta la foto del caso: {foto_path}")
+        _alerta_archivos_faltantes(
+            "Faltan imagenes para comparar",
+            "No se encontro la imagen del caso actual. Agregala a la "
+            "carpeta de casos y vuelve a intentarlo.",
+        )
 
     # =========================================================================
     # CONSULTAR RAG-V2
@@ -368,7 +496,12 @@ def main():
                 if img_path.exists():
                     st.image(str(img_path), width=150)
                 else:
-                    st.error(f"Imagen no encontrada: {img_path.name}")
+                    _alerta_archivos_faltantes(
+                        "Faltan imagenes para comparar",
+                        "Falta una imagen del catalogo necesaria para "
+                        "mostrar este resultado. Verifica que el catalogo "
+                        "este completo y vuelve a intentarlo.",
+                    )
 
             with col_info:
                 st.markdown(f"**Resultado {i}**")
