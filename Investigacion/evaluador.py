@@ -11,15 +11,15 @@ st.set_page_config(page_title="Evaluador RAG", layout="centered")
 API_URL = "http://localhost:8000/search/image"
 CASOS_FILE = os.path.join(os.path.dirname(__file__), "casos_prueba_2.csv")
 RESULTADOS_FILE = os.path.join(os.path.dirname(__file__), "resultados_evaluacion_2.csv")
-
+                        
 # Load cases
 @st.cache_data
-def load_cases():
-    if not os.path.exists(CASOS_FILE):
+def load_cases(file_path):
+    if not os.path.exists(file_path):
         return pd.DataFrame()
-    return pd.read_csv(CASOS_FILE)
+    return pd.read_csv(file_path)
 
-cases_df = load_cases()
+cases_df = load_cases(CASOS_FILE)
 
 if cases_df.empty:
     st.error(f"No se encontró {CASOS_FILE} o está vacío.")
@@ -57,7 +57,7 @@ def fetch_api(img_path, modo):
     # Call the actual API
     abs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), img_path)
     if not os.path.exists(abs_path):
-        return None
+        return {"error": f"Archivo no encontrado: {abs_path}"}
     
     with open(abs_path, "rb") as f:
         files = {"file": f}
@@ -66,9 +66,10 @@ def fetch_api(img_path, modo):
             r = requests.post(API_URL, files=files, data=data)
             if r.status_code == 200:
                 return r.json()
-        except:
-            return None
-    return None
+            else:
+                return {"error": f"API devolvió HTTP {r.status_code}: {r.text}"}
+        except Exception as e:
+            return {"error": f"Error de conexión: {e}"}
 
 def save_vote(case_img, true_id, res_id, pos, label, score):
     # Save to CSV
@@ -153,7 +154,8 @@ if st.session_state.api_results is None:
     with st.spinner(f"Consultando API en modo {st.session_state.modo}..."):
         res = fetch_api(img_path, st.session_state.modo)
         if not res or "resultados" not in res:
-            st.error("No se pudieron obtener resultados de la API.")
+            err_msg = res.get("error", "Error desconocido") if res else "Error desconocido"
+            st.error(f"No se pudieron obtener resultados de la API. Detalle: {err_msg}")
             st.stop()
         st.session_state.api_results = res
 
