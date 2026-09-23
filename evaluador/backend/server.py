@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 server.py — Backend del Evaluador (Ficha 03-A)
-================================================
+===============================================
 Servidor FastAPI que:
   1. Proxy a la API principal del buscador (POST /search/image, GET /health).
-  2. Sirve los 10 casos de prueba desde casos/casos.csv.
-  3. Guarda cada clic (juicio) en resultados.csv al momento del clic.
-  4. Exporta resultados.csv completo y calcula estadisticas.
+  2. Sirve los 10 casos de prueba desde casos_originales/ y casos_set_original.csv.
+  3. Guarda cada clic (juicio) en resultados_set_original.csv al momento del clic.
+  4. Exporta resultados_set_original.csv completo y calcula estadisticas.
   5. Sirve archivos estaticos del frontend.
 
 Puerto por defecto: 8001 (la API del buscador corre en 8000).
@@ -34,9 +34,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 BASE_DIR = Path(__file__).resolve().parent.parent          # evaluador/
 BACKEND_DIR = Path(__file__).resolve().parent               # evaluador/backend/
 PROJECT_DIR = BASE_DIR.parent                              # raiz del proyecto
-CASOS_DIR = BASE_DIR / "casos"
-CASOS_CSV = CASOS_DIR / "casos.csv"
-RESULTADOS_CSV = BASE_DIR / "resultados.csv"
+CASOS_DIR = BASE_DIR / "casos_originales"
+CASOS_CSV = BASE_DIR / "casos_set_original.csv"
+RESULTADOS_CSV = BASE_DIR / "resultados_set_original.csv"
 FRONTEND_DIR = BASE_DIR / "frontend"  # frontend estatico en evaluador/frontend/
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
@@ -68,7 +68,7 @@ app.add_middleware(
 def _leer_casos() -> list[dict]:
     """Lee casos/casos.csv y devuelve una lista de dicts."""
     if not CASOS_CSV.exists():
-        raise HTTPException(status_code=500, detail="No existe casos/casos.csv")
+        raise HTTPException(status_code=500, detail=f"No existe {CASOS_CSV}")
     with open(CASOS_CSV, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         return list(reader)
@@ -407,7 +407,7 @@ def servir_imagen(nombre: str):
 
 @app.get("/api/caso-imagen/{nombre}")
 def servir_imagen_caso(nombre: str):
-    """Sirve la imagen de consulta de un caso desde evaluador/casos/."""
+    """Sirve la imagen de consulta de un caso desde evaluador/casos_originales/."""
     for ext in ("", ".jpg", ".jpeg", ".png", ".webp"):
         ruta = CASOS_DIR / f"{nombre}{ext}"
         if ruta.exists():

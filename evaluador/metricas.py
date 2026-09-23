@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_CSV = BASE_DIR / "resultados.csv"
+DEFAULT_CSV = BASE_DIR / "resultados_set_original.csv"
 
 
 def cargar_resultados(ruta_csv: str | Path) -> list[dict]:
@@ -159,12 +159,12 @@ def main():
     parser.add_argument(
         "--csv",
         default=str(DEFAULT_CSV),
-        help="Ruta a resultados.csv (default: evaluador/resultados.csv)",
+        help="Ruta a resultados_set_original.csv (default: evaluador/resultados_set_original.csv)",
     )
     parser.add_argument(
         "--casos",
-        default=str(BASE_DIR / "casos" / "casos.csv"),
-        help="Ruta a casos.csv (default: evaluador/casos/casos.csv)",
+        default=str(BASE_DIR / "casos_set_original.csv"),
+        help="Ruta a casos_set_original.csv (default: evaluador/casos_set_original.csv)",
     )
     args = parser.parse_args()
 
