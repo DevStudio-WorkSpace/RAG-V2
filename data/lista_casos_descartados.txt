@@ -1,0 +1,29 @@
+Caso: caso_02 | casos_sala-3.csv | Motivo: Foto salía del catálogo (Tipo: sin_marco)
+Caso: caso_04 | casos_sala-3.csv | Motivo: Foto salía del catálogo (Tipo: sin_marco)
+Caso: caso_06 | casos_sala-3.csv | Motivo: Foto salía del catálogo (Tipo: sin_marco)
+Caso: caso_08 | casos_sala-3.csv | Motivo: Foto salía del catálogo (Tipo: sin_marco)
+Caso: caso_10 | casos_sala-3.csv | Motivo: Foto salía del catálogo (Tipo: sin_marco)
+Caso: caso-001 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-002 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-003 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-004 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-005 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-006 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-007 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-008 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-009 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: caso-010 | Sala 6 | Motivo: Foto repetida (Ya aportada por Sala 1)
+Caso: BANRURAL | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: FRANCE | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: LA GUAIRA | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: LISIADOS | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: LOS INCREDIBLES | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: MBAPE tirado | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: MayasFC | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: SemenoSports | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: Sports | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: SportsPatron | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: YMAL tirado | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: cr7 tirado | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: hermanoSport | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
+Caso: messi | Sala 7 | Motivo: id_correcto (nan) no existe en products.csv
