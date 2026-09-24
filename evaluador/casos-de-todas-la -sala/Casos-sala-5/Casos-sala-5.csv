@@ -1,4 +1,4 @@
-id_caso,descripcion,id_correcto,tipo,imagen
+caso,descripcion,id_correcto,tipo,imagen
 C_01,Cuerpo persona - caso C_01,AIM-P001-021,cuerpo,C_01.jpg
 C_02,Cuerpo persona - caso C_02,AIM-P012-025,cuerpo,C_02.jpg
 C_03,Cuerpo persona - caso C_03,AIM-P023-006,cuerpo,C_03.jpg
