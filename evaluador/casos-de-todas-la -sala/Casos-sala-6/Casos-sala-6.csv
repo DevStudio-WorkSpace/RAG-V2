@@ -1,0 +1,15 @@
+caso,id_correcto,tipo
+caso-001,AIM-P208-034,persona
+caso-002,AIM-P134-014,persona
+caso-003,AIM-P226-055,persona
+caso-004,AIM-P023-006,persona
+caso-005,AIM-P163-056,captura
+caso-006,AIM-P208-035,persona
+caso-007,AIM-P111-040,producto
+caso-008,AIM-P117-010,producto
+caso-009,AIM-P068-046,producto
+caso-010,AIM-P163-040,persona
+caso-011,AIM-P048-037,captura
+caso-012,AIM-P087-034,persona
+caso-013,AIM-P252-021,persona
+
