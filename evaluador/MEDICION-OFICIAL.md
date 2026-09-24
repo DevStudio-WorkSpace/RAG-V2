@@ -17,10 +17,19 @@ Sublitex · Ficha 05-A · Sala 1
 - **Descartados: la foto salía del catálogo:** 5
 - **Descartados: el id_correcto no existe en products.csv:** 14
 - **Descartados: foto repetida entre dos salas:** 10
-- **Descartados: mirando las dos imágenes, no son la misma camiseta:** pendiente
-- **Casos que entraron a la medición:** pendiente
+- **Descartados: mirando las dos imágenes, no son la misma camiseta:** 5
+- **Casos que entraron a la medición:** 33
 
 *Una línea:* La Sala 7 presentó la mayor cantidad de incidencias acumulando un total de 14 casos descartados por los filtros automatizados.
+
+## 3 · Distribución por tipos (oficiales)
+
+- **persona:** 15
+- **producto:** 13
+- **captura:** 3
+- **dificil:** 2
+
+*Una línea:* Alerta emitida al coordinador debido a que las categorías captura y dificil cuentan con menos de 8 casos válidos en el set final.
 
 ## 7 · Verificación (la llena quien auditó, no quien midió)
 
@@ -31,4 +40,4 @@ Sublitex · Ficha 05-A · Sala 1
 
 ## 8 · Qué no funciona o qué quedó débil
 
-Al 24 de septiembre se subsanaron las ausencias de datos mediante la descarga de las planillas de las salas 5, 6 y 7, junto con la incorporación del maestro de productos. No obstante, la Sala 4 no entregó su registro en el repositorio. Adicionalmente, el formato de origen presentó inconsistencias críticas en el nombrado de las columnas de identificación de imágenes entre equipos, requiriendo una normalización forzada mediante scripts de auditoría interna para asegurar la trazabilidad.
+Al 24 de septiembre se identificó que el proceso de recolección de datos presenta debilidades estructurales críticas. Las Salas 3 y 7 entregaron en su mayoría plantillas de diseño vectorial e imágenes comerciales indexadas de internet en lugar de capturas del mundo real, afectando negativamente el volumen del set de prueba. Asimismo, la muestra final quedó estadísticamente desbalanceada, dejando las categorías captura y dificil por debajo del umbral mínimo de 8 casos requeridos para garantizar la representatividad.
