@@ -1,0 +1,11 @@
+id_caso,descripcion,id_correcto,tipo,imagen
+C_01,Cuerpo persona - caso C_01,AIM-P001-021,cuerpo,C_01.jpg
+C_02,Cuerpo persona - caso C_02,AIM-P012-025,cuerpo,C_02.jpg
+C_03,Cuerpo persona - caso C_03,AIM-P023-006,cuerpo,C_03.jpg
+C_04,Cuerpo persona - caso C_04,AIM-P013-041,cuerpo,C_04.jpg
+C_05,Cuerpo persona - caso C_05,AIM-P004-031,cuerpo,C_05.jpg
+C_06,Cuerpo persona - caso C_06,AIM-P255-024,cuerpo,C_06.jpg
+C_07,Cuerpo persona - caso C_07,AIM-P255-023,cuerpo,C_07.jpg
+C_08,Cuerpo persona - caso C_08,AIM-P254-005,cuerpo,C_08.jpg
+C_09,Cuerpo persona - caso C_09,AIM-P252-057,cuerpo,C_09.jpg
+C_10,Cuerpo persona - caso C_10,AIM-P247-013,cuerpo,C_10.jpg
