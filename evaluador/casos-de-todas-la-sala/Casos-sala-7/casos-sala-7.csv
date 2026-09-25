@@ -1,15 +1,11 @@
-caso,id_correcto,tipo
-BANRURAL,,dificil
-FRANCE,,dificil
-LA GUAIRA,,dificil
-LISIADOS,,dificil
-LOS INCREDIBLES,,dificil
-MBAPE tirado,,dificil
-MayasFC,,dificil
-SemenoSports,,dificil
-Sports,,dificil
-SportsPatron,,dificil
-YMAL tirado,,dificil
-cr7 tirado,,dificil
-hermanoSport,,dificil
-messi,,dificil
+caso_id,foto,tipo,id_correcto
+caso_01,c_01.png,persona,AIM-P001-001
+caso_02,c_02.png,persona,AIM-P001-002
+caso_03,c_3.jpg,producto,AIM-P001-003
+caso_04,c_04.jpg,producto,AIM-P001-004
+caso_05,c_05.png,captura,AIM-P001-005
+caso_06,c_06.jpg,captura,AIM-P001-006
+caso_07,c_07.jpg,captura,AIM-P001-007
+caso_08,c_08.jpg,dificil,AIM-P001-008
+caso_09,c_09.jpg,dificil,AIM-P001-009
+caso_10,c_10.jpg,dificil,AIM-P001-010
