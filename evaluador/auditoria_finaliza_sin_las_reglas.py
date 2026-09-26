@@ -36,18 +36,22 @@ def cerrar_auditoria_dinamica():
             descartes_visuales_manuales += 1
             continue
             
-        # Si pasa el control de contenido, es un caso limpio oficial
-        casos_validos.append(fila)
-        
-        # CLASIFICACIÓN PASO 3: Mapeo analítico universal según tus hallazgos de hoy
+        # 🚀 CLASIFICACIÓN Y RE-ETIQUETADO PASO 3: Corrección física de las etiquetas del CSV
         if "pers" in tipo_original or "cuer" in tipo_original or "con_" in tipo_original:
+            fila['tipo'] = "persona"
             conteo_tipos["persona"] += 1
         elif "prod" in tipo_original:
+            fila['tipo'] = "producto"
             conteo_tipos["producto"] += 1
         elif "capt" in tipo_original:
+            fila['tipo'] = "captura"
             conteo_tipos["captura"] += 1
         else:
+            fila['tipo'] = "dificil"
             conteo_tipos["dificil"] += 1
+            
+        # Si pasa el control de contenido y se corrige la etiqueta, entra al set limpio oficial
+        casos_validos.append(fila)
 
     # Guardar el set limpio definitivo
     if casos_validos:
