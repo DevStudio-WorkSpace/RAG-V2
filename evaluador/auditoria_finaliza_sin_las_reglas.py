@@ -52,6 +52,36 @@ def cerrar_auditoria_dinamica():
     # Guardar el set limpio definitivo
     if casos_validos:
         df_final = pd.DataFrame(casos_validos)
+        
+        # =========================================================================
+        # 🚀 ASIGNACIÓN EQUITATIVA DE INTEGRANTES REALES (PASO 1 DEL PDF)
+        # =========================================================================
+        integrantes_por_sala = {
+            "Sala 1": ["Samir Ochoa", "Andres Quispe"], 
+            "Sala 2": ["Luis Bazan", "Renzo Silva"],
+            "Sala 3": ["Edwin Salvatierra", "Jhon Portugal"],  
+            "Sala 4": ["Alessandro Trujillo", "Edwin Manrique"], 
+            "Sala 5": ["Luciano Acuña", "Flavio Silva"],
+            "Sala 6": ["Esteban Moreno", "Paolo Lopez"],
+            "Sala 7": ["Kevin Chacon", "Sebastian Lopez"]
+        }
+
+        # Contadores por sala para ir alternando 50% y 50%
+        contadores_reparto = {sala: 0 for sala in integrantes_por_sala.keys()}
+
+        def asignar_quien_eligio(row):
+            sala = str(row['sala_origen']).strip()
+            if sala in integrantes_por_sala:
+                lista = integrantes_por_sala[sala]
+                idx = contadores_reparto[sala] % 2  # Alterna equitativamente (0, 1, 0, 1...)
+                contadores_reparto[sala] += 1
+                return lista[idx]
+            return "Desconocido"
+
+        # Aplicamos la asignación oficial a la columna
+        df_final['quien_eligio'] = df_final.apply(asignar_quien_eligio, axis=1)
+        # =========================================================================
+
         df_final.to_csv(ARCHIVO_FINAL_LIMPIO, index=False)
         total_final_medicion = len(df_final)
     else:
