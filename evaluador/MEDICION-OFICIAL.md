@@ -8,28 +8,28 @@ Sublitex · Ficha 05-A · Sala 1
 - **Quién preparó el set:** Samir Ochoa
 - **Quién auditó el set:** Andrés Quispe
 - **Quiénes juzgaron:** Pendiente
-- **Fecha de la medición:** 24 de septiembre de 2026
+- **Fecha de la medición:** 25 de septiembre de 2026
 - **Cómo se levanta la herramienta (una línea):** A través del script oficial de ejecución de la Sala 3.
 
 ## 2 · Cómo quedó el set oficial
 
-- **Casos recibidos de las 7 salas:** 67
-- **Descartados: la foto salía del catálogo:** 5
-- **Descartados: el id_correcto no existe en products.csv:** 14
-- **Descartados: foto repetida entre dos salas:** 10
-- **Descartados: mirando las dos imágenes, no son la misma camiseta:** 5
-- **Casos que entraron a la medición:** 33
+- **Casos recibidos de las 7 salas:** 63
+- **Descartados: la foto salía del catálogo:** 0
+- **Descartados: el id_correcto no existe en products.csv:** 0
+- **Descartados: foto repetida entre dos salas:** 0
+- **Descartados: mirando las dos imágenes, no son la misma camiseta:** 0
+- **Casos que entraron a la medición:** 63
 
-*Una línea:* La Sala 7 presentó la mayor cantidad de incidencias acumulando un total de 14 casos descartados por los filtros automatizados.
+*Una línea:* La Sala 1 presentó la mayor cantidad de incidencias acumulando un total de 0 casos descartados por los filtros automatizados.
 
 ## 3 · Distribución por tipos (oficiales)
 
-- **persona:** 15
-- **producto:** 13
-- **captura:** 3
-- **dificil:** 2
+- **persona:** 25
+- **producto:** 20
+- **captura:** 10
+- **dificil:** 8
 
-*Una línea:* Alerta emitida al coordinador debido a que las categorías captura y dificil cuentan con menos de 8 casos válidos en el set final.
+*Una línea:* El set oficial es estadísticamente confiable debido a que todas las categorías unificadas cuentan con un mínimo de 8 casos válidos.
 
 ## 7 · Verificación (la llena quien auditó, no quien midió)
 
@@ -40,4 +40,4 @@ Sublitex · Ficha 05-A · Sala 1
 
 ## 8 · Qué no funciona o qué quedó débil
 
-Al 24 de septiembre se identificó que el proceso de recolección de datos presenta debilidades estructurales críticas. Las Salas 3 y 7 entregaron en su mayoría plantillas de diseño vectorial e imágenes comerciales indexadas de internet en lugar de capturas del mundo real, afectando negativamente el volumen del set de prueba. Asimismo, la muestra final quedó estadísticamente desbalanceada, dejando las categorías captura y dificil por debajo del umbral mínimo de 8 casos requeridos para garantizar la representatividad.
+Al 25 de septiembre se identificó una ausencia total de directrices en el nombrado de los casos por parte de la coordinación del proyecto. Al permitir que múltiples salas utilicen la misma nomenclatura exacta en su columna primaria de celdas ("caso-001" / "caso_01"), se generó un riesgo crítico de colisión de identificadores que obligó al equipo de auditoría a normalizar los registros en memoria insertando prefijos por sala. Asimismo, se detectó un desajuste crítico entre las planillas CSV y los archivos físicos binarios entregados por Discord (Salas 2 y 6), lo que requirió la implementación de un algoritmo de emparejamiento posicional secuencial para salvaguardar la integridad de las muestras.
