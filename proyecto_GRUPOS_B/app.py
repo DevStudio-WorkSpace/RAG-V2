@@ -2,13 +2,11 @@
 Evaluador Ficha 03-B
 --------------------
 Consume RAG-V2 por HTTP y permite evaluar los resultados con juicios humanos.
-No modifica ningún archivo de RAG-V2.
+No modifica ningun archivo de RAG-V2.
 """
 
 import csv
-import json
 import os
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -29,6 +27,7 @@ st.markdown(
     <style>
         .stApp {
             background-color: #D6EAF8;
+            color: #1A1A2E;
         }
         header[data-testid="stHeader"] {
             background-color: rgba(214, 234, 248, 0.85);
@@ -40,24 +39,9 @@ st.markdown(
 
 
 # =============================================================================
-# ALERTA AMIGABLE PARA ARCHIVOS / IMÁGENES FALTANTES
+# ALERTA AMIGABLE PARA ARCHIVOS / IMAGENES FALTANTES
 # =============================================================================
 def _alerta_archivos_faltantes(tipo, detalle=""):
-    """
-    Muestra una alerta visual cuidada cuando faltan archivos o imágenes
-    locales necesarios para la evaluación. Esta función solo se usa para
-    errores esperables relacionados con la presencia de archivos en
-    disco (casos.csv, fotos de casos, miniaturas del catálogo).
-
-    NO se usa para errores inesperados del sistema ni para fallos del
-    buscador RAG-V2, que deben seguir apareciendo tal cual para que el
-    equipo pueda diagnosticarlos durante el desarrollo.
-
-    Args:
-        tipo: titulo corto de la alerta (ej. "Faltan imagenes para
-            comparar"). Si viene vacio se usa un titulo generico.
-        detalle: una sola frase breve y humana explicando que hacer.
-    """
     titulo = (tipo or "Faltan imagenes para comparar").strip()
     if detalle:
         cuerpo = detalle.strip()
@@ -103,18 +87,18 @@ def _alerta_archivos_faltantes(tipo, detalle=""):
         unsafe_allow_html=True,
     )
 
+
 # =============================================================================
-# RUTAS (calculadas desde la ubicación de app.py)
+# RUTAS (calculadas desde la ubicacion de app.py)
 # =============================================================================
 APP_DIR = Path(__file__).parent.resolve()
-RAG_BASE = APP_DIR.parent.resolve()  # RAG-V2 raíz
+RAG_BASE = APP_DIR.parent.resolve()
 CASOS_CSV = APP_DIR / "casos" / "casos.csv"
 CASOS_FOTOS = APP_DIR / "casos" / "fotos"
 CATALOGO_IMAGES = RAG_BASE / "data" / "images_normalized"
 JUICIOS_CSV = APP_DIR / "data" / "juicios.csv"
 API_URL = "http://localhost:8000"
 
-# Crear carpeta data/ si no existe (necesario para juicios.csv)
 (APP_DIR / "data").mkdir(parents=True, exist_ok=True)
 
 JUICIOS_COLS = [
@@ -127,14 +111,11 @@ JUICIOS_COLS = [
     "timestamp",
 ]
 
+
 # =============================================================================
-# RESOLVER RUTA DE IMAGEN DEL CATÁLOGO
+# RESOLVER RUTA DE IMAGEN DEL CATALOGO
 # =============================================================================
 def _resolver_ruta_catalogo(img_nombre, id_producto=""):
-    """
-    Devuelve la ruta de la imagen en el catálogo, probando diferentes
-    extensiones ya que la normalización puede haberlas convertido a .jpg.
-    """
     if not img_nombre:
         return Path()
     ruta = CATALOGO_IMAGES / img_nombre
@@ -151,6 +132,24 @@ def _resolver_ruta_catalogo(img_nombre, id_producto=""):
             return cand
     return ruta
 
+
+# =============================================================================
+# RESOLVER RUTA DE IMAGEN DEL CASO (consulta)
+# =============================================================================
+def _resolver_ruta_caso(caso_id):
+    if not caso_id:
+        return Path()
+    ruta = CASOS_FOTOS / caso_id
+    if ruta.exists():
+        return ruta
+    base = caso_id.rsplit(".", 1)[0] if "." in caso_id else caso_id
+    for ext in (".jpg", ".jpeg", ".png", ".webp"):
+        cand = CASOS_FOTOS / f"{base}{ext}"
+        if cand.exists():
+            return cand
+    return ruta
+
+
 # =============================================================================
 # CARGAR CASOS DESDE CSV
 # =============================================================================
@@ -160,6 +159,7 @@ def cargar_casos():
     with open(CASOS_CSV, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         return list(reader)
+
 
 # =============================================================================
 # CARGAR JUICIOS DESDE CSV
@@ -187,6 +187,7 @@ def cargar_juicios():
             }
             juicios[clave] = juicio
     return juicios
+
 
 # =============================================================================
 # GUARDAR JUICIO EN CSV (reemplaza si ya existe caso_id + posicion)
@@ -238,6 +239,7 @@ def guardar_juicio(juicio):
             writer.writerow(row_out)
     os.replace(tmp_path, JUICIOS_CSV)
 
+
 # =============================================================================
 # CONSULTAR RAG-V2 POR HTTP
 # =============================================================================
@@ -258,7 +260,7 @@ def consultar_rag(foto_path):
     except requests.exceptions.ConnectionError:
         return None, "No se pudo conectar a RAG-V2. Ejecuta: uvicorn api.main:app --port 8000"
     except requests.exceptions.Timeout:
-        return None, "La consulta tardó demasiado."
+        return None, "La consulta tardo demasiado."
 
     if resp.status_code != 200:
         try:
@@ -270,11 +272,12 @@ def consultar_rag(foto_path):
     result = resp.json()
     resultados = result.get("resultados", [])
     if not resultados:
-        return None, "La API no devolvió resultados."
+        return None, "La API no devolvio resultados."
     return resultados[:5], None
 
+
 # =============================================================================
-# CALCULAR MÉTRICAS DESDE JUICIOS
+# CALCULAR METRICAS DESDE JUICIOS
 # =============================================================================
 def calcular_metricas(juicios, casos):
     if not juicios:
@@ -304,7 +307,7 @@ def calcular_metricas(juicios, casos):
         if 1 in juicios_caso and juicios_caso[1] == "acierto":
             top1_aciertos += 1
 
-        if any(j in ("acierto",) for j in juicios_caso.values()):
+        if any(j == "acierto" for j in juicios_caso.values()):
             top5_aciertos += 1
 
         util = sum(1 for j in juicios_caso.values() if j in ("acierto", "sirve"))
@@ -316,8 +319,9 @@ def calcular_metricas(juicios, casos):
 
     return top1, top5, utilidad, total_casos
 
+
 # =============================================================================
-# MÉTRICAS POR TIPO
+# METRICAS POR TIPO
 # =============================================================================
 def calcular_metricas_por_tipo(juicios, casos):
     tipos = {}
@@ -337,8 +341,6 @@ def calcular_metricas_por_tipo(juicios, casos):
     resultados = {}
     for tid, data in tipos.items():
         casos_ids = data["casos"]
-        juicios_map = data["juicios"]
-
         casos_evaluados = set()
         for (cid, _), j in juicios.items():
             if cid in casos_ids:
@@ -361,7 +363,7 @@ def calcular_metricas_por_tipo(juicios, casos):
             }
             if 1 in juicios_caso and juicios_caso[1] == "acierto":
                 top1 += 1
-            if any(j in ("acierto",) for j in juicios_caso.values()):
+            if any(j == "acierto" for j in juicios_caso.values()):
                 top5 += 1
             util = sum(1 for j in juicios_caso.values() if j in ("acierto", "sirve"))
             utilidad += util
@@ -375,8 +377,9 @@ def calcular_metricas_por_tipo(juicios, casos):
 
     return resultados
 
+
 # =============================================================================
-# INICIALIZAR ESTADO DE SESIÓN
+# INICIALIZAR ESTADO DE SESION
 # =============================================================================
 def inicializar_estado():
     if "casos" not in st.session_state:
@@ -398,6 +401,14 @@ def inicializar_estado():
                     caso_actual = i
                     break
         st.session_state["caso_actual"] = caso_actual
+
+    if "ultimo_caso_id" not in st.session_state:
+        st.session_state["ultimo_caso_id"] = None
+    if "ultimos_resultados" not in st.session_state:
+        st.session_state["ultimos_resultados"] = None
+    if "ultimo_error" not in st.session_state:
+        st.session_state["ultimo_error"] = None
+
 
 # =============================================================================
 # INTERFAZ PRINCIPAL
@@ -425,9 +436,8 @@ def main():
 
     caso = casos[caso_actual]
     cid = caso["caso_id"]
-    foto_nombre = caso["foto"]
+    foto_path = _resolver_ruta_caso(cid)
     tipo = caso["tipo"]
-    foto_path = CASOS_FOTOS / foto_nombre
 
     n_total = len(casos)
     n_evaluados = len(set(k[0] for k in juicios if k[0] in [c["caso_id"] for c in casos]))
@@ -448,23 +458,38 @@ def main():
     # MOSTRAR FOTO DEL CASO
     # =========================================================================
     if foto_path.exists():
-        st.image(str(foto_path), caption=f"Foto del caso: {foto_nombre}", width=300)
+        st.image(str(foto_path), caption=f"Foto del caso: {cid}", width=300)
     else:
         _alerta_archivos_faltantes(
             "Faltan imagenes para comparar",
-            "No se encontro la imagen del caso actual. Agregala a la "
-            "carpeta de casos y vuelve a intentarlo.",
+            f"No se encontro la imagen del caso `{cid}`. Verifica que exista "
+            f"en `casos/fotos/` con extension .jpg, .jpeg, .png o .webp.",
         )
 
     # =========================================================================
-    # CONSULTAR RAG-V2
+    # CONSULTAR RAG-V2 (con cache en session_state)
     # =========================================================================
     resultados = None
     error = None
 
-    if foto_path.exists():
-        with st.spinner("Consultando RAG-V2..."):
-            resultados, error = consultar_rag(foto_path)
+    caso_id_actual = cid
+    caso_id_guardado = st.session_state.get("ultimo_caso_id")
+    if (
+        caso_id_guardado == caso_id_actual
+        and st.session_state.get("ultimos_resultados") is not None
+    ):
+        resultados = st.session_state["ultimos_resultados"]
+        error = st.session_state.get("ultimo_error")
+    else:
+        if foto_path.exists():
+            with st.spinner("Consultando RAG-V2..."):
+                resultados, error = consultar_rag(foto_path)
+            st.session_state["ultimo_caso_id"] = caso_id_actual
+            st.session_state["ultimos_resultados"] = resultados
+            st.session_state["ultimo_error"] = error
+        else:
+            resultados = None
+            error = f"La foto no existe: {foto_path}"
 
     if error:
         st.error(error)
@@ -529,7 +554,6 @@ def main():
                     }
                     guardar_juicio(juicio_data)
                     st.session_state["juicios"] = cargar_juicios()
-                    st.rerun()
 
                 c1, c2, c3 = st.columns(3)
                 with c1:
@@ -560,7 +584,7 @@ def main():
         st.markdown("---")
 
     # =========================================================================
-    # MÉTRICAS GLOBALES
+    # METRICAS GLOBALES
     # =========================================================================
     casos_ids = [c["caso_id"] for c in casos]
     juicios_filtrados = {
@@ -571,7 +595,7 @@ def main():
     top1, top5, utilidad, n = calcular_metricas(juicios_filtrados, casos)
 
     st.markdown("---")
-    st.markdown("### MÉTRICAS GLOBALES")
+    st.markdown("### METRICAS GLOBALES")
     if n > 0:
         st.markdown(f"- **Top 1:** {top1:.1%} ({int(top1 * n)}/{n})")
         st.markdown(f"- **Top 5:** {top5:.1%} ({int(top5 * n)}/{n})")
@@ -580,17 +604,18 @@ def main():
         st.info("No hay juicios evaluados todavía.")
 
     # =========================================================================
-    # MÉTRICAS POR TIPO
+    # METRICAS POR TIPO
     # =========================================================================
     metricas_tipo = calcular_metricas_por_tipo(juicios_filtrados, casos)
     if metricas_tipo:
-        st.markdown("### MÉTRICAS POR TIPO")
+        st.markdown("### METRICAS POR TIPO")
         for tid, m in metricas_tipo.items():
             n_t = m["n"]
             if n_t > 0:
                 st.markdown(f"- **{tid}** ({n_t} casos): Top1={m['top1']:.1%}, Top5={m['top5']:.1%}, Utilidad={m['utilidad']:.2f}/5")
             else:
                 st.markdown(f"- **{tid}** (0 casos evaluados)")
+
 
 if __name__ == "__main__":
     main()

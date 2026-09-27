@@ -15,26 +15,42 @@ El evaluador NO modifica RAG-V2. Solo consulta la API existente por HTTP y permi
 
 ### 1. Iniciar RAG-V2
 
-Desde la raíz de RAG-V2:
+***Programa Principal***
 
-```bash
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
-```
+Terminal 1:
 
-### 2. Instalar dependencias del evaluador
-
-```bash
-cd proyecto_GRUPOS_B
+cd "C:\Users\User\Desktop\rp-software1\RAG\RAG-V2"
 pip install -r requirements.txt
-```
+python -m uvicorn api.main:app --port 8000
 
-### 3. Iniciar el evaluador
+Terminal 2:
 
-```bash
+cd "C:\Users\User\Desktop\rp-software1\RAG\RAG-V2"
+streamlit run frontend/app.py
+
+Cuando aparezca:
+
+Email:
+
+Presionar ENTER sin escribir nada.
+
+### 2. Iniciar proyecto_GRUPOS_B
+
+***Programa Grupos B***
+
+Terminal 3:
+
+cd "C:\Users\User\Desktop\rp-software1\RAG\RAG-V2\proyecto_GRUPOS_B"
+pip install -r requirements.txt
 streamlit run app.py
-```
 
-El evaluador estará disponible en: http://localhost:8501
+### NAVEGADOR:
+
+http://localhost:8501
+
+y
+
+http://localhost:8502
 
 ## Preparar los casos
 
