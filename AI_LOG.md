@@ -746,3 +746,55 @@ runtime activo (api/, motores, índices, descriptores, validador) sin referencia
 a images_final; images_normalized intacto (15.272 archivos) tras la eliminación.
 **Pendiente:** la regeneración del banco vía consolidar.py entregará ahora tarjetas
 tal cual (sin normalización); normalizar_imagenes.py quedó como referencia.
+
+## Fecha: 2026-09-28 (documentación del motor)
+
+### Prompt - Analizar el proyecto completo y producir MOTOR.md en español (neutral/profesional) explicando el motor de búsqueda visual, sin modificar código y sin commitear
+**Propósito:** documentar el motor con evidencia real y verificable: pipeline de
+punta a punta (subida → preprocesamiento → CLIP/OpenCLIP/SigLIP → índice →
+reranking → respuesta → frontend), datos e índice, rendimiento (medidas vs
+estimaciones claramente separadas), escalabilidad y precisión; detectando la
+estructura real del repo (no la de los documentos viejos) y actualizando este log.
+
+**Resultado:** creado `MOTOR.md` en la raíz. Contenido principal:
+- **Pipeline** con diagrama Mermaid y nombres reales: `api/main.py`
+  (`search_image`, `search_image_v2`, `_encodificar_fusion`, `_recortes_consulta`,
+  `lifespan`), `api/preprocesar_consulta.py` (`preparar_consulta`, 320×320,
+  rembg→GrabCut), `api/search_engine.py` (`search_similar`), 
+  `api/search_engine_hito2.py` (`buscar_en_indice_normalizado`,
+  `recuperacion_fusion`, `_rerank_candidatos`), `api/descriptores_visuales.py`,
+  `frontend/app.py` (`buscar()`, modo=auto, modelo=fusion hardcodeado).
+- **Datos e índice (medido con np.load):** 15.272 productos; `embeddings.npy`,
+  `embeddings_clip.npy`, `embeddings_openclip.npy` = (15272, 512) float32
+  29,83 MiB c/u; `embeddings_siglip.npy` = (15272, 768) 44,74 MiB; `ids.npy`
+  (15272,) object; `descriptores.json` 47,4 MiB en disco ≈ 129 MB en RAM
+  (tamaño profundo medido) y 1,91 s de carga.
+- **Rendimiento:** medidas del repo (`data/comparacion_hito1_hito2.json`):
+  H1 224,5 ms · H2 840,8 ms · fusión 7.253,7 ms; medidas nuevas en esta sesión:
+  barrido lineal 1,65 ms, reranking 30 candidatos 44,2 ms cálido / 1.971,6 ms
+  frío, `preparar_consulta` (GrabCut) 5.727 ms, carga CLIP 29,04 s, encode
+  162,8 / 131,0 / 481,3 ms; torch 2.14.0+cpu sin CUDA, 8 hilos.
+- **Escalabilidad:** fuerza bruta O(N) sin ANN (verificado por grep: no hay
+  FAISS/hnswlib), handlers `async` con CPU que bloquean el event loop con 1 solo
+  worker, puntos de quiebre estimados a 100k y 1M, ruta de mejora (FAISS/pgvector,
+  descriptores binarios, workers) presentada como recomendación.
+- **Precisión:** 84% Top 1 / 90% Top 5 de la fusión y 60-64% de CLIP (JSON en
+  disco), modelo ganador SigLIP 92% (`docs-legacy/REPORTES_HITO2.md`), coherencia
+  Top 5 20-24% y evaluación humana casi sin ejecutar (16 filas / 5 consultas en
+  `data/evaluation.csv`), con discrepancias entre el JSON actual y
+  `REPORTES_HITO3_OPTIMIZACION.md` señaladas.
+
+**Hallazgos:** la estructura real es `api/ frontend/ data/ scripts/ evaluation/
+docs-legacy/` (no hay `backend/`); `README.md` sigue hablando de "1000 productos"
+y de CSV que ya no existen (`evaluation_metrics.csv`, `resultados_hito2.csv`,
+`resumen_hito2.txt`, `evidencia_coherencia_hito2.txt`); `data/tiempos.csv` solo
+tiene cabecera; `AGENTS.md` apunta a `TRABAJO.md` en la raíz pero está en
+`docs-legacy/`; `rembg` no está instalado (la UI usa GrabCut, ~5,7 s por consulta);
+la interfaz fuerza `modelo=fusion` (15 inferencias CPU por consulta).
+
+**Verificado:** ningún archivo de código modificado; solo se creó `MOTOR.md` y se
+agregó esta entrada. Mediciones ejecutadas en el venv del proyecto sobre los
+índices reales; sin commitear (a pedido).
+**Pendiente:** regenerar `data/evaluation_metrics.csv` y completar la evaluación
+humana del Top 5; recalibrar `UMBRAL_MINIMO_SIMILARIDAD` con
+`compare_hito1_hito2.py --fusion`.
