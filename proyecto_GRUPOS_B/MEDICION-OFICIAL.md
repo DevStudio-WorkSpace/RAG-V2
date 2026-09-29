@@ -1,43 +1,131 @@
-
 # Plantilla de entrega — Frente A
 
-Sublitex · Ficha 05-A · Sala 1
+*Sublitex · Ficha 05-A · Se copia, se llena y se devuelve. No se cambia la estructura.*
 
-## 1 · Identificación
+**Nombre del archivo:** `MEDICION-OFICIAL.md`
 
-- **Quién preparó el set:** Samir Ochoa
-- **Quién auditó el set:** Andrés Quispe
-- **Quiénes juzgaron:** Pendiente
-- **Fecha de la medición:** 25 de septiembre de 2026
-- **Cómo se levanta la herramienta (una línea):** A través del script oficial de ejecución de la Sala 3.
+Se entrega junto con el archivo de juicios en crudo y la planilla del set oficial.
 
-## 2 · Cómo quedó el set oficial
+**Tres reglas de llenado:** solo números, sin adjetivos; si algo no se calculó se escribe **pendiente**; la sección 8 no puede quedar vacía.
 
-- **Casos recibidos de las 7 salas:** 63
-- **Descartados: la foto salía del catálogo:** 0
-- **Descartados: el id_correcto no existe en products.csv:** 0
-- **Descartados: foto repetida entre dos salas:** 0
-- **Descartados: mirando las dos imágenes, no son la misma camiseta:** 0
-- **Casos que entraron a la medición:** 63
+---
 
-*Una línea:* La Sala 1 presentó la mayor cantidad de incidencias acumulando un total de 0 casos descartados por los filtros automatizados.
+# Integrantes:
 
-## 3 · Distribución por tipos (oficiales)
+-
+-Edwin Salvatierra
+-
+-
 
-- **persona:** 25
-- **producto:** 20
-- **captura:** 10
-- **dificil:** 8
+---
 
-*Una línea:* El set oficial es estadísticamente confiable debido a que todas las categorías unificadas cuentan con un mínimo de 8 casos válidos.
+# 1 · Identificación
 
-## 7 · Verificación (la llena quien auditó, no quien midió)
+| Quién preparó el set                       |   |
+| ------------------------------------------ | - |
+| Quién auditó el set                        |   |
+| Quiénes juzgaron                           |   |
+| Fecha de la medición                       |   |
+| Cómo se levanta la herramienta (una línea) |   |
 
-- **¿Los tres números se pueden recalcular desde el archivo en crudo y da lo mismo?:** pendiente
-- **¿Las filas del archivo cuadran con la cantidad de casos × posiciones?:** pendiente
-- **¿Se verificó uno por uno que cada id_correcto exista en products.csv?:** sí
-- **¿Se descartó algún caso después de haber visto su resultado?:** pendiente
+---
 
-## 8 · Qué no funciona o qué quedó débil
+# 2 · Cómo quedó el set oficial
 
-Al 25 de septiembre se identificó una ausencia total de directrices en el nombrado de los casos por parte de la coordinación del proyecto. Al permitir que múltiples salas utilicen la misma nomenclatura exacta en su columna primaria de celdas ("caso-001" / "caso_01"), se generó un riesgo crítico de colisión de identificadores que obligó al equipo de auditoría a normalizar los registros en memoria insertando prefijos por sala. Asimismo, se detectó un desajuste crítico entre las planillas CSV y los archivos físicos binarios entregados por Discord (Salas 2 y 6), lo que requirió la implementación de un algoritmo de emparejamiento posicional secuencial para salvaguardar la integridad de las muestras.
+|                                                                           | Cantidad |
+| ------------------------------------------------------------------------- | -------: |
+| Casos recibidos de las 7 salas                                            |          |
+| Descartados: la foto salía del catálogo (o recorte / recoloreada de ella) |          |
+| Descartados: el id_correcto no existe en products.csv                     |          |
+| Descartados: foto repetida entre dos salas                                |          |
+| Descartados: mirando las dos imágenes, no son la misma camiseta           |          |
+| **Casos que entraron a la medición**                                      |          |
+
+**Una línea:** ¿de qué sala vinieron la mayoría de los descartes y por qué motivo?
+
+---
+
+# 3 · Cómo quedó repartido por tipo
+
+| Tipo     | Casos |
+| -------- | ----: |
+| persona  |       |
+| producto |       |
+| captura  |       |
+| dificil  |       |
+
+**Si algún tipo quedó con menos de 8 casos, anotarlo acá:**
+
+---
+
+# 4 · El número
+
+| Número              | Resultado |
+| ------------------- | --------: |
+| Casos medidos (n)   |           |
+| Top 1 (%)           |           |
+| Top 5 (%)           |           |
+| Utilidad (de 0 a 5) |           |
+
+---
+
+# 5 · El número separado por tipo
+
+| Tipo     |  n | Top 1 | Top 5 | Utilidad |
+| -------- | -: | ----: | ----: | -------: |
+| persona  |    |       |       |          |
+| producto |    |       |       |          |
+| captura  |    |       |       |          |
+| dificil  |    |       |       |          |
+
+**Una línea:** ¿en qué tipo de foto se cae más el buscador?
+
+---
+
+# 6 · Prueba entre los dos jueces
+
+Los mismos 15 casos, juzgados por dos personas por separado.
+
+|                                                  | Resultado |
+| ------------------------------------------------ | --------: |
+| En cuántos de los 15 coincidieron los dos jueces |           |
+| En cuántos no coincidieron                       |           |
+| El desacuerdo más común fue entre…               |           |
+
+**Si no coincidieron en más de 3, ¿qué se hizo para alinear el criterio antes de seguir midiendo?**
+
+---
+
+# 7 · Verificación
+
+*La llena quien auditó, no quien midió.*
+
+| Verificación                                                                    | Resultado |
+| ------------------------------------------------------------------------------- | --------- |
+| ¿Los tres números se pueden recalcular desde el archivo en crudo y da lo mismo? | sí / no   |
+| ¿Las filas del archivo cuadran con la cantidad de casos × posiciones?           | sí / no   |
+| ¿Se verificó uno por uno que cada id_correcto exista en products.csv?           | sí / no   |
+| ¿Se descartó algún caso después de haber visto su resultado?                    | sí / no   |
+
+---
+
+# 8 · Qué no funciona o qué quedó débil
+
+Con sus palabras. Lo que falta, lo que quedó a medias, lo que no confían del todo.
+
+**Esta sección no puede quedar vacía.**
+
+---
+
+# 9 · Archivos que acompañan
+
+| Archivo                                                  | Nombre y ruta |
+| -------------------------------------------------------- | ------------- |
+| Archivo de juicios en crudo                              |               |
+| Planilla del set oficial (con la columna `quien_eligio`) |               |
+| Carpeta de fotos del set oficial                         |               |
+| Lista de casos descartados, con el motivo de cada uno    |               |
+
+---
+
+*Sublitex · Biblioteca visual · Ficha 05-A · Plantilla de entrega · Versión 1.0*

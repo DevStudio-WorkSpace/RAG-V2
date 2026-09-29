@@ -1,3 +1,22 @@
+# RESULTADOS_JUECES.md
+
+# Los jueces:
+
+-Edwin Salvatierra
+-Samir
+
+# Resultados de Edwin Salvatierra:
+
+METRICAS GLOBALES
+Top 1: 46.7% (7/15)
+Top 5: 53.3% (8/15)
+Utilidad: 2.40 / 5
+METRICAS POR TIPO
+producto (4 casos): Top1=50.0%, Top5=50.0%, Utilidad=1.50/5
+persona (4 casos): Top1=75.0%, Top5=75.0%, Utilidad=4.00/5
+captura (4 casos): Top1=50.0%, Top5=75.0%, Utilidad=3.00/5
+dificil (3 casos): Top1=0.0%, Top5=0.0%, Utilidad=0.67/5
+
 caso_id,tipo,posicion,id_resultado,juicio,score,timestamp
 sala2_caso-001.jpg,producto,5,AIM-P240-014,no_sirve,0.6528,2026-09-29T03:57:35Z
 sala2_caso-001.jpg,producto,4,AIM-P197-020,no_sirve,0.6534,2026-09-29T03:57:36Z
@@ -74,3 +93,6 @@ sala7_caso_10,dificil,2,AIM-P187-014,no_sirve,0.6888,2026-09-29T04:13:07Z
 sala7_caso_10,dificil,3,AIM-P029-041,no_sirve,0.6847,2026-09-29T04:13:10Z
 sala7_caso_10,dificil,4,AIM-P181-058,no_sirve,0.6846,2026-09-29T04:13:17Z
 sala7_caso_10,dificil,5,AIM-P179-027,no_sirve,0.679,2026-09-29T04:13:19Z
+
+# Resultados de Samir:
+
