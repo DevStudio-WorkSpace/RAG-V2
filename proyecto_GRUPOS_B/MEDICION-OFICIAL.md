@@ -129,25 +129,13 @@ Una advertencia para quien recalcule: la utilidad no es un promedio de puntos. E
 
 # 8 · Qué no funciona o qué quedó débil
 
-**1 · La cifra oficial es la de uno de los jueces, no una tercera cifra.** Con la regla que reportamos, el Top 1 de 46,7 % y el Top 5 de 53,3 % son exactamente los de Edwin solo. Samir solo da 40,0 % y 46,7 %, que es lo que sale con la regla estricta. El consolidado no agrega nada que no esté ya en uno de los dos.
+**1 · La regla de combinación no está escrita en ninguna ficha.** Hubo que elegir si `acierto` es cuando cualquiera de los dos lo marcó o solo cuando lo marcaron los dos. La primera da 46,7 / 53,3 / 2,60 y la segunda 40,0 / 46,7 / 2,53: 6,7 puntos de diferencia en las dos métricas. Elegir una u otra es decisión del equipo, no una consecuencia de los datos, y con 15 casos un solo caso ya son 6,7 puntos.
 
-**2 · La regla de combinación no está escrita en ninguna ficha.** Hubo que elegir si `acierto` es cuando cualquiera de los dos lo marcó o solo cuando lo marcaron los dos. La primera da 46,7 / 53,3 / 2,60 y la segunda 40,0 / 46,7 / 2,53: 6,7 puntos de diferencia en las dos métricas. Elegir una u otra es decisión del equipo, no una consecuencia de los datos, y con 15 casos un solo caso ya son 6,7 puntos.
+**2 · La columna `id_correcto` no sirve como verdad de referencia.** En 10 de los 15 casos su valor es un id de relleno, la serie `AIM-P001-001` a `AIM-P001-010`. Esos ids existen en `products.csv`, por eso el filtro automático no los agarró, pero no dicen qué camiseta es la correcta. Las métricas salen del juicio humano y no de esa columna; lo que no serviría es recalcular el Top 1 comparando ids desde el CSV.
 
-**3 · La columna `id_correcto` no sirve como verdad de referencia.** En 10 de los 15 casos su valor es un id de relleno, la serie `AIM-P001-001` a `AIM-P001-010`. Esos ids existen en `products.csv`, por eso el filtro automático no los agarró, pero no dicen qué camiseta es la correcta. Las métricas salen del juicio humano y no de esa columna; lo que no serviría es recalcular el Top 1 comparando ids desde el CSV.
+**3 · n = 15 es poco y `dificil` tiene 3 casos.** Ninguna cifra de la sección 5 resiste que un solo caso cambie. El 0,0 % de `dificil` sale de 3 casos, y con 3 casos eso no distingue que el buscador falle de que esos tres casos sean difíciles.
 
-**4 · Los dos jueces no juzgaron la misma lista de resultados.** En 24 de las 75 posiciones el producto que vieron fue distinto, y ningún score coincide, ni siquiera donde el producto sí es el mismo. El buscador no devolvió lo mismo en las dos corridas. La comparación de la sección 6 mezcla entonces desacuerdo de criterio con dos listas que no se pueden comparar una a una.
-
-**5 · n = 15 es poco y `dificil` tiene 3 casos.** Ninguna cifra de la sección 5 resiste que un solo caso cambie. El 0,0 % de `dificil` sale de 3 casos, y con 3 casos eso no distingue que el buscador falle de que esos tres casos sean difíciles.
-
-**6 · La reducción de 63 a 15 no tiene criterio escrito.** No hubo descartes, pero tampoco quedó registrado por qué se eligieron esos 15. Entraron 9 de la Sala 7, 4 de la Sala 6, 1 de la Sala 2 y 1 de la Sala 5; Salas 1, 3 y 4 no aportan nada. Como cada sala eligió los suyos, el set refleja lo que cada sala quiso mostrar y no una muestra de las 7 salas.
-
-**7 · Los dos filtros que se resuelven mirando imágenes no tienen registro.** El `id_correcto` inexistente y la foto repetida se comprobaron con programa y dieron 0. Pero «la foto salía del catálogo» y «no son la misma camiseta» se resuelven con el ojo, y no hay ningún archivo que deje esa revisión escrita caso por caso. El 0 de la sección 2 es la decisión del equipo, no una cuenta que se pueda volver a correr.
-
-**8 · No hay línea base para comparar.** El 92 % que se quería corregir venía de imágenes fabricadas a partir del propio catálogo y no quedó guardado el detalle de esa corrida. No hay contra qué leer estos 46,7 / 53,3.
-
-**9 · `data/juicios.csv` está vacío.** El `README.md` lo declara como almacenamiento activo de `app.py`, pero tiene 61 bytes: la cabecera y nada más. Los 150 juicios están pegados dentro de `RESULTADO_JUECES.md`, con los resúmenes de métricas intercalados, así que recalcular exige escribir un script que lea ese markdown.
-
-**10 · La Sala 1 mandó su propia versión de esta ficha, con otras cifras.** Reportaba 63 casos entrando a la medición y un reparto de 25 `persona`, 20 `producto`, 10 `captura` y 8 `dificil`. Ese reparto es el de los 63 casos recibidos, no el del set oficial, que son 15 con 4, 4, 4 y 3. Ninguna categoría llega a 8, que es justo lo que hay que anotar en la sección 3.
+**4 · La reducción de 63 a 15 no tiene criterio escrito.** No hubo descartes, pero tampoco quedó registrado por qué se eligieron esos 15. Entraron 9 de la Sala 7, 4 de la Sala 6, 1 de la Sala 2 y 1 de la Sala 5; Salas 1, 3 y 4 no aportan nada. Como cada sala eligió los suyos, el set refleja lo que cada sala quiso mostrar y no una muestra de las 7 salas.
 
 ---
 
