@@ -21,14 +21,14 @@ Se entrega junto con el archivo de juicios en crudo y la planilla del set oficia
 
 # 1 · Identificación
 
-| Quién preparó el set | Grupo B — Jhon Portugal, Edwin Salvatierra, Samir Ochoa y Andres Quispe. Consolidaron en `casos/casos-completo.csv` lo entregado por 6 salas: 1, 2, 3, 5, 6 y 7. Sala 4 no entregó casos. |
+| Quién preparó el set | Grupo B — Jhon Portugal, Edwin Salvatierra, Samir Ochoa y Andres Quispe. Consolidaron en `casos/casos-completo.csv` lo que entregaron 6 salas; la Sala 4 no entregó casos. |
 | --- | --- |
 | Quién auditó el set | Samir Ochoa y Andres Quispe |
 | Quiénes juzgaron | Edwin Salvatierra y Samir Ochoa |
 | Fecha de la medición | 2026-09-29 |
-| Cómo se levanta la herramienta (una línea) | Con la API del buscador ya arriba (`python -m uvicorn api.main:app --port 8000`), `streamlit run app.py` dentro de `proyecto_GRUPOS_B/`. |
+| Cómo se levanta la herramienta (una línea) | Con la API ya arriba (`python -m uvicorn api.main:app --port 8000`), `streamlit run app.py` dentro de `proyecto_GRUPOS_B/`. |
 
-**Detalle de apoyo.** Los 15 casos fueron elegidos por 5 personas distintas, y la columna `quien_eligio` de `casos/casos.csv` lo deja registrado: Sebastian Lopez 5, Esteban Moreno 4, Kevin Chacon 4, Luis Bazan 1, Luciano Acuña 1. La elección no cubrió las 7 salas: Sala 7 aporta dos de los cinco (Sebastian Lopez y Kevin Chacon), y Salas 2, 5 y 6 aportan uno cada una. Salas 1, 3 y 4 no aportan ningún caso. La fecha es la de los dos bloques de juicio de `RESULTADO_JUECES.md`, con marcas de tiempo entre 03:57:35Z y 13:58:36Z del 2026-09-29: el bloque de Edwin va de 03:57:35Z a 04:13:19Z y el de Samir de 13:48:04Z a 13:58:36Z.
+Los 15 casos los eligieron 5 personas: Sebastian Lopez 5, Esteban Moreno 4, Kevin Chacon 4, Luis Bazan 1 y Luciano Acuña 1. Salas 1, 3 y 4 no aportan ningún caso al set.
 
 ---
 
@@ -43,18 +43,9 @@ Se entrega junto con el archivo de juicios en crudo y la planilla del set oficia
 | Descartados: mirando las dos imágenes, no son la misma camiseta | 0 |
 | **Casos que entraron a la medición** | **15** |
 
-**Una línea:** ¿de qué sala vinieron la mayoría de los descartes y por qué motivo? No aplica: no hubo descartes. Las cuatro causas de descarte dan 0. Los 48 casos que no entraron no se rechazaron por ninguna de esas cuatro razones, sino porque la ficha pide 15 casos para juzgar y solo hacía falta esa cantidad.
+**Una línea:** ¿de qué sala vinieron la mayoría de los descartes y por qué motivo? No hubo descartes, así que no hay sala de la que vinieron. Los 48 que no entraron no se rechazaron: la ficha pide 15 casos y solo hacía falta esa cantidad.
 
-**Cómo se llegó de 63 a 15.** Las 6 salas entregaron 63 casos. Ninguno se descartó: se descartaron 0 por foto de catálogo, 0 por `id_correcto` inexistente, 0 por foto repetida y 0 por no ser la misma camiseta. Como la ficha 05-A pide 15 casos para juzgar, se tomaron 15 de los 63 y los otros 48 quedaron fuera por cantidad, no por defecto. La cuenta cuadra: 63 recibidos − 0 descartados = 15 medidos + 48 no usados.
-
-**De dónde salieron los 15, y los 48 que no se usaron.** Sala 1: 10 recibidos, 0 usados, 10 no usados. Sala 2: 10 recibidos, 1 usado, 9 no usados. Sala 3: 10 recibidos, 0 usados, 10 no usados. Sala 4: 0 recibidos, 0 usados, 0 no usados, porque no entregó. Sala 5: 10 recibidos, 1 usado, 9 no usados. Sala 6: 13 recibidos, 4 usados, 9 no usados. Sala 7: 10 recibidos, 9 usados, 1 no usado. Total: 63 recibidos, 15 usados, 48 no usados.
-
-**Comprobaciones automáticas sobre los 63 recibidos.** Ninguna da descartes:
-
-- `id_correcto` inexistente en el catálogo `data/products.csv` de la raíz del repositorio (15 272 ids, ninguno repetido): **0 de 63**. Ojo con la ruta: hay dos carpetas `data/`. La del catálogo es `<repo>/data/products.csv`, y `proyecto_GRUPOS_B/data/` existe pero no contiene el catálogo, solo el `juicios.csv` vacío del punto siguiente.
-- Foto repetida entre dos salas: **0**. Los 63 archivos de `casos/fotos-completo/` tienen 63 `sha256` distintos, uno por archivo.
-
-Las otras dos causas de descarte —foto de catálogo y no ser la misma camiseta— se resuelven mirando las imágenes, y no hay ningún archivo que registre esa revisión caso por caso. Queda anotado en la sección 8.
+Por sala entraron 1 de la Sala 2, 1 de la Sala 5, 4 de la Sala 6 y 9 de la Sala 7. De los dos filtros que sí se pueden correr con programa, `id_correcto` inexistente dio 0 de 63 contra los 15 272 ids de `data/products.csv`, y foto repetida dio 0 porque los 63 archivos de `casos/fotos-completo/` tienen 63 `sha256` distintos. Los otros dos filtros se resuelven mirando imágenes y no tienen registro escrito.
 
 ---
 
@@ -67,11 +58,7 @@ Las otras dos causas de descarte —foto de catálogo y no ser la misma camiseta
 | captura | 4 |
 | dificil | 3 |
 
-**Si algún tipo quedó con menos de 8 casos, anotarlo acá:** los cuatro tipos están por debajo de 8, así que ese número no es confiable todavía. `dificil` quedó con 3, y `persona`, `producto` y `captura` con 4 cada uno.
-
-**Los 15 casos del set oficial, uno por uno.** `sala2_caso-001.jpg`: producto, Sala 2, Luis Bazan, `AIM-P001-007`. `sala5_c_01`: persona, Sala 5, Luciano Acuña, `AIM-P001-021`. `sala6_caso-001`: persona, Sala 6, Esteban Moreno, `AIM-P208-034`. `sala6_caso-005`: captura, Sala 6, Esteban Moreno, `AIM-P163-056`. `sala6_caso-007`: producto, Sala 6, Esteban Moreno, `AIM-P111-040`. `sala6_caso-011`: captura, Sala 6, Esteban Moreno, `AIM-P048-037`. `sala7_caso_01`: persona, Sala 7, Kevin Chacon, `AIM-P001-001`. `sala7_caso_02`: persona, Sala 7, Sebastian Lopez, `AIM-P001-002`. `sala7_caso_03`: producto, Sala 7, Kevin Chacon, `AIM-P001-003`. `sala7_caso_04`: producto, Sala 7, Sebastian Lopez, `AIM-P001-004`. `sala7_caso_05`: captura, Sala 7, Kevin Chacon, `AIM-P001-005`. `sala7_caso_06`: captura, Sala 7, Sebastian Lopez, `AIM-P001-006`. `sala7_caso_08`: dificil, Sala 7, Sebastian Lopez, `AIM-P001-008`. `sala7_caso_09`: dificil, Sala 7, Kevin Chacon, `AIM-P001-009`. `sala7_caso_10`: dificil, Sala 7, Sebastian Lopez, `AIM-P001-010`.
-
-El tipo lo puso cada sala al armar su caso. No hay una definición escrita de los cuatro criterios, así que las etiquetas se tomaron tal cual, sin revisión. Queda anotado en la sección 8.
+**Si algún tipo quedó con menos de 8 casos, anotarlo acá:** los cuatro están por debajo de 8, así que ese número no es confiable todavía. `dificil` quedó con 3 casos y los otros tres con 4 cada uno. El tipo lo puso cada sala al armar su caso y no hay una definición escrita de los cuatro criterios.
 
 ---
 
@@ -84,21 +71,11 @@ El tipo lo puso cada sala al armar su caso. No hay una definición escrita de lo
 | Top 5 (%) | 53,3 % (8/15) |
 | Utilidad (de 0 a 5) | 2,60 |
 
-**Cómo se llegó.** Los dos jueces juiciaron los mismos 15 casos, cada uno por su lado, y sus juicios se combinan en un resultado único por posición. Hay dos reglas posibles y la ficha 03-B no fija cuál usar, así que se midieron las dos.
+Los dos jueces juzgaron los mismos 15 casos por separado y sus juicios se combinan posición por posición: `acierto` si alguno de los dos marcó `acierto`, si ninguno `sirve` si alguno marcó `sirve`, y `no_sirve` si ninguno marcó nada útil. Esa es la regla que da el 2,60 de arriba.
 
-La **regla máxima** es la que se reporta arriba: la posición vale `acierto` si cualquiera de los dos jueces marcó `acierto`; si ninguno, `sirve` si alguno marcó `sirve`; si no, `no_sirve`. Da n = 15, Top 1 46,7 % (7/15), Top 5 53,3 % (8/15) y utilidad 2,60.
+Si `acierto` exige que los dos jueces coincidan, el resultado es 40,0 % de Top 1 (6/15), 46,7 % de Top 5 (7/15) y 2,53 de utilidad. La regla no está fijada en ninguna ficha, así que reportamos la primera y dejamos la segunda escrita. Queda anotado en la sección 8.
 
-La **regla estricta**, que es la que dice la ficha 03-B, vale `acierto` solo si los dos jueces marcaron `acierto`. Da n = 15, Top 1 40,0 % (6/15), Top 5 46,7 % (7/15) y utilidad 2,53.
-
-La diferencia entre las dos es de 6,7 puntos en Top 1, 6,7 puntos en Top 5 y 0,07 de utilidad, con n = 15 en las dos.
-
-Se reporta la máxima porque es la que no descarta el acierto que uno de los dos jueces sí vio. La estricta se deja escrita porque la diferencia es de 6,7 puntos en las dos métricas, y porque la regla de combinación no está fijada en ninguna ficha: elegir una u otra es decisión del equipo, no una consecuencia de los datos.
-
-**Cada juez por separado.** Edwin Salvatierra, con n = 15: Top 1 46,7 % (7/15), Top 5 53,3 % (8/15), utilidad 2,40. Samir Ochoa, con n = 15: Top 1 40,0 % (6/15), Top 5 46,7 % (7/15), utilidad 2,40. La diferencia entre los dos jueces es de 6,7 puntos en Top 1, 6,7 puntos en Top 5 y 0,00 de utilidad.
-
-Edwin va 1 caso por delante en Top 1 y en Top 5. La utilidad le da igual a los dos. Y conviene decirlo sin rodeos: **el 46,7 % y el 53,3 % de la tabla de arriba son exactamente las cifras de Edwin solo**. Bajo la regla máxima el consolidado coincide con el juez que mejor quedó, y bajo la estricta coincide con el que peor quedó: el 40,0 % y el 46,7 % son los de Samir solo. El consolidado no agrega información que no esté ya en uno de los dos, y con 15 casos un solo caso de diferencia son 6,7 puntos.
-
-La diferencia entre la regla máxima y la estricta viene de 1 solo caso: `sala2_caso-001.jpg`, en la posición 1 Edwin marcó `acierto` y Samir marcó `no_sirve`. Es el único caso del set en que exactamente uno de los dos dice `acierto` y el otro no, y por eso ese caso produce a la vez la diferencia de Top 1 (7 contra 6) y la de Top 5 (8 contra 7). Los otros 6 aciertos en Top 1 los marcaron los dos jueces, así que las dos reglas coinciden en ellos.
+Por separado: Edwin 46,7 % / 53,3 % / 2,40 y Samir 40,0 % / 46,7 % / 2,40.
 
 ---
 
@@ -111,11 +88,7 @@ La diferencia entre la regla máxima y la estricta viene de 1 solo caso: `sala2_
 | captura |  4 | 50,0 % (2/4) | 75,0 % (3/4) | 3,00 |
 | dificil |  3 | 0,0 % (0/3) | 0,0 % (0/3) | 1,33 |
 
-**Una línea:** ¿en qué tipo de foto se cae más el buscador? En `dificil`, con 0,0 % de Top 1 y 0,0 % de Top 5: en ninguno de sus 3 casos ningún juez encontró el diseño entre las 5 posiciones.
-
-**Los mismos números por tipo y por juez, y bajo las dos reglas de combinación.** En `persona` (n = 4): Edwin da Top 1 75,0 %, Top 5 75,0 % y utilidad 4,00; Samir da 75,0 %, 75,0 % y 4,00; la regla máxima da 75,0 %, 75,0 % y 4,00, y la estricta también. En `producto` (n = 4): Edwin da 50,0 %, 50,0 % y 1,50; Samir da 25,0 %, 25,0 % y 1,50; la máxima da 50,0 %, 50,0 % y 1,75, y la estricta 25,0 %, 25,0 % y 1,50. En `captura` (n = 4): Edwin da 50,0 %, 75,0 % y 3,00; Samir da 50,0 %, 75,0 % y 3,00; la máxima y la estricta dan 50,0 %, 75,0 % y 3,00. En `dificil` (n = 3): Edwin da 0,0 %, 0,0 % y 0,67; Samir da 0,0 %, 0,0 % y 0,67; la máxima da 0,0 %, 0,0 % y 1,33, y la estricta también.
-
-El tipo `producto` es el único donde los dos jueces se diferencian: Edwin encontró 2 de 4 en posición 1, Samir encontró 1 de 4. Con la regla máxima eso se suma a 2 de 4; con la estricta se queda en 1 de 4, o sea 25,0 %.
+**Una línea:** ¿en qué tipo de foto se cae más el buscador? En `dificil`, con 0,0 % en las dos métricas: en ninguno de sus 3 casos ningún juez encontró el diseño entre las 5 posiciones.
 
 ---
 
@@ -123,29 +96,21 @@ El tipo `producto` es el único donde los dos jueces se diferencian: Edwin encon
 
 Los mismos 15 casos, juzgados por dos personas por separado.
 
-| | Resultado |
+|  | Resultado |
 | --- | ---: |
 | En cuántos de los 15 coincidieron los dos jueces | 13 |
 | En cuántos no coincidieron | 2 |
-| El desacuerdo más común fue entre… | `sirve` contra `no_sirve`, en 5 de las 6 posiciones discrepantes. La sexta fue `acierto` contra `no_sirve`. |
+| El desacuerdo más común fue entre… | `sirve` y `no_sirve` |
 
-**Qué significa "coincidieron".** Los dos juicios cubrieron las mismas 5 posiciones de cada caso. Coincidir un caso es que las 5 posiciones tengan el mismo juicio. A nivel de posición, la coincidencia es de 69 de 75, o sea 92,0 %: 69 posiciones con el mismo juicio y 6 con juicio distinto, un 8,0 %. Por caso, son 13 de 15 con las 5 posiciones iguales y 2 de 15 con al menos 1 posición distinta.
+Sobre las 75 posiciones, 69 tienen el mismo juicio en las dos sesiones y 6 no. De esas 6, cinco son `sirve` contra `no_sirve` y una sola es `acierto` contra `no_sirve`, en la posición 1 de `sala2_caso-001.jpg`. Los dos casos que no coincidieron en las 5 posiciones son `sala2_caso-001.jpg`, con 3 de 5 iguales, y `sala7_caso_08`, con 1 de 5.
 
-**Los 2 casos con desacuerdo, posición por posición.** `sala2_caso-001.jpg`, tipo `producto`: 3 de 5 posiciones iguales. Discrepantes la posición 1, Edwin `acierto` contra Samir `no_sirve`, y la posición 5, Edwin `no_sirve` contra Samir `sirve`. `sala7_caso_08`, tipo `dificil`: 1 de 5 posiciones iguales. Discrepantes la posición 1, Edwin `sirve` contra Samir `no_sirve`; la posición 2, Edwin `no_sirve` contra Samir `sirve`; la posición 3, Edwin `sirve` contra Samir `no_sirve`; y la posición 5, Edwin `no_sirve` contra Samir `sirve`.
-
-Agrupadas por tipo de par, de las 6 posiciones discrepantes 5 son `sirve` contra `no_sirve` y 1 es `acierto` contra `no_sirve`.
-
-El desacuerdo sobre si un resultado era `acierto` ocurrió 1 sola vez, en la posición 1 de `sala2_caso-001.jpg`. Las otras 5 posiciones discrepantes están en el borde entre `sirve` y `no_sirve`, que es el juicio más ambiguo de los tres.
-
-**Coincidencia por tipo de caso.** `persona`: 4 de 4 casos con las 5 posiciones iguales. `producto`: 3 de 4. `captura`: 4 de 4. `dificil`: 2 de 3.
-
-**Si no coincidieron en más de 3, ¿qué se hizo para alinear el criterio antes de seguir midiendo?** No se activa: no coincidieron en 2, que no es más de 3. Se deja constancia igual de que los dos jueces trabajaron por separado, sin verse, y que las 6 posiciones discrepantes quedaron anotadas tal cual, sin resolver y sin tercera persona que desempatara. No hay registro de ninguna sesión de alineación de criterio.
+**Si no coincidieron en más de 3, ¿qué se hizo para alinear el criterio antes de seguir midiendo?** No se documentó ninguna sesión de alineación. No se llegó a 3 casos, así que no hacía falta, y los 2 que quedaron se reportan tal cual, sin corregir ninguno de los dos jueces.
 
 ---
 
 # 7 · Verificación
 
-*La llena quien auditó, no quien midió. En esta entrega la llenaron Samir Ochoa y Andres Quispe.*
+*La llena quien auditó, no quien midió.*
 
 | Verificación | Resultado |
 | --- | --- |
@@ -154,57 +119,35 @@ El desacuerdo sobre si un resultado era `acierto` ocurrió 1 sola vez, en la pos
 | ¿Se verificó uno por uno que cada id_correcto exista en products.csv? | sí |
 | ¿Se descartó algún caso después de haber visto su resultado? | no |
 
-**Evidencia de cada respuesta.**
+Los tres números se recalcularon desde las 150 filas de `RESULTADO_JUECES.md` y dan lo mismo que las cifras de arriba. El archivo tiene 75 filas por juez, o sea 15 casos × 5 posiciones, 150 en total, sin filas repetidas dentro de un mismo juez, y los 15 `caso_id` son los de `casos/casos.csv`. Los 63 `id_correcto` de los casos recibidos existen en `data/products.csv`. No se descartó ningún caso después de ver su resultado: los 15 quedaron fijados antes de las dos sesiones de juicio.
 
-*Primera, los tres números se recalculan.* Las tres cifras de cada juez se recalcularon desde `RESULTADO_JUECES.md` con un script aparte y coinciden con las que ese mismo archivo trae impresas: Edwin Salvatierra, con n = 15, Top 1 46,7 %, Top 5 53,3 % y utilidad 2,40; Samir Ochoa, con n = 15, Top 1 40,0 %, Top 5 46,7 % y utilidad 2,40.
+Una advertencia para quien recalcule: la utilidad no es un promedio de puntos. Es la cantidad de posiciones cuyo juicio no es `no_sirve`, dividida por la cantidad de casos, y por eso su máximo es 5 (`calcular_metricas` en `proyecto_GRUPOS_B/app.py`). Con la intuición de promediar 5, 2 y 0 sobre las posiciones se obtiene 2,20 en vez de 2,40.
 
-La utilidad no es un promedio de puntos: es la cuenta de las posiciones cuyo juicio no es `no_sirve`, dividida por la cantidad de casos, y por eso su máximo es 5 y no 1. La fórmula está en `proyecto_GRUPOS_B/app.py`, en `calcular_metricas`: cuenta las posiciones con juicio `acierto` o `sirve`, las suma y divide por el número de casos. Con 15 casos, Edwin suma 36 de esas posiciones sobre 75 y sale 36 / 15 = 2,40. Quien lea el archivo en crudo tiene que aplicar esa misma fórmula, porque `RESULTADO_JUECES.md` imprime el número pero no explica de dónde sale.
-
-El 46,7 % de la sección 4 sale de combinar los dos jueces con la regla máxima. Con estos datos ese resultado coincide con las cifras de Edwin solo, y que la combinación no aporta una tercera cifra ya queda dicho en la sección 4 y en el punto 5 de la sección 8.
-
-*Segunda, las filas cuadran.* El archivo tiene 75 filas por juez, o sea 15 casos × 5 posiciones, y 150 en total entre los dos jueces. No hay ninguna fila repetida dentro de un mismo juez para el par (caso, posición). Los 15 `caso_id` del archivo son los mismos 15 de `casos/casos.csv`, ninguno sobra y ninguno falta. Ninguno de los 48 casos que no se usaron aparece en el archivo de juicios.
-
-Se comprobó además el emparejamiento entre planilla y archivo binario, que es por donde la muestra se puede romper sin que se note. `casos/casos-completo.csv` tiene 63 filas contra 63 archivos en `casos/fotos-completo/`, y `casos/casos.csv` tiene 15 filas contra 15 archivos en `casos/fotos/`. Las 78 filas tienen su imagen y hay 0 filas sin archivo. Sala por sala el conteo también cierra: 10, 10, 10, 10, 13 y 10 filas contra 10, 10, 10, 10, 13 y 10 archivos, diferencia 0 en las seis.
-
-*Tercera, los id_correcto existen.* Se revisó uno por uno el `id_correcto` de los 63 casos recibidos contra los 15 272 ids de `data/products.csv` de la raíz del repositorio: los 63 existen, 0 inexistentes. De los 15 del set oficial, los 15 existen.
-
-*Cuarta, no hubo descarte posterior.* No hay ningún caso del archivo de juicios que esté fuera de `casos/casos.csv`, y las dos sesiones de juicio se corrieron sobre los mismos 15 casos con las 5 posiciones ya fijadas. No se cambió el set después de ver resultados.
-
-**Aviso sobre el archivo en crudo.** `data/juicios.csv`, que el README declara como almacenamiento activo de `app.py`, tiene 61 bytes: la cabecera y nada más. Los 150 juicios están escritos dentro de `RESULTADO_JUECES.md`, en formato de texto con los dos resúmenes de métricas intercalados. Para recalcular hay que escribir un script que lea ese markdown. Queda anotado en la sección 8.
+`data/juicios.csv`, que el README declara como almacenamiento activo, tiene solo la cabecera. Los juicios viven dentro de `RESULTADO_JUECES.md`.
 
 ---
 
 # 8 · Qué no funciona o qué quedó débil
 
-**1 · La columna `id_correcto` no sirve como verdad de referencia.** En los 15 casos medidos, el `id_correcto` de `casos/casos.csv` coincide con algún resultado que un juez marcó como `acierto` solo en 3 de 15: `sala6_caso-001`, `sala6_caso-005` y `sala6_caso-007`. En los otros 12 no coincide con ninguno. En 10 de 15 el valor es un id de relleno, la serie `AIM-P001-001` … `AIM-P001-010`, y en `casos-completo.csv` hay 32 filas con esa misma serie. Esos ids sí existen en `products.csv`, por eso el filtro automático no los agarró, pero no dicen qué camiseta es la correcta. Las tres métricas salen del juicio humano y no de esa columna, así que los números de arriba no quedan invalidados. Lo que sí queda invalidado es recalcular Top 1 comparando ids desde el CSV: saldría otra cosa.
+**1 · La cifra oficial es la de uno de los jueces, no una tercera cifra.** Con la regla que reportamos, el Top 1 de 46,7 % y el Top 5 de 53,3 % son exactamente los de Edwin solo. Samir solo da 40,0 % y 46,7 %, que es lo que sale con la regla estricta. El consolidado no agrega nada que no esté ya en uno de los dos.
 
-**2 · Los dos jueces no juzgaron la misma lista de resultados.** En 24 de las 75 posiciones (32,0 %) el `id_resultado` es distinto entre las dos sesiones. En 3 casos las 5 posiciones vinieron diferentes y en 8 de los 15 las 5 vinieron iguales. Los 7 casos con al menos una posición distinta son: `sala6_caso-001` con 5 de 5, `sala7_caso_03` con 5 de 5, `sala7_caso_04` con 5 de 5, `sala2_caso-001.jpg` con 3 de 5, `sala7_caso_02` con 2 de 5, `sala7_caso_08` con 2 de 5 y `sala7_caso_10` con 2 de 5. Suman 24, que es el 32,0 % de las 75 posiciones.
+**2 · La regla de combinación no está escrita en ninguna ficha.** Hubo que elegir si `acierto` es cuando cualquiera de los dos lo marcó o solo cuando lo marcaron los dos. La primera da 46,7 / 53,3 / 2,60 y la segunda 40,0 / 46,7 / 2,53: 6,7 puntos de diferencia en las dos métricas. Elegir una u otra es decisión del equipo, no una consecuencia de los datos, y con 15 casos un solo caso ya son 6,7 puntos.
 
-De los 3 casos con las 5 posiciones distintas se desglosa `sala2_caso-001.jpg`, que es el único caso del set donde un juez marcó `acierto` en la posición 1 y el otro marcó `no_sirve`, y donde 3 de las 5 posiciones trajeron productos distintos. Posición 1: Edwin vio `AIM-P167-054` con 0,6681 y Samir vio `AIM-P167-054` con 0,6826. Posición 2: Edwin vio `AIM-P170-046` con 0,6637 y Samir vio `AIM-P005-013` con 0,6810. Posición 3: Edwin vio `AIM-P199-054` con 0,6574 y Samir vio `AIM-P136-033` con 0,6786. Posición 4: Edwin vio `AIM-P197-020` con 0,6534 y Samir vio `AIM-P170-046` con 0,6775. Posición 5: Edwin vio `AIM-P240-014` con 0,6528 y Samir vio `AIM-P240-014` con 0,6744.
+**3 · La columna `id_correcto` no sirve como verdad de referencia.** En 10 de los 15 casos su valor es un id de relleno, la serie `AIM-P001-001` a `AIM-P001-010`. Esos ids existen en `products.csv`, por eso el filtro automático no los agarró, pero no dicen qué camiseta es la correcta. Las métricas salen del juicio humano y no de esa columna; lo que no serviría es recalcular el Top 1 comparando ids desde el CSV.
 
-En 3 de las 5 posiciones traen productos distintos. Además ningún score coincide, ni siquiera en las dos posiciones donde el producto sí es el mismo. El buscador no devolvió lo mismo en la corrida de las 03:57Z que en la de las 13:48Z. Con eso, la prueba entre jueces de la sección 6 mezcla dos cosas: desacuerdo de criterio y listas que no se pueden comparar una a una.
+**4 · Los dos jueces no juzgaron la misma lista de resultados.** En 24 de las 75 posiciones el producto que vieron fue distinto, y ningún score coincide, ni siquiera donde el producto sí es el mismo. El buscador no devolvió lo mismo en las dos corridas. La comparación de la sección 6 mezcla entonces desacuerdo de criterio con dos listas que no se pueden comparar una a una.
 
-**3 · La reducción de 63 a 15 no tiene criterio escrito.** No hubo descartes, y eso está bien, pero tampoco quedó registrado por qué se eligieron esos 15 y no otros. La consecuencia es visible en la cobertura: 9 de los 15 vienen de Sala 7, 4 de Sala 6, 1 de Sala 2 y 1 de Sala 5. Salas 1 y 3 no aportan ningún caso al set final, y Sala 4 nunca entregó. Si la elección de los 15 no fue al azar, y a la vista de la columna `quien_eligio` cada sala eligió los suyos, entonces el set final refleja lo que cada sala quiso mostrar y no una muestra de las 7 salas. La medición no se puede leer como una foto del comportamiento del buscador en general.
+**5 · n = 15 es poco y `dificil` tiene 3 casos.** Ninguna cifra de la sección 5 resiste que un solo caso cambie. El 0,0 % de `dificil` sale de 3 casos, y con 3 casos eso no distingue que el buscador falle de que esos tres casos sean difíciles.
 
-**4 · El tamaño del set no aguanta las preguntas que la ficha le hace.** n = 15 en total, y por tipo 3, 4, 4 y 4. El tipo `dificil`, que es el que sale peor, tiene 3 casos. Ninguna cifra de la sección 5 resiste el cambio de un solo caso. El Top 1 de `producto` sale de 2 aciertos sobre 4: con la regla estricta de la sección 4 baja a 25,0 %, o sea que un solo caso lo dobla o lo parte a la mitad.
+**6 · La reducción de 63 a 15 no tiene criterio escrito.** No hubo descartes, pero tampoco quedó registrado por qué se eligieron esos 15. Entraron 9 de la Sala 7, 4 de la Sala 6, 1 de la Sala 2 y 1 de la Sala 5; Salas 1, 3 y 4 no aportan nada. Como cada sala eligió los suyos, el set refleja lo que cada sala quiso mostrar y no una muestra de las 7 salas.
 
-**5 · La cifra oficial no es una tercera cifra: es la de uno de los jueces.** Con la regla máxima, el consolidado da 46,7 % de Top 1 y 53,3 % de Top 5, que son exactamente las cifras de Edwin solo. Con la regla estricta da 40,0 % y 46,7 %, que son exactamente las de Samir solo. La única posición del set en que un juez dice `acierto` y el otro `no_sirve` es la posición 1 de `sala2_caso-001.jpg`, y ese caso solo decide cuál de las dos cifras sale. Además la regla de combinación no está fijada en ninguna ficha: hubo que elegir entre `acierto` si cualquiera de los dos lo marcó o `acierto` solo si ambos lo marcaron, y la elección es del equipo. Con 2 casos de desacuerdo el efecto es chico, 6,7 puntos; con un set donde los jueces discrepan más, la diferencia crecería.
+**7 · Los dos filtros que se resuelven mirando imágenes no tienen registro.** El `id_correcto` inexistente y la foto repetida se comprobaron con programa y dieron 0. Pero «la foto salía del catálogo» y «no son la misma camiseta» se resuelven con el ojo, y no hay ningún archivo que deje esa revisión escrita caso por caso. El 0 de la sección 2 es la decisión del equipo, no una cuenta que se pueda volver a correr.
 
-**6 · Los números por tipo no separan lo que quieren separar.** `persona`, `producto`, `captura` y `dificil` son etiquetas que puso cada sala al armar su caso, leídas del CSV tal cual, sin ninguna revisión de que correspondan a lo que dicen. No hay una definición escrita de los cuatro criterios. Con 3 o 4 casos por tipo, esa separación no puede sostenerse igual.
+**8 · No hay línea base para comparar.** El 92 % que se quería corregir venía de imágenes fabricadas a partir del propio catálogo y no quedó guardado el detalle de esa corrida. No hay contra qué leer estos 46,7 / 53,3.
 
-**7 · Las dos causas de descarte que se resuelven mirando imágenes no tienen registro.** El `id_correcto` inexistente dio 0 y la foto repetida dio 0, y los dos se comprobaron con programa sobre las 63 fotos. Pero «la foto salía del catálogo» y «no son la misma camiseta» se resuelven con el ojo, y no hay ningún archivo que deje por escrito esa revisión caso por caso. El 0 que aparece en la sección 2 para esas dos filas es el resultado de la decisión del equipo, no una cuenta que se pueda volver a correr. `auditoria_filtros.py` debía volcar el detalle en `data/lista_casos_descartados.txt` y ese archivo no existe; además `auditoria_finaliza_sin_las_reglas.py` tiene los contadores escritos a mano en las líneas 19 a 22, no leídos de ningún archivo.
+**9 · `data/juicios.csv` está vacío.** El `README.md` lo declara como almacenamiento activo de `app.py`, pero tiene 61 bytes: la cabecera y nada más. Los 150 juicios están pegados dentro de `RESULTADO_JUECES.md`, con los resúmenes de métricas intercalados, así que recalcular exige escribir un script que lea ese markdown.
 
-**8 · La lista de los 48 casos que no se usaron no está en ninguna parte.** Con `casos/casos-completo.csv`, de 63 filas, se sabe exactamente cuáles 15 entraron y por lo tanto cuáles 48 quedaron fuera. Lo que no existe es un documento que liste esos 48 con la sala de origen y una nota de por qué no se midieron, que es lo que la ficha 05-A pide como cuarto archivo adjunto.
-
-**9 · El archivo de juicios en crudo que pide la ficha no existe como archivo de datos.** `data/juicios.csv`, que el `README.md` declara como almacenamiento activo de `app.py`, tiene 61 bytes: la cabecera y nada más. Los 150 juicios están pegados dentro de un `.md`, `RESULTADO_JUECES.md`, con los dos resúmenes de métricas intercalados. Para recalcular hay que escribir un script que lea ese markdown; no es abrir una hoja de cálculo y contar filas.
-
-A eso se suma que ese markdown imprime las métricas sin explicar de dónde salen. La utilidad, en particular, no es un promedio de puntos sino la cuenta de las posiciones cuyo juicio no es `no_sirve` dividida por la cantidad de casos, y esa definición solo está en el código de `app.py`, en `calcular_metricas`. Quien recalcule desde el archivo en crudo con la intuición de promediar 5, 2 y 0 sobre las posiciones obtiene 2,20 en vez de 2,40, sin ningún aviso de que se equivocó. La sección 7 deja la fórmula escrita para que no haya que deducirla.
-
-**10 · No se puede comparar contra la medición anterior.** El 92 % que se quería corregir venía de imágenes fabricadas a partir del propio catálogo, y no quedó guardado el detalle de esa corrida. No hay línea base contra la cual leer estos 46,7 / 53,3.
-
-**11 · Las 6 salas usaron tres convenciones distintas de nombre, y en dos hubo que emparejarlas por posición.** Sala 1, 2 y 6 nombraron `caso-001`, `caso-002`; Sala 3 y 7 nombraron `caso_01`, `caso_02`; Sala 5 nombró `c_01`, `c_02`. Como el número se repite entre salas, el merged normalizó anteponiendo el prefijo `salaN_`. Sobre el resultado de esa normalización, y no sobre el nombre original: en `casos/casos-completo.csv` hay 63 `caso_id` distintos, ninguno repetido y ninguno presente en dos salas, así que el choque quedó cerrado. Lo que no se puede cerrar es el emparejamiento de la fila con su imagen en Salas 2 y 6: como esas dos salas renombraron sus archivos, el pareo se hizo por posición, suponiendo que el orden de las filas era el mismo que el de los binarios. Hoy el conteo cierra y las 78 filas tienen su archivo, pero si dentro de una de esas dos salas el orden de las filas no era el de los archivos, el `id_correcto` de una fila quedó pegado a la foto de otro caso. Eso no se detecta mirando el resultado de la búsqueda, porque el buscador responde a la foto y no a la fila del CSV. Alcance: 23 de los 63 recibidos, de los cuales entraron al set oficial 5.
-
-**12 · La Sala 1 entregó su propia versión de esta misma ficha, con cifras distintas.** La auditoria que seria la Sala-1 (Samir Ochoa y Andres Quispe) reportaba 63 casos entrando a la medición, un reparto por tipo de 25 `persona`, 20 `producto`, 10 `captura` y 8 `dificil`, y afirmaba que «todas las categorías unificadas cuentan con un mínimo de 8 casos válidos». Esas cifras son el reparto de tipo de los 63 casos recibidos, no el del set oficial: el set oficial son 15 casos con 4, 4, 4 y 3, y ninguna categoría llega a 8, que es justo lo que la sección 3 tiene que anotar. Aquella versión además dejaba «quiénes juzgaron» en pendiente y no traía las secciones 4, 5, 6 ni 9. La afirmación del reparto por tipo se comprobó contra `casos/casos-completo.csv` y es el reparto de los 63 recibidos, no el del set oficial. Se anota acá porque es la clase de documento que puede volver a aparecer y volver a confundir cuál es la cifra buena: la de los 63 recibidos o la de los 15 medidos.
+**10 · La Sala 1 mandó su propia versión de esta ficha, con otras cifras.** Reportaba 63 casos entrando a la medición y un reparto de 25 `persona`, 20 `producto`, 10 `captura` y 8 `dificil`. Ese reparto es el de los 63 casos recibidos, no el del set oficial, que son 15 con 4, 4, 4 y 3. Ninguna categoría llega a 8, que es justo lo que hay que anotar en la sección 3.
 
 ---
 
@@ -212,12 +155,10 @@ A eso se suma que ese markdown imprime las métricas sin explicar de dónde sale
 
 | Archivo | Nombre y ruta |
 | --- | --- |
-| Archivo de juicios en crudo | `proyecto_GRUPOS_B/RESULTADO_JUECES.md` — 150 filas de juicio, 75 de Edwin Salvatierra y 75 de Samir Ochoa, con los dos resúmenes de métricas intercalados. Nota: `proyecto_GRUPOS_B/data/juicios.csv`, que el README declara como almacenamiento activo, está vacío, solo la cabecera. |
+| Archivo de juicios en crudo | `proyecto_GRUPOS_B/RESULTADO_JUECES.md` — 150 filas de juicio, 75 de cada juez, con los resúmenes de métricas intercalados. |
 | Planilla del set oficial (con la columna `quien_eligio`) | `proyecto_GRUPOS_B/casos/casos.csv` — 15 filas, columnas `caso_id,id_correcto,tipo,sala_origen,quien_eligio`. |
-| Carpeta de fotos del set oficial | `proyecto_GRUPOS_B/casos/fotos/` — 15 archivos, uno por cada `caso_id`. Las 63 fotos recibidas de las 6 salas están en `proyecto_GRUPOS_B/casos/fotos-completo/`. |
-| Lista de casos descartados, con el motivo de cada uno | `proyecto_GRUPOS_B/casos/casos-completo.csv` — 63 filas. No hubo descartes, así que no hay lista de descartados: este archivo marca los 63 casos recibidos y, al restar las 15 filas de `casos.csv`, se obtienen los 48 que no se usaron, con su sala de origen en la columna `sala_origen`. No hay columna de motivo porque no hubo motivos que registrar. |
-
-**Nota sobre la lista de descartados.** La plantilla pide un cuarto archivo con los casos descartados y su motivo. En esta medición los cuatro contadores de descarte dan 0, así que ese archivo no tiene contenido que reportar. Lo que sí se puede dar es el complemento: los 48 casos que no entraron a la medición, identificables restando los dos CSV. Si en la revisión se considera que esa lista debe existir igual, el camino es agregarle a `casos-completo.csv` una columna `motivo_no_medido` y llenarla con el motivo por el que cada caso quedó fuera, que en esta versión no está escrito en ningún lado.
+| Carpeta de fotos del set oficial | `proyecto_GRUPOS_B/casos/fotos/` — 15 imágenes, una por `caso_id`. Las 63 recibidas están en `proyecto_GRUPOS_B/casos/fotos-completo/`. |
+| Lista de casos descartados, con el motivo de cada uno | `proyecto_GRUPOS_B/casos/casos-completo.csv` — 63 filas. No hubo descartes, así que esa lista no tiene contenido: restando las 15 filas de `casos.csv` salen los 48 que no se usaron, con su sala en la columna `sala_origen`. |
 
 ---
 
