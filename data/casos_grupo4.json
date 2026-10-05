@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "id_caso": "C_01",
+      "descripcion": "Barcelona",
+      "id_correcto": "ID_BARCELONA",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_02",
+      "descripcion": "Real Madrid",
+      "id_correcto": "ID_REAL_MADRID",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_03",
+      "descripcion": "Universitario",
+      "id_correcto": "ID_UNIVERSITARIO",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_04",
+      "descripcion": "Alianza Lima",
+      "id_correcto": "ID_ALIANZA_LIMA",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_05",
+      "descripcion": "Sporting Cristal",
+      "id_correcto": "ID_SPORTING_CRISTAL",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_06",
+      "descripcion": "Peru",
+      "id_correcto": "ID_PERU",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_07",
+      "descripcion": "Brazil",
+      "id_correcto": "ID_BRAZIL",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_08",
+      "descripcion": "Argentina",
+      "id_correcto": "ID_ARGENTINA",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_09",
+      "descripcion": "Manchester City",
+      "id_correcto": "ID_MANCHESTER_CITY",
+      "tipo": "foto_real"
+    },
+    {
+      "id_caso": "C_10",
+      "descripcion": "AC Milan",
+      "id_correcto": "ID_AC_MILAN",
+      "tipo": "foto_real"
+    }
+  ]
+}

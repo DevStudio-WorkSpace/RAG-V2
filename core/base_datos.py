@@ -6,7 +6,7 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 class QdrantManager:
-    def __init__(self):
+    def __init__(self, collection_name: str = "camisetas_fashion_v3"):
         """
         Inicializa el cliente de Qdrant apuntando a Docker o a almacenamiento local según .env.
         """
@@ -15,7 +15,7 @@ class QdrantManager:
         else:
             self.client = QdrantClient(path=str(settings.QDRANT_DATA_PATH))
             
-        self.collection_name = "camisetas_fashion_v3"
+        self.collection_name = collection_name
         self._ensure_collection()
         
     def _ensure_collection(self):
