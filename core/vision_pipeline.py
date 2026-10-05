@@ -32,15 +32,15 @@ class VisionPipeline:
             logger.warning("Ejecuta 'python exportar_onnx.py' para generar el .onnx y optimizar.")
             self.yolo_model = YOLO("yolov8n.pt")
         
-        # Cargar CLIP estándar (Alineado con embeddings.npy de RAG-V2)
-        model_id = "openai/clip-vit-base-patch32"
-        self.clip_model = CLIPModel.from_pretrained(model_id)
-        self.clip_processor = CLIPProcessor.from_pretrained(model_id)
+        from transformers import SiglipImageProcessor, SiglipModel
+        # Cargar SigLIP (El modelo ganador con 92% de precisión)
+        model_id = "google/siglip-base-patch16-224"
+        self.clip_model = SiglipModel.from_pretrained(model_id)
+        self.clip_processor = SiglipImageProcessor.from_pretrained(model_id)
         
-        # Mover CLIP a GPU si está disponible
+        # Mover a GPU si está disponible
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         if self.device == "cuda":
-            # Usar FP16 en GPU para acelerar inferencia
             self.clip_model.half()
         self.clip_model.to(self.device)
         
@@ -93,20 +93,13 @@ class VisionPipeline:
                 logger.error(f"Error en rembg: {e}")
                 return aislado
         else:
-            logger.warning("No se detectó persona con >40% de confianza. Aplicando fallback (Center Crop).")
-            # Fallback seguro: Center Crop proporcional (por ejemplo, del centro del 60% de la imagen)
-            w, h = image.size
-            crop_w, crop_h = int(w * 0.6), int(h * 0.6)
-            left = (w - crop_w) // 2
-            top = (h - crop_h) // 2
-            right = left + crop_w
-            bottom = top + crop_h
-            
-            aislado_fallback = image.crop((left, top, right, bottom))
+            logger.info("No se detectó persona. Es probable que sea una plantilla. Usando Rembg en la imagen completa.")
+            # Fallback para plantillas: Pasar la imagen completa a Rembg para aislar la prenda
             try:
-                return rembg.remove(aislado_fallback)
+                return rembg.remove(image)
             except Exception as e:
-                return aislado_fallback
+                logger.error(f"Error en rembg (fallback): {e}")
+                return image
 
     def extract_features(self, image: Image.Image) -> np.ndarray:
         """

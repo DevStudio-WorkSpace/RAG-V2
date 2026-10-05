@@ -51,7 +51,7 @@ El flujo completo es: **scrapear → consolidar → generar embeddings → levan
 ### 1. Scrapear el catálogo
 
 ```bash
-python main.py --paginas 1-20 --imagenes 1000 --modo fresh
+python main.py --paginas 1-20 --imagenes 1000
 ```
 
 **Parámetros de `main.py`:**
@@ -60,7 +60,7 @@ python main.py --paginas 1-20 --imagenes 1000 --modo fresh
 |---|---|---|
 | `--paginas` | `1-20`, `1,2,3`, `all` | Páginas del catálogo a scrapear. Un rango se escribe `inicio-fin`. `all` scrapea todo. |
 | `--imagenes` | número o `all` | Cantidad máxima de imágenes/productos a descargar. |
-| `--modo` | `fresh` o `update` | `fresh` **borra `data/` y re-descarga todo desde cero**. `update` fusiona con los productos existentes (evita re-descargar). |
+| `--modo` | `auto`, `update`, `fresh` | **Por defecto es `auto`**. Detecta si ya hay datos previos para no borrarlos y cambia a `update` de manera segura. `fresh` **borra `data/` y re-descarga todo desde cero**. `update` fusiona con los productos existentes (evita re-descargar). |
 
 Este paso genera:
 - `data/productos.json` — datos crudos del scraping.
@@ -91,17 +91,24 @@ python scripts/validate_dataset.py --benchmark   # mide tiempo en 1000 registros
 
 Reporta: registros totales/válidos, IDs duplicados, nombres vacíos, URLs vacías/repetidas, extensiones inválidas, imágenes faltantes/dañadas y duplicados por hash MD5.
 
-### 4. Generar los embeddings (Sala 4)
+### 4. Generar los embeddings (Sala 4 / Hito 2)
 
+**Opción Recomendada (Motor Nuevo Hito 2/3 - YOLO + Fashion-CLIP):**
+Primero, optimiza el modelo de detección para no saturar la memoria RAM:
+```bash
+yolo export model=yolov8n.pt format=onnx
+```
+Luego, genera los embeddings avanzados extrayendo solo el torso y detectando color:
+```bash
+python scripts/entrenar_nuevo_motor.py
+```
+*(Nota: Este script usa multiprocesamiento e incluye caché incremental para no reprocesar imágenes ya completadas).*
+
+**Opción Legacy (Motor Base CLIP Hito 1):**
 ```bash
 python scripts/generar_embeddings.py
 ```
-
-Lee `products.csv` en orden, abre cada imagen de `images_normalized/`, genera su vector con **CLIP** (`openai/clip-vit-base-patch32`), lo normaliza con L2 y guarda:
-- `data/embeddings.npy` — matriz `(N, 512)`.
-- `data/ids.npy` — IDs alineados por posición con los embeddings.
-
-> La correspondencia posición ↔ ID es obligatoria: si se altera el orden, el sistema devolvería nombres asociados a la imagen equivocada.
+Lee `products.csv`, abre cada imagen y genera su vector con **CLIP** (`openai/clip-vit-base-patch32`), guardando `embeddings.npy` e `ids.npy`.
 
 ### 5. Levantar la API (Sala 3)
 

@@ -43,7 +43,7 @@ def obtener_argumentos():
     )
 
     parser.add_argument(
-        "--modo", choices=["fresh", "update"], default="fresh", help="Modo de ejecución"
+        "--modo", choices=["fresh", "update", "auto"], default="auto", help="Modo de ejecución"
     )
 
     return parser.parse_args()
@@ -51,6 +51,17 @@ def obtener_argumentos():
 
 def main():
     args = obtener_argumentos()
+
+    from pathlib import Path
+    from utils.helpers import DATA_DIR
+
+    if args.modo == "auto":
+        archivo_productos = Path(DATA_DIR) / "productos.json"
+        if archivo_productos.exists():
+            print("\n[INFO] Datos previos detectados. Cambiando automáticamente a modo 'update' para no borrarlos.")
+            args.modo = "update"
+        else:
+            args.modo = "fresh"
 
     print("Configuración:")
     print("----------------")

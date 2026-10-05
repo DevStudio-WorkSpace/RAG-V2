@@ -94,10 +94,10 @@ def search_similar(imagen: Image.Image, color_filtro: str = None, top_k: int = 5
     # Si el usuario no forzó un filtro de color, usamos el detectado
     color_a_filtrar = color_filtro if color_filtro else color_detectado
     
-    # 2. Búsqueda Híbrida Vectorial en Qdrant
-    resultados_db = perform_hybrid_search(qdrant_db, query_vector, color_a_filtrar, limit=top_k)
+    # 2. Búsqueda Híbrida Vectorial en Qdrant (Traemos 30 para el Reranking)
+    resultados_db = perform_hybrid_search(qdrant_db, query_vector, color_a_filtrar, limit=30)
     
-    # 3. Formatear la salida para la API de RAG-V2 (compatible con frontend)
+    # 3. Formatear la salida para la API
     resultados_formateados = []
     for pos, r in enumerate(resultados_db, start=1):
         filename = r.payload.get("filename", "")
@@ -109,13 +109,21 @@ def search_similar(imagen: Image.Image, color_filtro: str = None, top_k: int = 5
             "url": "",
             "proveedor": "Catálogo Local",
             "score": round(float(r.score), 4),
-            "score_reranking": round(float(r.score), 4),
-            "posicion_final": pos
         })
         
+    # 4. Reranking Visual (Corrige el problema de colores usando Hito 2)
+    from api.search_engine_hito2 import _rerank_candidatos
+    
+    resultados_finales = _rerank_candidatos(
+        candidatos=resultados_formateados,
+        query_image=imagen,
+        etiqueta_modelo="YOLO+SigLIP",
+        top_k=top_k
+    )
+    
     return {
         "color_detectado": color_detectado,
-        "resultados": resultados_formateados
+        "resultados": resultados_finales
     }
 
 def ingest_to_qdrant(imagen: Image.Image, filename: str):

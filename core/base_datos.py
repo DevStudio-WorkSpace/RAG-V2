@@ -35,7 +35,7 @@ class QdrantManager:
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(
-                    size=512,  # CLIP-ViT-Base-Patch32 embedding size
+                    size=768,  # SigLIP embedding size
                     distance=Distance.COSINE
                 ),
                 hnsw_config=HnswConfigDiff(
