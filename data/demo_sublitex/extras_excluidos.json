@@ -1,0 +1,27 @@
+{
+  "nota": "DEMO_GENERADO: la Tarea 1 habla de 40 imagenes; la carpeta tiene 44 JPG. Estas 4 se excluyeron por presunto duplicado del mismo kit (regla reproducible).",
+  "excluidos": [
+    {
+      "archivo": "Qatar Home Kit 26.jpg",
+      "motivo": "DEMO: presunto duplicado"
+    },
+    {
+      "archivo": "ESPAÑA HOME.jpg",
+      "motivo": "DEMO: presunto duplicado"
+    },
+    {
+      "archivo": "Inglaterra World Cup 26.jpg",
+      "motivo": "DEMO: presunto duplicado"
+    },
+    {
+      "archivo": "Colombia Amarillo 2026.jpg",
+      "motivo": "DEMO: presunto duplicado"
+    }
+  ],
+  "restantes_en_carpeta": [
+    "Colombia Amarillo 2026.jpg",
+    "ESPAÑA HOME.jpg",
+    "Inglaterra World Cup 26.jpg",
+    "Qatar Home Kit 26.jpg"
+  ]
+}

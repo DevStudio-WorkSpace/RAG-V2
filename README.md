@@ -323,24 +323,46 @@ WebScraping/
 
 ## Tarea 1 · El cargador (Pipeline de Indexación) - Sublitex
 
-Para el procesamiento de los nuevos diseños de **Sublitex** sin interferir con el catálogo base de Aimari, se desarrolló un pipeline de indexación aislado. Este pipeline extrae características visuales utilizando exactamente el mismo modelo del Hito 2 (`YOLO + Fashion-CLIP`), aplica validación estricta de nomenclatura y enriquece los metadatos desde un archivo CSV.
+Para el procesamiento de los nuevos diseños de **Sublitex** sin interferir con el catálogo base de Aimari, se desarrolló un pipeline de indexación aislado. Este pipeline extrae características visuales utilizando exactamente el mismo modelo del Hito 2 (`YOLO + Fashion-CLIP`), aplica validación estricta de nomenclatura y enriquece los metadatos desde la planilla **"Control de exportación"** y el mapa de la hoja **"Listas"**.
+
+### Contrato de datos (unificado en `core/sublitex.py`)
+
+- **Código:** `SBX-XXXXX` (regex `^SBX-\d{5}$`), consecutivo global de 5 dígitos
+  según la Ficha 05-B oficial (ej. `SBX-00001`). El número de carpeta NO va en el
+  código: se lee de la columna `carpeta_origen` de la planilla.
+- **Planilla "Control de exportación"** (CSV o XLSX) con 9 columnas:
+  `codigo`, `carpeta_origen`, `archivo_original`, `tipo`, `deporte`, `ocasion`, `estado`, `quien`, `fecha`.
+- **Hoja "Listas"** (o CSV `--mapa`): mapa `numero de carpeta -> carpeta real del Drive`.
+- **Trazabilidad obligatoria:** imagen publicada (PNG) → código → `carpeta_origen` + `archivo_original` → carpeta real (Listas) → CDR original.
+- **CDR = SOLO LECTURA** (`core/cdr_seguridad.py`): renombrar, mover, borrar, sobrescribir o modificar un CDR original lanza `ErrorCDRProtegido`. Solo se reconstruye su ruta; el reordenamiento real está reservado al final de la Fase 1 / Tarea 2.
 
 ### Paso a paso de ejecución
 
 **1. Preparar los datos:**
-Asegúrate de tener una carpeta con los 40 PNGs a indexar y un archivo CSV (Control de exportación) que contenga al menos las siguientes columnas: `codigo`, `carpeta_origen`, `archivo_original`.
-
-**2. Ejecutar el script:**
-Corre el script apuntando a tu carpeta de imágenes y a tu archivo CSV:
+Genera las plantillas vacías oficiales (por defecto en `data/`) y complétalas con los datos reales:
 
 ```bash
-python scripts/cargador_sublitex.py --image_folder ruta/a/carpeta_png --csv_path ruta/a/control_exportacion.csv
+python scripts/crear_plantilla_sublitex.py
+```
+
+Debes tener una carpeta con los PNGs (`SBX-XXXXX.png`), la planilla **"Control de exportación"** con las 9 columnas y el mapa de carpetas (hoja **"Listas"** en el XLSX o un CSV con `--mapa`).
+
+**2. Ejecutar el script:**
+
+```bash
+python scripts/cargador_sublitex.py --image_folder ruta/a/carpeta_png --csv_path "ruta/a/Control de exportacion.xlsx"
+python scripts/cargador_sublitex.py --image_folder ruta/a/carpeta_png --csv_path ruta/a/control_exportacion.csv --mapa ruta/a/listas.csv
 ```
 
 **Este proceso:**
-1. Lee las imágenes PNG y extrae el código del nombre del archivo.
-2. Rechaza y loguea cualquier archivo cuyo nombre no cumpla con la expresión regular estricta `^SBX-\d{2}-\d{4}$`.
-3. Cruza la información con el archivo CSV y extrae `codigo`, `carpeta_origen` y `archivo_original`.
-4. Utiliza el modelo avanzado para generar los vectores.
+1. Lee la planilla (CSV o XLSX) validando las 9 columnas y el mapa de la hoja **Listas**.
+2. Rechaza y reporta cualquier PNG cuyo nombre no cumpla `^SBX-\d{5}$`, que no tenga fila en la planilla o cuyo código esté duplicado.
+3. **Rechaza los registros incompletos** (sin `carpeta_origen` o `archivo_original`, o fuera del mapa de Listas): nunca inventa carpetas ni nombres.
+4. Genera los vectores con el mismo modelo del Hito 2 para cada registro válido completo.
 5. Valida matemáticamente que $\text{longitud}(\text{vectores}) == \text{longitud}(\text{IDs})$. Si no coinciden, aborta la operación para evitar corrupción de datos.
-6. **Aislamiento**: Persiste los vectores y sus metadatos en una nueva colección independiente en Qdrant llamada `sublitex_fashion_v1`, manteniendo intacta la colección de Aimari. También genera respaldos `.npy` en `data/`.
+6. **Aislamiento**: persiste los vectores y sus metadatos en una nueva colección independiente en Qdrant llamada `sublitex_fashion_v1`, manteniendo intacta la colección de Aimari. Genera respaldos `.npy` (`data/embeddings_sublitex.npy`, `data/ids_sublitex.npy`), un catálogo trazable JSON (`data/catalogo_sublitex.json`) y un reporte de errores/omisiones JSON (`data/errores_carga_sublitex.json`).
+
+### Validación del contrato
+
+- `python -m unittest discover -s tests`: cubre generación/formato de códigos, conservación de `carpeta_origen` + `archivo_original`, localización del CDR desde el código, validación de cadena completa, rechazo de registros incompletos y la política CDR SOLO LECTURA.
+- `python scripts/auditoria_seccion00.py`: auditoría (solo lectura) del estado de los PNGs, la planilla y el mapa; usa el mismo contrato de `core/sublitex.py`.

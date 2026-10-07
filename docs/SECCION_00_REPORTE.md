@@ -1,0 +1,245 @@
+# SECCION 00 — REPORTE DE AUDITORIA (generado)
+
+- Fecha: 2026-10-07 11:59
+- Script: `scripts/auditoria_seccion00.py` (solo lectura)
+- Salida: `C:\Users\SAMIR\RAG-V2-sala5\docs\SECCION_00_REPORTE.md`
+
+## 1. Regla del codigo
+
+`SBX-XXXXX` — expresion regular exacta: `^SBX-\d{5}$` (consecutivo global).
+
+Validos: `SBX-00001`, `SBX-00147`, `SBX-08340`, `SBX-11000`, `SBX-99999`.
+
+Invalidos: `SBX-0001`, `SBX-03-0147`, `SBX-000147`, `SBX_00001`, `SBX-00001-extra`, `XXX-00001`, `SBX-AB-XYZ`, `00001`, `01_0001`.
+
+> Formato definitivo (ratificado): `SBX-XXXXX`, segun la Ficha 05-B oficial (`ids: Los codigos SBX-00001`) y la escala de ~11.000 disenos (001, 002, ...).
+> El numero de carpeta NO va en el codigo: se lee de la columna `carpeta_origen` de la planilla y se resuelve con la hoja `Listas`. El formato `SBX-NN-NNNN` (carpeta-correlativo) queda DESCARTADO por no tener respaldo en ningun documento oficial.
+
+## 2. Regla del archivo
+
+`SBX-XXXXX.png` — la validacion se hace sobre el nombre base (`os.path.splitext`), mas la extension `.png` exacta y la firma binaria PNG.
+
+## 3. Planilla encontrada
+
+- Ruta: `C:\Users\SAMIR\RAG-V2-sala5\data/control_exportacion.csv`
+- Formato / hoja: CSV (utf-8-sig)
+- Hoja Listas: El mapa de carpetas requiere una planilla XLSX con la hoja 'Listas' o un CSV de mapa (--mapa).
+
+## 4. Columnas encontradas
+
+| Columna esperada | Presente |
+| --- | --- |
+| codigo | si |
+| carpeta_origen | si |
+| archivo_original | si |
+| tipo | si |
+| deporte | si |
+| ocasion | si |
+| estado | si |
+| quien | si |
+| fecha | si |
+
+Columnas leidas: codigo, carpeta_origen, archivo_original, tipo, deporte, ocasion, estado, quien, fecha
+
+Coinciden exactamente con las 9 columnas del contrato.
+
+## 5. Mapa de carpetas
+
+**NO DISPONIBLE** — El mapa de carpetas requiere una planilla XLSX con la hoja 'Listas' o un CSV de mapa (--mapa)..
+
+No se inventa el valor de `03` ni de ninguna otra carpeta.
+
+## 6. PNG encontrados
+
+- Ruta: `C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized`
+- Cantidad total de archivos: 44
+- Cantidad de archivos con extension .png: 0
+- Cantidad validos (`SBX-XXXXX.png` + firma PNG): 0
+- Cantidad invalidos: 44
+- Extensiones: .jpg=44
+
+## 7. Cruce PNG <-> planilla
+
+**Cruce no ejecutable:** faltan PNG validos, planilla o ambos.
+
+| Metrica | Resultado |
+| --- | --- |
+| PNG valido + fila encontrada | 0 (sin PNG validos) |
+| PNG valido + fila inexistente | 0 |
+| PNG invalidos | 44 |
+| Fila de planilla sin PNG | n/a (sin planilla) |
+| Codigo duplicado | n/a (sin planilla) |
+| carpeta_origen vacio | n/a (sin planilla) |
+| archivo_original vacio | n/a (sin planilla) |
+
+## 8. Problemas encontrados
+
+Resumen: CRÍTICO=1, BAJO=44
+
+### CRÍTICO (1)
+
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized** — Ningun archivo cumple SBX-XXXXX.png (44 archivos revisados).
+  - Impacto: El cargador rechazaria el 100% de los archivos; no hay codigo que unir a la planilla.
+  - Solucion propuesta: Pedir la exportacion con la nomenclatura oficial o generar copias renombradas en OTRA carpeta.
+
+### BAJO (44)
+
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\ARGENTINA 2026 NEGRO MORADO.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Alemania Away Black Fantasy 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Alemania Away Kit 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Alemania Kit Local 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Alemania Training 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Argentina Kit Local 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Austria Home Kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Belgica Home Kit Cup 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Brasil Away Kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Brasil World Cup Home Kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Canada 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Colombia Amarillo 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Colombia Away Kit Cup 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Colombia Home 2025-26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Costa Rica Away Kit 26 (1).jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Costa Rica Home Kit World Cup 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\ESPAÑA HOME.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Escocia Home kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\España Home Kit 26 Fantasy.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\España Home Kit Cup 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Francia Azul Kit 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\ITALIA CUP 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Inglaterra Home Kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Inglaterra World Cup 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Japon Home Kit Cup 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\KIT USA 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Leon Interclasse Dorado Negro.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Lineas Puntos Verde  Morado.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Liverpool Adidas 2025-26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\MEXICO CUP 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\NIGERIA 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\NORUEGA 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Nottingham Forest Third Kit 24.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Nueva Zelanda World 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\POLONIA CUP 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\PORTUGAL CRISTIANO.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Palmeiras Entremaniemto 23-24.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Perú Local Kit 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\QATAR CUP 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Qatar Home Kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\USA CUP 2026.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Ucrania Home Kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Uruguay Away Kit 25-26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+- **C:\Users\SAMIR\RAG-V2-sala5\data/imagenes_normalized\Venezuela Home  Kit 26.jpg** — Archivo que no es PNG (extension distinta).
+  - Impacto: La especificacion pide PNG exportados del CDR.
+  - Solucion propuesta: Pedir la exportacion en PNG o documentar la variante.
+
+
+## 9. Cadena de trazabilidad
+
+| Eslabon | Disponible |
+| --- | --- |
+| PNG -> codigo | **NO** |
+| codigo -> planilla | **NO** |
+| planilla -> carpeta_origen | SI |
+| planilla -> archivo_original | SI |
+| carpeta_origen -> CDR (mapa Listas) | **NO** |
+
+**La cadena NO es trazable todavia.** Faltan los insumos marcados arriba; no se completan con datos inventados.
+
+## 10. Recomendacion para la Tarea 1
+
+El cargador debera consumir, en este orden y sin romper la cadena:
+
+1. Carpeta de PNG `SBX-XXXXX.png`, validada con `^SBX-\d{5}$`; los inválidos se reportan, no se corrigen ni se ignoran en silencio.
+2. Planilla Control de exportacion como fuente unica de `carpeta_origen` y `archivo_original`, unida por `codigo`; todo PNG sin fila y toda fila sin PNG se lista en un archivo aparte.
+3. Hoja/CSV Listas como mapa `numero -> carpeta real` para llegar al CDR; mientras no exista, `carpeta_origen` se conserva literal de la planilla.
+4. Catalogo de salida con `codigo + carpeta_origen + archivo_original` en una coleccion/npy NUEVA, con el mismo modelo del buscador y con la verificacion `len(vectores) == len(ids)`.
+
+## Problemas bloqueantes actuales
+
+- **CRITICO** — Ningun archivo cumple SBX-XXXXX.png (44 archivos revisados). Impacto: El cargador rechazaria el 100% de los archivos; no hay codigo que unir a la planilla.
+

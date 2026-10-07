@@ -1,0 +1,207 @@
+{
+  "nota": "DEMO_GENERADO: codigos, carpetas, archivos y CDR son sinteticos y reproducibles; no representan datos reales del Drive de Sublitex.",
+  "n_imagenes": 40,
+  "carpeta_demo": "03 -> C:\\Users\\SAMIR\\RAG-V2-sala5\\data\\demo_sublitex\\cdr_real\\Demostracion\\03",
+  "asignacion": {
+    "SBX-03-0001": {
+      "imagen_jpg": "Alemania Away Black Fantasy 26.jpg",
+      "archivo_original": "Alemania_Away_Black_Fantasy_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0002": {
+      "imagen_jpg": "Alemania Away Kit 2026.jpg",
+      "archivo_original": "Alemania_Away_Kit_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0003": {
+      "imagen_jpg": "Alemania Kit Local 26.jpg",
+      "archivo_original": "Alemania_Kit_Local_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0004": {
+      "imagen_jpg": "Alemania Training 26.jpg",
+      "archivo_original": "Alemania_Training_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0005": {
+      "imagen_jpg": "ARGENTINA 2026 NEGRO MORADO.jpg",
+      "archivo_original": "ARGENTINA_2026_NEGRO_MORADO.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0006": {
+      "imagen_jpg": "Argentina Kit Local 2026.jpg",
+      "archivo_original": "Argentina_Kit_Local_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0007": {
+      "imagen_jpg": "Austria Home Kit 26.jpg",
+      "archivo_original": "Austria_Home_Kit_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0008": {
+      "imagen_jpg": "Belgica Home Kit Cup 26.jpg",
+      "archivo_original": "Belgica_Home_Kit_Cup_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0009": {
+      "imagen_jpg": "Brasil Away Kit 26.jpg",
+      "archivo_original": "Brasil_Away_Kit_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0010": {
+      "imagen_jpg": "Brasil World Cup Home Kit 26.jpg",
+      "archivo_original": "Brasil_World_Cup_Home_Kit_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0011": {
+      "imagen_jpg": "Canada 2026.jpg",
+      "archivo_original": "Canada_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0012": {
+      "imagen_jpg": "Colombia Away Kit Cup 26.jpg",
+      "archivo_original": "Colombia_Away_Kit_Cup_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0013": {
+      "imagen_jpg": "Colombia Home 2025-26.jpg",
+      "archivo_original": "Colombia_Home_2025_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0014": {
+      "imagen_jpg": "Costa Rica Away Kit 26 (1).jpg",
+      "archivo_original": "Costa_Rica_Away_Kit_26_1.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0015": {
+      "imagen_jpg": "Costa Rica Home Kit World Cup 26.jpg",
+      "archivo_original": "Costa_Rica_Home_Kit_World_Cup_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0016": {
+      "imagen_jpg": "Escocia Home kit 26.jpg",
+      "archivo_original": "Escocia_Home_kit_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0017": {
+      "imagen_jpg": "España Home Kit 26 Fantasy.jpg",
+      "archivo_original": "Espana_Home_Kit_26_Fantasy.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0018": {
+      "imagen_jpg": "España Home Kit Cup 26.jpg",
+      "archivo_original": "Espana_Home_Kit_Cup_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0019": {
+      "imagen_jpg": "Francia Azul Kit 2026.jpg",
+      "archivo_original": "Francia_Azul_Kit_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0020": {
+      "imagen_jpg": "Inglaterra Home Kit 26.jpg",
+      "archivo_original": "Inglaterra_Home_Kit_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0021": {
+      "imagen_jpg": "ITALIA CUP 2026.jpg",
+      "archivo_original": "ITALIA_CUP_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0022": {
+      "imagen_jpg": "Japon Home Kit Cup 26.jpg",
+      "archivo_original": "Japon_Home_Kit_Cup_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0023": {
+      "imagen_jpg": "KIT USA 2026.jpg",
+      "archivo_original": "KIT_USA_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0024": {
+      "imagen_jpg": "Leon Interclasse Dorado Negro.jpg",
+      "archivo_original": "Leon_Interclasse_Dorado_Negro.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0025": {
+      "imagen_jpg": "Lineas Puntos Verde  Morado.jpg",
+      "archivo_original": "Lineas_Puntos_Verde_Morado.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0026": {
+      "imagen_jpg": "Liverpool Adidas 2025-26.jpg",
+      "archivo_original": "Liverpool_Adidas_2025_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0027": {
+      "imagen_jpg": "MEXICO CUP 2026.jpg",
+      "archivo_original": "MEXICO_CUP_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0028": {
+      "imagen_jpg": "NIGERIA 2026.jpg",
+      "archivo_original": "NIGERIA_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0029": {
+      "imagen_jpg": "NORUEGA 2026.jpg",
+      "archivo_original": "NORUEGA_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0030": {
+      "imagen_jpg": "Nottingham Forest Third Kit 24.jpg",
+      "archivo_original": "Nottingham_Forest_Third_Kit_24.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0031": {
+      "imagen_jpg": "Nueva Zelanda World 2026.jpg",
+      "archivo_original": "Nueva_Zelanda_World_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0032": {
+      "imagen_jpg": "Palmeiras Entremaniemto 23-24.jpg",
+      "archivo_original": "Palmeiras_Entremaniemto_23_24.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0033": {
+      "imagen_jpg": "Perú Local Kit 2026.jpg",
+      "archivo_original": "Peru_Local_Kit_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0034": {
+      "imagen_jpg": "POLONIA CUP 2026.jpg",
+      "archivo_original": "POLONIA_CUP_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0035": {
+      "imagen_jpg": "PORTUGAL CRISTIANO.jpg",
+      "archivo_original": "PORTUGAL_CRISTIANO.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0036": {
+      "imagen_jpg": "QATAR CUP 2026.jpg",
+      "archivo_original": "QATAR_CUP_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0037": {
+      "imagen_jpg": "Ucrania Home Kit 26.jpg",
+      "archivo_original": "Ucrania_Home_Kit_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0038": {
+      "imagen_jpg": "Uruguay Away Kit 25-26.jpg",
+      "archivo_original": "Uruguay_Away_Kit_25_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0039": {
+      "imagen_jpg": "USA CUP 2026.jpg",
+      "archivo_original": "USA_CUP_2026.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    },
+    "SBX-03-0040": {
+      "imagen_jpg": "Venezuela Home  Kit 26.jpg",
+      "archivo_original": "Venezuela_Home_Kit_26.cdr",
+      "origen": "DEMO_GENERADO (orden alfabetico, sin evidencia real del Drive)"
+    }
+  }
+}
