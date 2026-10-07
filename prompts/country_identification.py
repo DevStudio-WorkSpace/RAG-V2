@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 country_identification.py - Prompt de identificación por país/equipo
 -------------------------------------------------------------------
@@ -333,7 +332,10 @@ for pais, info in PAISES_FUTBOL.items():
 # FUNCIÓN DE IDENTIFICACIÓN POR COLORES
 # =============================================================================
 
-def identificar_pais_equipo(colores_detectados: list[str], patron: str = "") -> list[dict]:
+
+def identificar_pais_equipo(
+    colores_detectados: list[str], patron: str = ""
+) -> list[dict]:
     """
     Dada una lista de colores detectados y un patrón opcional,
     devuelve los países/equipos más probables ordenados por relevancia.
@@ -371,18 +373,20 @@ def identificar_pais_equipo(colores_detectados: list[str], patron: str = "") -> 
 
         score_total = score_colores + score_patron
 
-        resultados.append({
-            "pais": info["nombre_completo"],
-            "seleccion": info["seleccion"],
-            "colores": info["colores"],
-            "colores_hex": info["colores_hex"],
-            "patron_tipico": info["patron_tipico"],
-            "elementos": info["elementos"],
-            "equipos_famosos": info["equipos_famosos"],
-            "descripcion": info["descripcion"],
-            "score_coincidencia": round(score_total, 3),
-            "coincidencia_colores": f"{coincidencias}/{len(colores_pais)}",
-        })
+        resultados.append(
+            {
+                "pais": info["nombre_completo"],
+                "seleccion": info["seleccion"],
+                "colores": info["colores"],
+                "colores_hex": info["colores_hex"],
+                "patron_tipico": info["patron_tipico"],
+                "elementos": info["elementos"],
+                "equipos_famosos": info["equipos_famosos"],
+                "descripcion": info["descripcion"],
+                "score_coincidencia": round(score_total, 3),
+                "coincidencia_colores": f"{coincidencias}/{len(colores_pais)}",
+            }
+        )
 
     # Ordenar por score descendente
     resultados.sort(key=lambda x: x["score_coincidencia"], reverse=True)
@@ -401,14 +405,16 @@ def generar_contexto_pais(pais: str) -> str:
     """
     info = PAISES_FUTBOL.get(pais.lower())
     if not info:
-        return f"País no encontrado en la base de datos. Colores detectados en la imagen."
+        return (
+            "País no encontrado en la base de datos. Colores detectados en la imagen."
+        )
 
-    return f"""País detectado: {info['nombre_completo']} ({info['seleccion']})
-Colores típicos: {', '.join(info['colores'])}
-Patrón característico: {info['patron_tipico']}
-Elementos distintivos: {', '.join(info['elementos'])}
-Equipos asociados: {', '.join(info['equipos_famosos'][:5])}
-Descripción de referencia: {info['descripcion']}"""
+    return f"""País detectado: {info["nombre_completo"]} ({info["seleccion"]})
+Colores típicos: {", ".join(info["colores"])}
+Patrón característico: {info["patron_tipico"]}
+Elementos distintivos: {", ".join(info["elementos"])}
+Equipos asociados: {", ".join(info["equipos_famosos"][:5])}
+Descripción de referencia: {info["descripcion"]}"""
 
 
 def construir_prompt_identificacion(
@@ -474,12 +480,12 @@ Formato de respuesta:
 # =============================================================================
 
 __all__ = [
-    "IDENTIFICATION_SYSTEM_PROMPT",
-    "IDENTIFICATION_PROMPT",
-    "SEARCH_SIMILAR_PROMPT",
-    "PAISES_FUTBOL",
     "COLOR_A_PAISES",
-    "identificar_pais_equipo",
-    "generar_contexto_pais",
+    "IDENTIFICATION_PROMPT",
+    "IDENTIFICATION_SYSTEM_PROMPT",
+    "PAISES_FUTBOL",
+    "SEARCH_SIMILAR_PROMPT",
     "construir_prompt_identificacion",
+    "generar_contexto_pais",
+    "identificar_pais_equipo",
 ]

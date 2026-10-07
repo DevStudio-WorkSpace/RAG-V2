@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 generar_indices_comparativos.py
 -------------------------------
@@ -74,6 +73,7 @@ def resolver_ruta_imagen(fila):
         if os.path.exists(candidata):
             return candidata
     return None
+
 
 # Modelos a comparar. Para SigLIP se usa SOLO el preprocesador de imagen
 # (SiglipImageProcessor) para no depender del tokenizador SentencePiece.
@@ -172,7 +172,8 @@ def limpiar_tiempos_generacion():
         lector = csv.DictReader(f)
         filas = [
             (row["consulta"], row.get("tiempo_segundos", ""))
-            for row in lector if not str(row.get("consulta", "")).startswith("generacion_")
+            for row in lector
+            if not str(row.get("consulta", "")).startswith("generacion_")
         ]
     with open(TIEMPOS_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -207,7 +208,7 @@ def generar_indice(cfg, filas, ids, device):
     inicio = time.perf_counter()
 
     for lote_inicio in range(0, total, BATCH_SIZE):
-        lote = filas[lote_inicio:lote_inicio + BATCH_SIZE]
+        lote = filas[lote_inicio : lote_inicio + BATCH_SIZE]
         indices_lote = []
         imagenes_lote = []
 
@@ -215,8 +216,10 @@ def generar_indice(cfg, filas, ids, device):
             idx = lote_inicio + pos
             ruta_imagen = resolver_ruta_imagen(fila)
             if ruta_imagen is None:
-                print(f"  [ERROR] Imagen no encontrada para {fila['id']}: "
-                      f"{fila['imagen']} ni equivalentes en {IMAGES_DIR}")
+                print(
+                    f"  [ERROR] Imagen no encontrada para {fila['id']}: "
+                    f"{fila['imagen']} ni equivalentes en {IMAGES_DIR}"
+                )
                 errores += 1
                 continue
             try:
@@ -259,9 +262,16 @@ def generar_indice(cfg, filas, ids, device):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sala 4 - Índices comparados CLIP/OpenCLIP/SigLIP")
-    parser.add_argument("--solo", nargs="*", choices=[m["clave"] for m in MODELOS],
-                        default=None, help="Solo estos modelos (por defecto todos)")
+    parser = argparse.ArgumentParser(
+        description="Sala 4 - Índices comparados CLIP/OpenCLIP/SigLIP"
+    )
+    parser.add_argument(
+        "--solo",
+        nargs="*",
+        choices=[m["clave"] for m in MODELOS],
+        default=None,
+        help="Solo estos modelos (por defecto todos)",
+    )
     args = parser.parse_args()
 
     claves = set(args.solo) if args.solo else {m["clave"] for m in MODELOS}
@@ -270,7 +280,9 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("=" * 72)
     print("SALA 4 - GENERACIÓN DE ÍNDICES COMPARATIVOS")
-    print(f"Dispositivo: {device} | Modelos: {', '.join(m['clave'] for m in seleccion)}")
+    print(
+        f"Dispositivo: {device} | Modelos: {', '.join(m['clave'] for m in seleccion)}"
+    )
     print("=" * 72)
 
     filas = leer_productos_csv()
@@ -286,7 +298,9 @@ def main():
     print("RESUMEN DE GENERACIÓN")
     print("=" * 72)
     for clave, generados, errores, segundos in resumen:
-        print(f"  {clave:<10s} {generados:>5d} embeddings  errores={errores:<3d}  {segundos:8.2f}s")
+        print(
+            f"  {clave:<10s} {generados:>5d} embeddings  errores={errores:<3d}  {segundos:8.2f}s"
+        )
     print(f"Tiempos registrados en: {TIEMPOS_CSV}")
 
 

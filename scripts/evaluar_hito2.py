@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 evaluar_hito2.py (Sala 2 - Hito 2)
 -----------------------------------
@@ -30,8 +29,8 @@ import pandas as pd
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, BASE_DIR)
 
-from api.preprocesar_consulta import preparar_consulta  # noqa: E402
-from api.search_engine import cargar_indice, search_similar  # noqa: E402
+from api.preprocesar_consulta import preparar_consulta
+from api.search_engine import cargar_indice, search_similar
 
 CONSULTAS = os.path.join(BASE_DIR, "data", "consultas")
 MANIFEST = os.path.join(BASE_DIR, "evaluation", "consultas_hito2.csv")
@@ -54,16 +53,16 @@ def main():
 
     cargar_indice()
     from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer("clip-ViT-B-32")
 
-    filas = []
-    tiempos_proc = []
-    tiempos_orig = []
-    tiempos_prep = []
+    import concurrent.futures
 
-    for idx, row in df.iterrows():
+    def procesar_fila(args):
+        idx, row = args
         archivo = os.path.join(CONSULTAS, row["consulta"])
         from PIL import Image
+
         imagen = Image.open(archivo).convert("RGB")
         correcto = row["id_correcto"]
 
@@ -81,37 +80,63 @@ def main():
         ids_orig = [r["id"] for r in res_orig]
         ids_proc = [r["id"] for r in res_proc]
 
-        filas.append({
+        try:
+            rank_orig = ids_orig.index(correcto) + 1
+        except ValueError:
+            rank_orig = 0
+            
+        try:
+            rank_proc = ids_proc.index(correcto) + 1
+        except ValueError:
+            rank_proc = 0
+
+        print(f"[{idx + 1}/{len(df)}] {row['consulta']} | O1={ids_orig[0] != correcto if ids_orig else True} P1={ids_proc[0] != correcto if ids_proc else True}")
+
+        return {
             "archivo": row["consulta"],
             "categoria": row["categoria"],
             "correcto_id": correcto,
-            "top1_original": ids_orig[0],
-            "top1_original_score": res_orig[0]["score"],
+            "top1_original": ids_orig[0] if ids_orig else None,
+            "top1_original_score": res_orig[0]["score"] if res_orig else 0,
             "top5_original": "|".join(ids_orig),
-            "hit1_original": ids_orig[0] == correcto,
+            "hit1_original": (ids_orig[0] == correcto) if ids_orig else False,
             "hit5_original": correcto in ids_orig,
-            "top1_procesada": ids_proc[0],
-            "top1_procesada_score": res_proc[0]["score"],
+            "mrr_original": 1.0 / rank_orig if rank_orig > 0 else 0.0,
+            "top1_procesada": ids_proc[0] if ids_proc else None,
+            "top1_procesada_score": res_proc[0]["score"] if res_proc else 0,
             "top5_procesada": "|".join(ids_proc),
-            "hit1_procesada": ids_proc[0] == correcto,
+            "hit1_procesada": (ids_proc[0] == correcto) if ids_proc else False,
             "hit5_procesada": correcto in ids_proc,
+            "mrr_procesada": 1.0 / rank_proc if rank_proc > 0 else 0.0,
             "recorte_pct": prep["recorte_pct"],
             "pasos": ";".join(prep["pasos"]),
             "tiempo_original_s": round(t_orig, 3),
             "tiempo_procesada_s": round(t_proc, 3),
             "tiempo_preprocesado_s": prep["tiempo_segundos"],
-        })
-        tiempos_orig.append(t_orig)
-        tiempos_proc.append(t_proc)
-        tiempos_prep.append(prep["tiempo_segundos"])
-        print(f"[{idx+1}/{len(df)}] {row['consulta']} | O1={ids_orig[0] != correcto} P1={ids_proc[0] != correcto}")
+        }
+
+    filas = []
+    tiempos_orig = []
+    tiempos_proc = []
+    tiempos_prep = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        for res_dict in executor.map(procesar_fila, df.iterrows()):
+            filas.append(res_dict)
+            tiempos_orig.append(res_dict["tiempo_original_s"])
+            tiempos_proc.append(res_dict["tiempo_procesada_s"])
+            tiempos_prep.append(res_dict["tiempo_preprocesado_s"])
 
     res = pd.DataFrame(filas)
     res.to_csv(SALIDA_CSV, index=False, encoding="utf-8")
 
     def top5(regla, r):
         if regla == "score":
-            usar = "top5_procesada" if r.top1_procesada_score > r.top1_original_score else "top5_original"
+            usar = (
+                "top5_procesada"
+                if r.top1_procesada_score > r.top1_original_score
+                else "top5_original"
+            )
         elif regla == "recorte":
             usar = "top5_procesada" if r.recorte_pct < 0.95 else "top5_original"
         elif regla == "procesada":
@@ -122,7 +147,11 @@ def main():
 
     def top1(regla, r):
         if regla == "score":
-            return r.top1_procesada if r.top1_procesada_score > r.top1_original_score else r.top1_original
+            return (
+                r.top1_procesada
+                if r.top1_procesada_score > r.top1_original_score
+                else r.top1_original
+            )
         if regla == "recorte":
             return r.top1_procesada if r.recorte_pct < 0.95 else r.top1_original
         if regla == "procesada":
@@ -132,46 +161,66 @@ def main():
     def metrica(regla):
         t1 = int(sum(top1(regla, r) == r.correcto_id for r in res.itertuples()))
         t5 = int(sum(r.correcto_id in top5(regla, r) for r in res.itertuples()))
-        return t1, t5
+        
+        mrr_sum = 0.0
+        for r in res.itertuples():
+            t5_list = top5(regla, r)
+            if r.correcto_id in t5_list:
+                mrr_sum += 1.0 / (t5_list.index(r.correcto_id) + 1)
+        mrr = mrr_sum / len(res) if len(res) > 0 else 0.0
+        
+        return t1, t5, mrr
 
     lineas = []
     lineas.append("RESUMEN HITO 2 - SALA 2 (50 consultas comunes)")
     lineas.append("")
     lineas.append(f"Total consultas evaluadas: {len(res)}")
     lineas.append("")
-    lineas.append(f"{'Regla':<34}{'Top1':>10}{'Top5':>10}{'P50/50':>10}")
+    lineas.append(f"{'Regla':<34}{'Top1':>10}{'Top5':>10}{'MRR':>10}{'P50/50':>10}")
     for nombre, regla in [
         ("Hito 1 (siempre original)", "original"),
         ("Hito 2 (siempre procesada)", "procesada"),
         ("Hito 2 auto: mayor score top1", "score"),
         ("Hito 2 auto: recorte < 0.95", "recorte"),
     ]:
-        t1, t5 = metrica(regla)
+        t1, t5, mrr = metrica(regla)
         p1 = 100 * t1 / max(1, len(res))
         p5 = 100 * t5 / max(1, len(res))
-        lineas.append(f"{nombre:<34}{t1:>7}/{len(res)}{t5:>7}/{len(res)}"
-                      f"{puntaje_combinado_50_50(p1, p5):>9.1f}")
+        lineas.append(
+            f"{nombre:<34}{t1:>7}/{len(res)}{t5:>7}/{len(res)}{mrr:>10.3f}"
+            f"{puntaje_combinado_50_50(p1, p5):>9.1f}"
+        )
     lineas.append("")
 
     for nombre, regla in [("score", "score"), ("recorte", "recorte")]:
-        res[f"auto_{regla}"] = res.apply(lambda r: top1(regla, r), axis=1)
+        res[f"auto_{regla}"] = res.apply(lambda r, regla=regla: top1(regla, r), axis=1)
 
     lineas.append("Por categoria (Hito 1 -> Hito 2 procesada):")
-    lineas.append(f"{'Categoria':<14}{'n':>4}{'Top1 H1':>10}{'Top1 H2':>10}"
-                  f"{'Top5 H1':>10}{'Top5 H2':>10}{'P50 H1':>9}{'P50 H2':>9}")
+    lineas.append(
+        f"{'Categoria':<14}{'n':>4}{'Top1 H1':>10}{'Top1 H2':>10}"
+        f"{'Top5 H1':>10}{'Top5 H2':>10}{'P50 H1':>9}{'P50 H2':>9}"
+    )
     for cat, g in res.groupby("categoria"):
         p1h1 = 100 * g["hit1_original"].mean()
         p1h2 = 100 * g["hit1_procesada"].mean()
         p5h1 = 100 * g["hit5_original"].mean()
         p5h2 = 100 * g["hit5_procesada"].mean()
-        lineas.append(f"{cat:<14}{len(g):>4}{p1h1:>9.0f}%{p1h2:>10.0f}%"
-                      f"{p5h1:>9.0f}%{p5h2:>10.0f}%"
-                      f"{puntaje_combinado_50_50(p1h1, p5h1):>8.1f}"
-                      f"{puntaje_combinado_50_50(p1h2, p5h2):>9.1f}")
+        lineas.append(
+            f"{cat:<14}{len(g):>4}{p1h1:>9.0f}%{p1h2:>10.0f}%"
+            f"{p5h1:>9.0f}%{p5h2:>10.0f}%"
+            f"{puntaje_combinado_50_50(p1h1, p5h1):>8.1f}"
+            f"{puntaje_combinado_50_50(p1h2, p5h2):>9.1f}"
+        )
     lineas.append("")
-    lineas.append(f"Tiempo promedio de busqueda (original):  {np.mean(tiempos_orig):.2f}s")
-    lineas.append(f"Tiempo promedio de busqueda (preparada):  {np.mean(tiempos_proc):.2f}s")
-    lineas.append(f"Tiempo promedio de preprocesamiento:      {np.mean(tiempos_prep):.2f}s")
+    lineas.append(
+        f"Tiempo promedio de busqueda (original):  {np.mean(tiempos_orig):.2f}s"
+    )
+    lineas.append(
+        f"Tiempo promedio de busqueda (preparada):  {np.mean(tiempos_proc):.2f}s"
+    )
+    lineas.append(
+        f"Tiempo promedio de preprocesamiento:      {np.mean(tiempos_prep):.2f}s"
+    )
     lineas.append(f"Tiempo total de las 50 consultas:         {sum(tiempos_proc):.1f}s")
     lineas.append("")
 

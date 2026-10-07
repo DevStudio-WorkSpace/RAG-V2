@@ -1,176 +1,154 @@
 import os
-import sys
-import importlib.util
+import uuid
 import numpy as np
-import pandas as pd
+from PIL import Image
+import torch
 
-# Directorio base del proyecto (raíz WebScraping)
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATADIR = os.path.join(BASE_DIR, "data")
+# -------------------------------------------------------------------------
+# IMPORTANTE: Aquí importamos el Vision Pipeline de tu Buscador.
+# Debes asegurarte de copiar la carpeta 'core' de tu Buscador a RAG-V2,
+# o ajustar las rutas para que encuentre YOLO, Rembg y Fashion-CLIP.
+# -------------------------------------------------------------------------
+from core.vision_pipeline import VisionPipeline
+from core.base_datos import QdrantManager
+from core.search_service import perform_hybrid_search
 
-# Única ubicación de embeddings y datos en la raíz del proyecto
-EMBEDDING_PATHS = [
-    os.path.join(DATADIR, "embeddings.npy"),
-    os.path.join(DATADIR, "index_embeddings.npy"),
-]
-
-IDSPATH = os.path.join(DATADIR, "ids.npy")
-CONECTOR_PATH = os.path.join(BASE_DIR, "scripts", "conector_sala3.py")
-
-
-def _get_embeddings_path():
-    """Retorna la primera ruta de embeddings existente."""
-    for path in EMBEDDING_PATHS:
-        if os.path.exists(path):
-            return path
-    return EMBEDDING_PATHS[0]
-
-
-def _importar_conector_sala1():
-    """Importa dinámicamente cargar_productos_sala1 desde conector_sala3.py"""
-    if not os.path.exists(CONECTOR_PATH):
-        raise FileNotFoundError(f"No se encontró el conector de Sala 1 en: {CONECTOR_PATH}")
-    spec = importlib.util.spec_from_file_location("conector_sala3", CONECTOR_PATH)
-    conector = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(conector)
-    return conector.cargar_productos_sala1
-
-
-df = None
-embeddings_norm = None
-ids = None
-
+# Instancias Globales
+pipeline = None
+qdrant_db = None
 
 def cargar_indice():
     """
-    Carga los productos reales desde Sala 1 (data/products.csv) mediante conector_sala3.py
-    y los embeddings de Sala 3.
-    Lanza un ValueError descriptivo si la cantidad de productos no coincide con los embeddings.
+    Inicializa la conexión con Qdrant y carga los modelos de IA en memoria.
+    Reemplaza la antigua lógica que cargaba FAISS y los .npy.
     """
-    global df, embeddings_norm, ids
-
-    cargar_productos_sala1 = _importar_conector_sala1()
-    _df = cargar_productos_sala1()
-
-    emb_path = _get_embeddings_path()
-    if not os.path.exists(emb_path):
-        raise FileNotFoundError(f"Falta el archivo de embeddings en: {emb_path}")
-
-    _embeddings = np.load(emb_path).astype(np.float32)
-
-    # Validar coincidencia de cantidad entre productos y embeddings
-    if len(_df) != _embeddings.shape[0]:
-        raise ValueError(
-            f"Desfase detectado: Hay {len(_df)} productos en products.csv (Sala 1) "
-            f"pero {_embeddings.shape[0]} embeddings en embeddings.npy (Sala 3). "
-            f"Pendiente actualización de embeddings por Sala 4."
-        )
-
-    _ids = None
-    if os.path.exists(IDSPATH):
+    global pipeline, qdrant_db
+    print("Inicializando Motor de IA (YOLO + Rembg + Fashion-CLIP)...")
+    pipeline = VisionPipeline()
+    
+    print("Conectando a Qdrant...")
+    qdrant_db = QdrantManager()
+    
+    # Auto-migrar datos si Qdrant está vacío
+    if qdrant_db.client.count(qdrant_db.collection_name).count == 0:
+        print("Qdrant está vacío. Migrando datos desde .npy (esto tomará unos segundos)...")
+        import pandas as pd
+        from qdrant_client.http.models import PointStruct
+        
         try:
-            loaded_ids = np.load(IDSPATH, allow_pickle=True)
-            if len(loaded_ids) == len(_embeddings):
-                _ids = loaded_ids
-        except Exception:
-            pass
+            emb_path = os.path.join("data", "embeddings.npy")
+            df_path = os.path.join("data", "products.csv")
+            
+            if os.path.exists(emb_path) and os.path.exists(df_path):
+                embeddings = np.load(emb_path)
+                df = pd.read_csv(df_path)
+                
+                points = []
+                # Evitamos vectores nulos (fallidos en generación original)
+                valido = np.linalg.norm(embeddings, axis=1) > 0
+                
+                for idx, row in df.iterrows():
+                    if idx < len(embeddings) and valido[idx]:
+                        # Qdrant requiere UUID o integer. Generamos uno aleatorio y guardamos el original en el payload
+                        point_id = str(uuid.uuid4())
+                        original_id = str(row["id"]) if "id" in row else point_id
+                        # Limpiamos NaN en el filename por si acaso
+                        filename = str(row["imagen"]) if pd.notna(row.get("imagen")) else f"{original_id}.jpg"
+                        
+                        point = PointStruct(
+                            id=point_id,
+                            vector=embeddings[idx].tolist(),
+                            payload={"filename": filename, "color": "Desconocido", "original_id": original_id}
+                        )
+                        points.append(point)
+                        
+                        # Subir en lotes para no saturar la memoria
+                        if len(points) >= 500:
+                            qdrant_db.upsert_vectors(points)
+                            points = []
+                            
+                if points:
+                    qdrant_db.upsert_vectors(points)
+                    
+                print(f"Migración completada. Se ingestaron {qdrant_db.client.count(qdrant_db.collection_name).count} vectores.")
+            else:
+                print("No se encontraron los archivos data/embeddings.npy o data/products.csv para migrar.")
+        except Exception as e:
+            print(f"Error migrando datos a Qdrant: {e}")
+            
+    print("Sistemas operativos. Motor de búsqueda listo.")
 
-    if _ids is None:
-        if "id" in _df.columns and len(_df) == len(_embeddings):
-            _ids = _df["id"].values
-        else:
-            _ids = np.array([str(i) for i in range(len(_embeddings))])
-
-    if _embeddings.shape[0] != len(_ids):
-        raise ValueError(
-            f"Cantidad de embeddings ({_embeddings.shape[0]}) no coincide con ids ({len(_ids)})"
-        )
-
-    # Normalización L2 de la matriz de embeddings
-    normas = np.linalg.norm(_embeddings, axis=1, keepdims=True)
-    normas[normas == 0] = 1e-10
-    _embeddings_norm = _embeddings / normas
-
-    df, embeddings_norm, ids = _df, _embeddings_norm, _ids
-    return df, embeddings_norm, ids
-
-
-def search_similar(query_embedding, top_k: int = 5) -> list[dict]:
+def search_similar(imagen: Image.Image, color_filtro: str = None, top_k: int = 5):
     """
-    Recibe un embedding de consulta (list o np.ndarray) y devuelve el top_k de productos más similares.
-    Contrato de respuesta: list de objetos con keys: id, nombre, imagen, url, proveedor, score.
+    Recibe una imagen (PIL), la procesa (YOLO+Rembg+CLIP), y busca en Qdrant.
+    Si se proporciona un color_filtro, hace búsqueda híbrida exacta.
     """
-    if df is None or embeddings_norm is None:
-        cargar_indice()
-
-    v_query = np.array(query_embedding, dtype=np.float32).flatten()
-
-    dim_esperada = embeddings_norm.shape[1]
-    if v_query.shape[0] != dim_esperada:
-        raise ValueError(
-            f"El vector de consulta tiene {v_query.shape[0]} dimensiones, se esperaban {dim_esperada}"
-        )
-
-    norm_q = np.linalg.norm(v_query)
-    if norm_q == 0:
-        raise ValueError("El vector de consulta no puede ser un vector nulo")
-    v_query = v_query / norm_q
-
-    # Producto punto con la matriz normalizada L2 para similitud coseno
-    scores = np.dot(embeddings_norm, v_query)
-    top_k_idx = np.argsort(scores)[::-1][:top_k]
-
-    resultados = []
-    for idx in top_k_idx:
-        row = df.iloc[idx]
-        nombre = row.get("nombre_original", row.get("nombre", ""))
-        imagen = row.get("imagen", row.get("archivo", ""))
-        url = row.get("url", "")
-        proveedor = row.get("proveedor", "Designs Aimari")
-
-        resultados.append({
-            "id": str(ids[idx]),
-            "nombre": str(nombre),
-            "imagen": str(imagen),
-            "url": str(url),
-            "proveedor": str(proveedor),
-            "score": round(float(scores[idx]), 4),
+    if pipeline is None or qdrant_db is None:
+        raise RuntimeError("El índice no ha sido cargado. Llama a cargar_indice() primero.")
+    
+    # 1. Pipeline de Inteligencia Artificial (Extrae embedding y color)
+    resultado = pipeline.process_image(imagen)
+    query_vector = resultado["embedding"]
+    color_detectado = resultado["color"]
+    
+    # Si el usuario no forzó un filtro de color, usamos el detectado
+    color_a_filtrar = color_filtro if color_filtro else color_detectado
+    
+    # 2. Búsqueda Híbrida Vectorial en Qdrant (Traemos 30 para el Reranking)
+    resultados_db = perform_hybrid_search(qdrant_db, query_vector, color_a_filtrar, limit=30)
+    
+    # 3. Formatear la salida para la API
+    resultados_formateados = []
+    for pos, r in enumerate(resultados_db, start=1):
+        filename = r.payload.get("filename", "")
+        original_id = r.payload.get("original_id", str(r.id))
+        resultados_formateados.append({
+            "id": original_id,
+            "nombre": filename.split('.')[0] if filename else f"Producto {original_id}",
+            "imagen": filename,
+            "url": "",
+            "proveedor": "Catálogo Local",
+            "score": round(float(r.score), 4),
         })
-    return resultados
-
-
-def info_indice() -> dict:
-    """
-    Retorna la cantidad de productos (Sala 1) y embeddings (Sala 3) actuales
-    para permitir visualizar el desfase en el endpoint /health.
-    """
-    try:
-        cargar_productos_sala1 = _importar_conector_sala1()
-        df_sala1 = cargar_productos_sala1()
-        num_products = len(df_sala1)
-    except Exception:
-        num_products = len(df) if df is not None else 0
-
-    try:
-        emb_path = _get_embeddings_path()
-        if os.path.exists(emb_path):
-            emb_arr = np.load(emb_path, mmap_mode="r")
-            num_embeddings = int(emb_arr.shape[0])
-        else:
-            num_embeddings = int(embeddings_norm.shape[0]) if embeddings_norm is not None else 0
-    except Exception:
-        num_embeddings = int(embeddings_norm.shape[0]) if embeddings_norm is not None else 0
-
-    info = {
-        "products": num_products,
-        "embeddings": num_embeddings,
+        
+    # 4. Reranking Visual (Corrige el problema de colores usando Hito 2)
+    from api.search_engine_hito2 import _rerank_candidatos
+    
+    resultados_finales = _rerank_candidatos(
+        candidatos=resultados_formateados,
+        query_image=imagen,
+        etiqueta_modelo="YOLO+SigLIP",
+        top_k=top_k
+    )
+    
+    return {
+        "color_detectado": color_detectado,
+        "resultados": resultados_finales
     }
 
-    if num_products != num_embeddings:
-        info["desfase_detectado"] = True
-        info["observacion"] = (
-            f"Desfase detectado: {num_products} productos en products.csv (Sala 1) vs "
-            f"{num_embeddings} embeddings en embeddings.npy (Sala 3). Pendiente entrega de Sala 4."
-        )
+def ingest_to_qdrant(imagen: Image.Image, filename: str):
+    """
+    (Opcional) Usa esta función para llenar tu base de datos Qdrant
+    dinámicamente sin usar scripts estáticos de numpy.
+    """
+    resultado = pipeline.process_image(imagen)
+    query_vector = resultado["embedding"]
+    color = resultado["color"]
+    
+    from qdrant_client.http.models import PointStruct
+    
+    point_id = str(uuid.uuid4())
+    point = PointStruct(
+        id=point_id,
+        vector=query_vector.tolist(),
+        payload={"filename": filename, "color": color}
+    )
+    qdrant_db.upsert_vectors([point])
+    return point_id
 
-    return info
+def info_indice() -> dict:
+    """Retorna información del estado de Qdrant."""
+    if qdrant_db is None:
+        return {"status": "No inicializado"}
+    # Podrías agregar una llamada a qdrant_db.client.count() aquí si lo deseas
+    return {"status": "Qdrant Online", "coleccion": qdrant_db.collection_name}

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 normalizar_imagenes.py  -  Sala 1 / Hito 2  [LEGACY]
 -----------------------------------------------------
@@ -65,27 +64,34 @@ warnings.filterwarnings("ignore")
 # ─────────────────────────────────────────────
 # CONFIGURACION
 # ─────────────────────────────────────────────
-BASE_DIR       = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-IMAGES_ORIGEN  = os.path.join(BASE_DIR, "data", "images_final")      # fuente unica (no se toca)
-IMAGES_NORM    = os.path.join(BASE_DIR, "data", "images_normalized") # salida normalizada
-REPORTE_TXT    = os.path.join(BASE_DIR, "data", "informe_normalizacion.txt")
-DETALLE_CSV    = os.path.join(BASE_DIR, "data", "detalle_normalizacion.csv")
-REVISION_CSV   = os.path.join(BASE_DIR, "data", "revision_humana_50.csv")
-CONTACT_SHEET  = os.path.join(BASE_DIR, "data", "revision_contact_sheet.png")
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+IMAGES_ORIGEN = os.path.join(
+    BASE_DIR, "data", "images_final"
+)  # fuente unica (no se toca)
+IMAGES_NORM = os.path.join(BASE_DIR, "data", "images_normalized")  # salida normalizada
+REPORTE_TXT = os.path.join(BASE_DIR, "data", "informe_normalizacion.txt")
+DETALLE_CSV = os.path.join(BASE_DIR, "data", "detalle_normalizacion.csv")
+REVISION_CSV = os.path.join(BASE_DIR, "data", "revision_humana_50.csv")
+CONTACT_SHEET = os.path.join(BASE_DIR, "data", "revision_contact_sheet.png")
 
-UMBRAL_FONDO   = 245     # pixeles con brillo menor a esto se consideran contenido
-FRACCION_BANDA = 0.02    # fraccion minima de fila/columna "no fondo" para iniciar banda/bloque
-FUSION_GAP     = 12      # px: bandas/bloques separados por menos de esto se fusionan
-ANCHO_LOGO_MAX = 0.18    # fraccion del ancho: bloque izquierdo mas estrecho que esto es logo
-HUECO_MIN      = 0.15    # densidad maxima en un "valle" para considerarlo hueco real
-CANVAS_SIZE    = 700     # lado mayor del lienzo de salida (proporcion conservada)
-AMPLIACION_MAX = 2.0     # no ampliar mas de 2x (evitar perdida de definicion)
-EXTENSIONES    = (".jpg", ".jpeg", ".png", ".gif")
+UMBRAL_FONDO = 245  # pixeles con brillo menor a esto se consideran contenido
+FRACCION_BANDA = (
+    0.02  # fraccion minima de fila/columna "no fondo" para iniciar banda/bloque
+)
+FUSION_GAP = 12  # px: bandas/bloques separados por menos de esto se fusionan
+ANCHO_LOGO_MAX = (
+    0.18  # fraccion del ancho: bloque izquierdo mas estrecho que esto es logo
+)
+HUECO_MIN = 0.15  # densidad maxima en un "valle" para considerarlo hueco real
+CANVAS_SIZE = 700  # lado mayor del lienzo de salida (proporcion conservada)
+AMPLIACION_MAX = 2.0  # no ampliar mas de 2x (evitar perdida de definicion)
+EXTENSIONES = (".jpg", ".jpeg", ".png", ".gif")
 
 
 # ─────────────────────────────────────────────
 # HELPERS DE IMAGEN
 # ─────────────────────────────────────────────
+
 
 def abrir_rgb(ruta):
     """Abre cualquier imagen (JPG/PNG/GIF, incl. paleta/alfa) como RGB plano."""
@@ -238,10 +244,14 @@ def detectar_uniformes(seg, ancho_banda):
         det.append(f"logo descartado x[{logo[0]}:{logo[1]}]")
 
     # ── caso B: primer bloque ancho pegado al borde -> puede tener logo dentro ──
-    elif (len(bloques) >= 1 and primero[0] <= umbral_borde
-          and ancho_primero > ancho_logo_max):
-        logo, frente_nuevo = separar_logo_y_frente(fr, primero[0], primero[1],
-                                                   ancho_logo_max)
+    elif (
+        len(bloques) >= 1
+        and primero[0] <= umbral_borde
+        and ancho_primero > ancho_logo_max
+    ):
+        logo, frente_nuevo = separar_logo_y_frente(
+            fr, primero[0], primero[1], ancho_logo_max
+        )
         if logo is not None:
             bloques[0] = frente_nuevo
             det.append(f"logo separado de bloque ancho x[{logo[0]}:{logo[1]}]")
@@ -277,7 +287,7 @@ def ajustar_recorte(seg, x0, x1, y0, y1, margen=2):
     ya estan en coordenadas de la imagen; solo las filas necesitan
     desplazamiento (+y0).
     """
-    mask = (seg[:, x0 : x1 + 1].mean(axis=2) < UMBRAL_FONDO)
+    mask = seg[:, x0 : x1 + 1].mean(axis=2) < UMBRAL_FONDO
     cols = np.where(mask.any(axis=0))[0]
     rows = np.where(mask.any(axis=1))[0]
     if len(cols) == 0 or len(rows) == 0:
@@ -314,12 +324,16 @@ def recortar_franjas_oscuras(im, umbral=40, dif=30, fraccion_max=0.04):
     der = 0
     if w > 12:
         col = brillo.mean(axis=0)
-        interior = col[int(0.03 * w):int(0.08 * w)].mean()
+        interior = col[int(0.03 * w) : int(0.08 * w)].mean()
         while izq < max_px_col and col[izq] < umbral and col[izq] < interior - dif:
             izq += 1
         if izq < 2:
             izq = 0
-        while der < max_px_col and col[w - 1 - der] < umbral and col[w - 1 - der] < interior - dif:
+        while (
+            der < max_px_col
+            and col[w - 1 - der] < umbral
+            and col[w - 1 - der] < interior - dif
+        ):
             der += 1
         if der < 2:
             der = 0
@@ -328,12 +342,16 @@ def recortar_franjas_oscuras(im, umbral=40, dif=30, fraccion_max=0.04):
     inf = 0
     if h > 12:
         fil = brillo.mean(axis=1)
-        interior = fil[int(0.03 * h):int(0.08 * h)].mean()
+        interior = fil[int(0.03 * h) : int(0.08 * h)].mean()
         while sup < max_px_fil and fil[sup] < umbral and fil[sup] < interior - dif:
             sup += 1
         if sup < 2:
             sup = 0
-        while inf < max_px_fil and fil[h - 1 - inf] < umbral and fil[h - 1 - inf] < interior - dif:
+        while (
+            inf < max_px_fil
+            and fil[h - 1 - inf] < umbral
+            and fil[h - 1 - inf] < interior - dif
+        ):
             inf += 1
         if inf < 2:
             inf = 0
@@ -378,7 +396,7 @@ def normalizar_imagen(ruta):
         motivo.append(f"{len(bandas)} bandas (se esperaban 3)")
 
     hay_cabecera = any(b[1] < y0 for b in bandas)
-    hay_pie      = any(b[0] > y1 for b in bandas)
+    hay_pie = any(b[0] > y1 for b in bandas)
     if not hay_cabecera and not hay_pie:
         estado = "dudoso"
         motivo.append("sin cabecera ni pie (formato atipico)")
@@ -389,12 +407,16 @@ def normalizar_imagen(ruta):
 
     if frente is None and espalda is None:
         bbox = (None, None, None, None)
-        mask = (seg.mean(axis=2) < UMBRAL_FONDO)
+        mask = seg.mean(axis=2) < UMBRAL_FONDO
         cols = np.where(mask.any(axis=0))[0]
         rows = np.where(mask.any(axis=1))[0]
         if len(cols) and len(rows):
-            fx0, fx1, fy0, fy1 = (int(cols.min()), int(cols.max()),
-                                  int(rows.min()), int(rows.max()))
+            fx0, fx1, fy0, fy1 = (
+                int(cols.min()),
+                int(cols.max()),
+                int(rows.min()),
+                int(rows.max()),
+            )
             # solo se confia en el fallback si el contenido ocupa una
             # fraccion razonable de la banda central
             if (fx1 - fx0 + 1) >= 0.20 * w and (fy1 - fy0 + 1) >= 0.20 * (y1 - y0 + 1):
@@ -403,9 +425,18 @@ def normalizar_imagen(ruta):
         if bbox[0] is not None:
             x0, x1, fy0, fy1 = bbox
             estado = "dudoso"
-            motivo.append("fallback: sin frente/espalda, recorte por contenido (revisar)")
+            motivo.append(
+                "fallback: sin frente/espalda, recorte por contenido (revisar)"
+            )
         else:
-            return None, "fallido", "no se detectaron uniformes en la zona central", None, None, len(bandas)
+            return (
+                None,
+                "fallido",
+                "no se detectaron uniformes en la zona central",
+                None,
+                None,
+                len(bandas),
+            )
     else:
         recorte_fallback = False
 
@@ -432,12 +463,13 @@ def normalizar_imagen(ruta):
     # ── ajuste fino al contenido util (quita marco/margenes) ──
     if recorte_fallback:
         y0_fb, y1_fb = fy0 + y0, fy1 + y0
-        crop = im.crop((max(x0 - 2, 0), max(y0_fb - 2, 0),
-                        min(x1 + 3, w), min(y1_fb + 3, h)))
+        crop = im.crop(
+            (max(x0 - 2, 0), max(y0_fb - 2, 0), min(x1 + 3, w), min(y1_fb + 3, h))
+        )
     else:
         x0, x1, y0, y1 = ajustar_recorte(seg, x0, x1, y0, y1, margen=2)
         ancho = x1 - x0 + 1
-        alto  = y1 - y0 + 1
+        alto = y1 - y0 + 1
         if ancho < 0.25 * w or alto < 0.20 * (y1 - y0 + 1) + 1:
             if estado == "ok":
                 estado = "dudoso"
@@ -455,8 +487,7 @@ def normalizar_imagen(ruta):
         escala = CANVAS_SIZE / lado
     elif lado < CANVAS_SIZE / AMPLIACION_MAX:
         escala = min(AMPLIACION_MAX, CANVAS_SIZE / lado)
-        if escala < 1.0:
-            escala = 1.0
+        escala = max(escala, 1.0)
     nuevo = (max(1, int(round(cw * escala))), max(1, int(round(ch * escala))))
     if nuevo != (cw, ch):
         crop = crop.resize(nuevo, Image.LANCZOS)
@@ -468,6 +499,7 @@ def normalizar_imagen(ruta):
 # ─────────────────────────────────────────────
 # VALIDACION HUMANA (muestra de 50)
 # ─────────────────────────────────────────────
+
 
 def generar_muestra_humana(ids, n=50):
     """
@@ -484,15 +516,39 @@ def generar_muestra_humana(ids, n=50):
 
     with open(rev_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["id", "normalizada", "original",
-                    "solo_frente_espalda", "sin_logo", "sin_marco",
-                    "sin_cabecera_pie", "sin_cortes", "sin_deformacion",
-                    "lienzo_ok", "clasificacion", "observacion"])
+        w.writerow(
+            [
+                "id",
+                "normalizada",
+                "original",
+                "solo_frente_espalda",
+                "sin_logo",
+                "sin_marco",
+                "sin_cabecera_pie",
+                "sin_cortes",
+                "sin_deformacion",
+                "lienzo_ok",
+                "clasificacion",
+                "observacion",
+            ]
+        )
         for mid in muestra:
-            w.writerow([mid,
-                        os.path.join("images_normalized", mid),
-                        os.path.join("images_final", mid),
-                        "", "", "", "", "", "", "", "", ""])
+            w.writerow(
+                [
+                    mid,
+                    os.path.join("images_normalized", mid),
+                    os.path.join("images_final", mid),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                ]
+            )
 
     # contact sheet: 2 paneles (original | normalizada) por fila
     por_fila = 6
@@ -500,10 +556,11 @@ def generar_muestra_humana(ids, n=50):
     thumb = 200
     pad = 10
     panel = thumb * 2 + pad * 3
-    hoja_im = Image.new("RGB",
-                        (por_fila * panel + pad,
-                         filas * thumb + pad * (filas + 1)),
-                        (255, 255, 255))
+    hoja_im = Image.new(
+        "RGB",
+        (por_fila * panel + pad, filas * thumb + pad * (filas + 1)),
+        (255, 255, 255),
+    )
     for i, mid in enumerate(muestra):
         r, c = divmod(i, por_fila)
         x = pad + c * (panel + pad)
@@ -524,14 +581,14 @@ def generar_muestra_humana(ids, n=50):
 # PROCESAMIENTO PRINCIPAL
 # ─────────────────────────────────────────────
 
+
 def procesar(limite=None, canvas_size=CANVAS_SIZE, muestra=50):
     global CANVAS_SIZE
     CANVAS_SIZE = canvas_size
     os.makedirs(IMAGES_NORM, exist_ok=True)
 
     archivos = sorted(
-        f for f in os.listdir(IMAGES_ORIGEN)
-        if f.lower().endswith(EXTENSIONES)
+        f for f in os.listdir(IMAGES_ORIGEN) if f.lower().endswith(EXTENSIONES)
     )
     if limite:
         archivos = archivos[:limite]
@@ -574,10 +631,17 @@ def procesar(limite=None, canvas_size=CANVAS_SIZE, muestra=50):
         if espalda is not None:
             con_espalda += 1
 
-        resultados.append([base_id + ".jpg", estado, detalle,
-                           f"{im_out.size[0]}x{im_out.size[1]}", "ok-saved",
-                           "si" if frente is not None else "no",
-                           "si" if espalda is not None else "no"])
+        resultados.append(
+            [
+                base_id + ".jpg",
+                estado,
+                detalle,
+                f"{im_out.size[0]}x{im_out.size[1]}",
+                "ok-saved",
+                "si" if frente is not None else "no",
+                "si" if espalda is not None else "no",
+            ]
+        )
         if estado == "ok":
             ok += 1
             recorte_ok += 1
@@ -597,16 +661,32 @@ def procesar(limite=None, canvas_size=CANVAS_SIZE, muestra=50):
     # ── verificacion de integridad de salida ──
     todo_en_disco = sorted(os.listdir(IMAGES_NORM))
     salidas_jpg = [f for f in todo_en_disco if f.lower().endswith(".jpg")]
-    hay_otras_ext = any(f.lower().endswith((".png", ".gif", ".jpeg")) for f in todo_en_disco)
+    hay_otras_ext = any(
+        f.lower().endswith((".png", ".gif", ".jpeg")) for f in todo_en_disco
+    )
     completo = len(salidas_jpg) == total and not hay_otras_ext
-    integridad = "OK (100% .jpg)" if completo else (
-        f"INCOMPLETO: {len(salidas_jpg)}/{total} .jpg, otras ext: {hay_otras_ext}")
+    integridad = (
+        "OK (100% .jpg)"
+        if completo
+        else (
+            f"INCOMPLETO: {len(salidas_jpg)}/{total} .jpg, otras ext: {hay_otras_ext}"
+        )
+    )
 
     # ── guardar detalle CSV ──
     with open(DETALLE_CSV, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["id", "estado", "motivo", "dimensiones_normalizada",
-                    "guardada", "frente_detectado", "espalda_detectada"])
+        w.writerow(
+            [
+                "id",
+                "estado",
+                "motivo",
+                "dimensiones_normalizada",
+                "guardada",
+                "frente_detectado",
+                "espalda_detectada",
+            ]
+        )
         w.writerows(resultados)
 
     # ── guardar reporte de texto ──
@@ -623,12 +703,11 @@ def procesar(limite=None, canvas_size=CANVAS_SIZE, muestra=50):
         f.write(f"Espalda detectada       : {con_espalda}\n")
         f.write(f"Integridad de salida    : {integridad}\n")
         f.write(f"Tiempo total            : {tiempo_total:.2f} s\n")
-        f.write(f"Tiempo promedio         : {tiempo_prom*1000:.1f} ms/imagen\n")
+        f.write(f"Tiempo promedio         : {tiempo_prom * 1000:.1f} ms/imagen\n")
         f.write("=" * 60 + "\n")
         f.write("\nIMAGENES ATIPICAS (no siguen la estructura habitual):\n")
         if atipicas:
-            for a_ in sorted(set(atipicas)):
-                f.write(f"  {a_}\n")
+            f.writelines(f"  {a_}\n" for a_ in sorted(set(atipicas)))
         else:
             f.write("  (ninguna)\n")
         f.write("\nCASOS PARA REVISION HUMANA (dudosas + fallidas):\n")
@@ -653,7 +732,7 @@ def procesar(limite=None, canvas_size=CANVAS_SIZE, muestra=50):
     print(f"Espalda detectada       : {con_espalda}")
     print(f"Integridad de salida    : {integridad}")
     print(f"Tiempo total            : {tiempo_total:.2f} s")
-    print(f"Tiempo promedio         : {tiempo_prom*1000:.1f} ms/imagen")
+    print(f"Tiempo promedio         : {tiempo_prom * 1000:.1f} ms/imagen")
     print("=" * 60)
     print(f"Reporte   : {REPORTE_TXT}")
     print(f"Detalle   : {DETALLE_CSV}")
@@ -665,22 +744,44 @@ def procesar(limite=None, canvas_size=CANVAS_SIZE, muestra=50):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sala 1 / Hito 2 - Normalizacion del banco")
-    parser.add_argument("--limite", type=int, default=None,
-                        help="Procesar solo las primeras N imagenes (pruebas)")
-    parser.add_argument("--canvas", type=int, default=CANVAS_SIZE,
-                        help="Lado mayor del lienzo (default 700)")
-    parser.add_argument("--muestra", type=int, default=50,
-                        help="Tamano de la muestra para validacion humana (default 50)")
-    parser.add_argument("--solo-muestra", action="store_true",
-                        help="Solo regenerar la muestra humana (sin re-normalizar)")
+    parser = argparse.ArgumentParser(
+        description="Sala 1 / Hito 2 - Normalizacion del banco"
+    )
+    parser.add_argument(
+        "--limite",
+        type=int,
+        default=None,
+        help="Procesar solo las primeras N imagenes (pruebas)",
+    )
+    parser.add_argument(
+        "--canvas",
+        type=int,
+        default=CANVAS_SIZE,
+        help="Lado mayor del lienzo (default 700)",
+    )
+    parser.add_argument(
+        "--muestra",
+        type=int,
+        default=50,
+        help="Tamano de la muestra para validacion humana (default 50)",
+    )
+    parser.add_argument(
+        "--solo-muestra",
+        action="store_true",
+        help="Solo regenerar la muestra humana (sin re-normalizar)",
+    )
     args = parser.parse_args()
 
     if args.solo_muestra:
-        ids = [f for f in sorted(os.listdir(IMAGES_NORM))
-               if f.lower().endswith((".jpg", ".jpeg", ".png", ".gif"))]
+        ids = [
+            f
+            for f in sorted(os.listdir(IMAGES_NORM))
+            if f.lower().endswith((".jpg", ".jpeg", ".png", ".gif"))
+        ]
         if len(ids) < args.muestra:
-            sys.exit(f"No hay suficientes normalizadas ({len(ids)}) para muestra de {args.muestra}")
+            sys.exit(
+                f"No hay suficientes normalizadas ({len(ids)}) para muestra de {args.muestra}"
+            )
         rev_csv, hoja = generar_muestra_humana(ids, n=args.muestra)
         print("=" * 60)
         print(f"Muestra humana {args.muestra} (semilla 42)   -> {rev_csv}")

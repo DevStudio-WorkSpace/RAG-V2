@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 evidencia_hito2.py (Sala 2 - Hito 2)
 ------------------------------------
@@ -26,7 +25,7 @@ from PIL import Image, ImageDraw, ImageFont
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, BASE_DIR)
 
-from api.preprocesar_consulta import preparar_consulta  # noqa: E402
+from api.preprocesar_consulta import preparar_consulta
 
 CONSULTAS = os.path.join(BASE_DIR, "data", "consultas")
 IMGS = os.path.join(BASE_DIR, "data", "images_normalized")
@@ -62,16 +61,26 @@ def main():
     res["familia"] = res["correcto_id"].apply(familia)
     res["t5o"] = res["top5_original"].str.split("|")
     res["t5p"] = res["top5_procesada"].str.split("|")
-    res["coh_o"] = res.apply(lambda r: np.mean([familia(x) == r["familia"] for x in r["t5o"]]), axis=1)
-    res["coh_p"] = res.apply(lambda r: np.mean([familia(x) == r["familia"] for x in r["t5p"]]), axis=1)
+    res["coh_o"] = res.apply(
+        lambda r: np.mean([familia(x) == r["familia"] for x in r["t5o"]]), axis=1
+    )
+    res["coh_p"] = res.apply(
+        lambda r: np.mean([familia(x) == r["familia"] for x in r["t5p"]]), axis=1
+    )
 
     lineas = []
-    lineas.append("COHERENCIA DEL TOP 5 (proporcion de resultados de la misma familia de diseno)")
+    lineas.append(
+        "COHERENCIA DEL TOP 5 (proporcion de resultados de la misma familia de diseno)"
+    )
     lineas.append("")
     lineas.append(f"{'Categoria':<14}{'Hito 1':>10}{'Hito 2':>10}")
     for cat, g in res.groupby("categoria"):
-        lineas.append(f"{cat:<14}{100*g['coh_o'].mean():>9.0f}%{100*g['coh_p'].mean():>10.0f}%")
-    lineas.append(f"{'TOTAL':<14}{100*res['coh_o'].mean():>9.0f}%{100*res['coh_p'].mean():>10.0f}%")
+        lineas.append(
+            f"{cat:<14}{100 * g['coh_o'].mean():>9.0f}%{100 * g['coh_p'].mean():>10.0f}%"
+        )
+    lineas.append(
+        f"{'TOTAL':<14}{100 * res['coh_o'].mean():>9.0f}%{100 * res['coh_p'].mean():>10.0f}%"
+    )
     texto = "\n".join(lineas)
     print(texto)
     with open(EVIDENCIA_TXT, "w", encoding="utf-8") as f:
@@ -97,13 +106,23 @@ def main():
 
         lienzo = Image.new("RGB", (ancho * 3 + 40, ancho + 34), (255, 255, 255))
         d = ImageDraw.Draw(lienzo)
-        d.text((5, 4), f"{archivo} | {cat} | correcto={correcto}", font=_font(11), fill=(0, 0, 0))
+        d.text(
+            (5, 4),
+            f"{archivo} | {cat} | correcto={correcto}",
+            font=_font(11),
+            fill=(0, 0, 0),
+        )
         lienzo.paste(piezas[0], (10, 20))
         d.text((10, ancho + 24), "consulta", font=_font(11), fill=(0, 0, 0))
         lienzo.paste(piezas[1], (ancho + 20, 20))
         d.text((ancho + 20, ancho + 24), "preparada", font=_font(11), fill=(0, 0, 0))
         lienzo.paste(piezas[2], (2 * ancho + 30, 20))
-        d.text((2 * ancho + 30, ancho + 24), f"Top1 H2: {top1_proc}", font=_font(11), fill=(0, 0, 0))
+        d.text(
+            (2 * ancho + 30, ancho + 24),
+            f"Top1 H2: {top1_proc}",
+            font=_font(11),
+            fill=(0, 0, 0),
+        )
 
         out = os.path.join(MONT_OUT, os.path.splitext(archivo)[0] + ".png")
         lienzo.save(out)

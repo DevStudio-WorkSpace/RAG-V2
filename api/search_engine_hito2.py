@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 search_engine_hito2.py
 ----------------------
@@ -68,11 +67,11 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from api.search_engine import DATADIR, search_similar
 from api.descriptores_visuales import (
     descriptores_de_bgr,
     similitudes_visuales,
 )
+from api.search_engine import DATADIR, search_similar
 
 # ── PESOS DEL SCORE FINAL (probar, no asumir) ────────────────────────────
 # Score_final = Σ peso_atributo * score_atributo, con el score de embeddings
@@ -80,16 +79,16 @@ from api.descriptores_visuales import (
 # Los pesos se normalizan para que sumen 1. El embedding manda (0.50): es la
 # señal MÁS robusta a oclusiones (un punto/franja que tape parte del diseño
 # corrompe los descriptores de píxeles, no el vector semántico del modelo).
-PESO_EMBEDDING       = 0.50   # el embedding sigue mandando (robusto a oclusiones)
-PESO_COLOR_GLOBAL    = 0.07   # paleta global percibida por una persona
-PESO_COLOR_FRENTE    = 0.04   # región izquierda (frente en el banco)
-PESO_COLOR_ESPALDA   = 0.04   # región derecha (espalda en el banco)
-PESO_ESTRUCTURA      = 0.07   # distribución del patrón en grises (robusto al color)
-PESO_COLOR_DOMINANTE = 0.08   # color dominante (k-means HSV)
-PESO_GAMA            = 0.04   # gama cromática (histograma HSV grueso)
-PESO_PATRON          = 0.06   # diseño/patrón (textura en grilla)
-PESO_MARCO           = 0.06   # estructura con/sin marco
-PESO_FRANJAS         = 0.04   # líneas/franjas/rayados (elementos gráficos)
+PESO_EMBEDDING = 0.50  # el embedding sigue mandando (robusto a oclusiones)
+PESO_COLOR_GLOBAL = 0.07  # paleta global percibida por una persona
+PESO_COLOR_FRENTE = 0.04  # región izquierda (frente en el banco)
+PESO_COLOR_ESPALDA = 0.04  # región derecha (espalda en el banco)
+PESO_ESTRUCTURA = 0.07  # distribución del patrón en grises (robusto al color)
+PESO_COLOR_DOMINANTE = 0.08  # color dominante (k-means HSV)
+PESO_GAMA = 0.04  # gama cromática (histograma HSV grueso)
+PESO_PATRON = 0.06  # diseño/patrón (textura en grilla)
+PESO_MARCO = 0.06  # estructura con/sin marco
+PESO_FRANJAS = 0.04  # líneas/franjas/rayados (elementos gráficos)
 
 _PESOS = {
     "embedding": PESO_EMBEDDING,
@@ -171,6 +170,7 @@ _cache_avanzados_online = {}
 # LECTURA Y DESCRIPTORES
 # ─────────────────────────────────────────────
 
+
 def _leer_bgr_desde_ruta(ruta):
     """
     Lee una imagen desde disco y la devuelve como arreglo BGR (formato de
@@ -234,8 +234,11 @@ def _histograma_hsv(bgr):
     # 256 bins, dos fotos del mismo diseño con distinta iluminación darían
     # histogramas "distintos"; con pocos bins se captura la paleta global.
     histograma = cv2.calcHist(
-        [hsv], [0, 1, 2], None,
-        [8, 8, 8], [0, 180, 0, 256, 0, 256],
+        [hsv],
+        [0, 1, 2],
+        None,
+        [8, 8, 8],
+        [0, 180, 0, 256, 0, 256],
     )
 
     # Normalizar para que la comparación no dependa del tamaño/resolución
@@ -263,8 +266,9 @@ def _estructura_gris(bgr):
         gris = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     else:
         gris = bgr
-    gris = cv2.resize(gris, (TAM_ESTRUCTURA, TAM_ESTRUCTURA),
-                      interpolation=cv2.INTER_AREA)
+    gris = cv2.resize(
+        gris, (TAM_ESTRUCTURA, TAM_ESTRUCTURA), interpolation=cv2.INTER_AREA
+    )
     return gris.astype(np.float32) / 255.0
 
 
@@ -329,6 +333,7 @@ def _descriptores_de_archivo(nombre_archivo, id_catalogo=None):
 # DESCRIPTORES AVANZADOS (precomputados u on-the-fly)
 # ─────────────────────────────────────────────
 
+
 def cargar_descriptores_precomputados():
     """
     Carga data/descriptores.json (scripts/precomputar_descriptores.py) como
@@ -339,8 +344,10 @@ def cargar_descriptores_precomputados():
     if _cache_descripciones_pre:
         return _cache_descripciones_pre
     if not os.path.exists(DESCRIPTORES_JSON):
-        print("[search_engine_hito2] AVISO: no existe data/descriptores.json; "
-              "descriptores avanzados se calculan on-the-fly.")
+        print(
+            "[search_engine_hito2] AVISO: no existe data/descriptores.json; "
+            "descriptores avanzados se calculan on-the-fly."
+        )
         _cache_descripciones_pre = None
         return None
     try:
@@ -350,8 +357,10 @@ def cargar_descriptores_precomputados():
         for cid, desc in zip(datos.get("ids", []), datos.get("descriptores", [])):
             mapa[str(cid)] = desc
         _cache_descripciones_pre = mapa
-        print(f"[search_engine_hito2] {len(mapa)} descriptores avanzados "
-              "precomputados cargados.")
+        print(
+            f"[search_engine_hito2] {len(mapa)} descriptores avanzados "
+            "precomputados cargados."
+        )
         return mapa
     except Exception as e:
         print(f"[search_engine_hito2] AVISO: no se pudo cargar descriptores.json: {e}")
@@ -406,6 +415,7 @@ def _descriptores_avanzados_candidato(cand):
 # MOTOR CON RERANKING
 # ─────────────────────────────────────────────
 
+
 def cargar_indice_normalizado(modelo: str = "clip"):
     """
     Carga el índice del Hito 2 (Sala 4) para el modelo indicado:
@@ -426,8 +436,10 @@ def cargar_indice_normalizado(modelo: str = "clip"):
     ruta_indice = INDICES_NORMALIZADOS[modelo]
     if not os.path.exists(ruta_indice):
         if modelo == "clip":
-            print("[search_engine_hito2] AVISO: no existe embeddings_clip.npy "
-                  "(Sala 4); usando el índice CLIP del Hito 1.")
+            print(
+                "[search_engine_hito2] AVISO: no existe embeddings_clip.npy "
+                "(Sala 4); usando el índice CLIP del Hito 1."
+            )
             return None
         raise ValueError(
             f"No existe el índice OpenCLIP en {ruta_indice}. Generalo primero: "
@@ -464,8 +476,10 @@ def cargar_indice_normalizado(modelo: str = "clip"):
     # reconstruye desde el CSV para no desalinear silenciosamente.
     if ids is None or len(ids) != len(embeddings):
         if df is not None and "id" in df.columns:
-            print("[search_engine_hito2] AVISO: ids.npy no coincide; "
-                  "reconstruyendo IDs desde products.csv.")
+            print(
+                "[search_engine_hito2] AVISO: ids.npy no coincide; "
+                "reconstruyendo IDs desde products.csv."
+            )
             ids = df["id"].values
         else:
             raise ValueError(
@@ -477,13 +491,21 @@ def cargar_indice_normalizado(modelo: str = "clip"):
         if len(ids) != len(csv_ids) or any(
             str(a) != str(b) for a, b in zip(ids, csv_ids)
         ):
-            print("[search_engine_hito2] AVISO: ids.npy desactualizado respecto "
-                  "a products.csv; reconstruyendo IDs desde el CSV.")
+            print(
+                "[search_engine_hito2] AVISO: ids.npy desactualizado respecto "
+                "a products.csv; reconstruyendo IDs desde el CSV."
+            )
             ids = csv_ids
 
-    _cache_indices[modelo] = (embeddings, np.asarray(ids), df, valido)
-    print(f"[search_engine_hito2] Índice normalizado '{modelo}' de Sala 4 "
-          f"cargado: {embeddings.shape[0]} productos x {embeddings.shape[1]} dims.")
+    import faiss
+    faiss_index = faiss.IndexFlatIP(embeddings.shape[1])
+    faiss_index.add(embeddings)
+
+    _cache_indices[modelo] = (faiss_index, embeddings, np.asarray(ids), df, valido)
+    print(
+        f"[search_engine_hito2] Índice normalizado '{modelo}' de Sala 4 "
+        f"cargado: {embeddings.shape[0]} productos x {embeddings.shape[1]} dims (con FAISS)."
+    )
     return _cache_indices[modelo]
 
 
@@ -491,21 +513,23 @@ def buscar_en_indice_normalizado(
     query_embedding,
     top_k: int = 5,
     modelo: str = "clip",
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Búsqueda por similitud coseno contra el índice del Hito 2
     (imágenes normalizadas, Sala 4) del modelo indicado. Contrato de
     respuesta idéntico al del Hito 1: id, nombre, imagen, url, proveedor,
     score.
+    Puede excluir productos específicos si se provee una lista `exclude_ids`.
     """
     indice = cargar_indice_normalizado(modelo=modelo)
     if indice is None:
         # Sin índice de Sala 4 para este modelo: cae al índice del Hito 1
         # (embeddings.npy). Los descriptores visuales SIEMPRE se calculan
         # sobre images_normalized/ (carpeta única de búsqueda).
-        return search_similar(query_embedding, top_k=top_k)
+        return search_similar(query_embedding, top_k=top_k, exclude_ids=exclude_ids)
 
-    embeddings, ids, df, valido = indice
+    faiss_index, embeddings, ids, df, valido = indice
     v_query = np.array(query_embedding, dtype=np.float32).flatten()
     if v_query.shape[0] != embeddings.shape[1]:
         raise ValueError(
@@ -516,23 +540,40 @@ def buscar_en_indice_normalizado(
     if norm_q == 0:
         raise ValueError("El vector de consulta no puede ser un vector nulo")
     v_query = v_query / norm_q
+    v_query = v_query.reshape(1, -1)
 
-    scores = np.dot(embeddings, v_query)
-    # Excluir filas inválidas (vectores nulos) del ranking
-    scores[~valido] = -np.inf
-    top_idx = np.argsort(scores)[::-1][:top_k]
+    search_k = top_k
+    if exclude_ids:
+        search_k += len(exclude_ids)
+    search_k += int(np.sum(~valido)) # Add room for invalid embeddings
+    search_k = min(search_k, faiss_index.ntotal)
 
+    distances, indices = faiss_index.search(v_query, search_k)
+    distances, indices = distances[0], indices[0]
+
+    exclude_set = set(str(eid) for eid in exclude_ids) if exclude_ids else set()
     resultados = []
-    for idx in top_idx:
+    
+    for score, idx in zip(distances, indices):
+        if idx == -1 or not valido[idx]:
+            continue
+        if str(ids[idx]) in exclude_set:
+            continue
+
         row = {} if df is None else df.iloc[idx]
-        resultados.append({
-            "id": str(ids[idx]),
-            "nombre": str(row.get("nombre_original", row.get("nombre", ""))),
-            "imagen": str(row.get("imagen", "")),
-            "url": str(row.get("url", "")),
-            "proveedor": str(row.get("proveedor", "Designs Aimari")),
-            "score": round(float(scores[idx]), 4),
-        })
+        resultados.append(
+            {
+                "id": str(ids[idx]),
+                "nombre": str(row.get("nombre_original", row.get("nombre", ""))),
+                "imagen": str(row.get("imagen", "")),
+                "url": str(row.get("url", "")),
+                "proveedor": str(row.get("proveedor", "Designs Aimari")),
+                "score": round(float(score), 4),
+            }
+        )
+        if len(resultados) == top_k:
+            break
+            
     return resultados
 
 
@@ -578,12 +619,16 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
     if q_hist_global is not None and len(candidatos) > 5:
         distancias_color = []
         for cand in candidatos[:10]:  # Muestrear primeros 10 candidatos
-            desc_cand = _descriptores_de_archivo(cand["imagen"], id_catalogo=cand.get("id"))
+            desc_cand = _descriptores_de_archivo(
+                cand["imagen"], id_catalogo=cand.get("id")
+            )
             if desc_cand is not None and desc_cand.get("hist_global") is not None:
                 # Distancia chi-cuadrado (menor = más similar)
-                dist = cv2.compareHist(q_hist_global, desc_cand["hist_global"], cv2.HISTCMP_CHISQR)
+                dist = cv2.compareHist(
+                    q_hist_global, desc_cand["hist_global"], cv2.HISTCMP_CHISQR
+                )
                 distancias_color.append(dist)
-        
+
         if distancias_color:
             dist_promedio = np.mean(distancias_color)
             # Si la distancia promedio es alta (> 5.0), la consulta tiene
@@ -676,31 +721,33 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
 
         # Componente de color agregado (para reportes y compatibilidad)
         score_color = (
-            (PESOS["color_global"] * score_color_global
-             + PESOS["color_frente"] * score_frente
-             + PESOS["color_espalda"] * score_espalda)
-            / max(1e-9, PESOS["color_global"]
-                  + PESOS["color_frente"] + PESOS["color_espalda"])
+            PESOS["color_global"] * score_color_global
+            + PESOS["color_frente"] * score_frente
+            + PESOS["color_espalda"] * score_espalda
+        ) / max(
+            1e-9, PESOS["color_global"] + PESOS["color_frente"] + PESOS["color_espalda"]
         )
 
-        reranked.append({
-            **cand,
-            "score_inicial": round(score_embedding, 4),
-            "score_recuperacion": round(score_embedding, 4),
-            "posicion_inicial": pos_inicial,
-            "score_embedding": round(score_embedding_norm, 4),
-            "score_color_global": round(score_color_global, 4),
-            "score_color_frente": round(score_frente, 4),
-            "score_color_espalda": round(score_espalda, 4),
-            "score_estructura": round(score_estructura, 4),
-            "score_color_dominante": round(score_color_dominante, 4),
-            "score_gama": round(score_gama, 4),
-            "score_patron": round(score_patron, 4),
-            "score_marco": round(score_marco, 4),
-            "score_franjas": round(score_franjas, 4),
-            "score_color": round(score_color, 4),
-            "score_reranking": round(float(score_final), 4),
-        })
+        reranked.append(
+            {
+                **cand,
+                "score_inicial": round(score_embedding, 4),
+                "score_recuperacion": round(score_embedding, 4),
+                "posicion_inicial": pos_inicial,
+                "score_embedding": round(score_embedding_norm, 4),
+                "score_color_global": round(score_color_global, 4),
+                "score_color_frente": round(score_frente, 4),
+                "score_color_espalda": round(score_espalda, 4),
+                "score_estructura": round(score_estructura, 4),
+                "score_color_dominante": round(score_color_dominante, 4),
+                "score_gama": round(score_gama, 4),
+                "score_patron": round(score_patron, 4),
+                "score_marco": round(score_marco, 4),
+                "score_franjas": round(score_franjas, 4),
+                "score_color": round(score_color, 4),
+                "score_reranking": round(float(score_final), 4),
+            }
+        )
 
     # Ordenar por score_final descendente
     reranked.sort(key=lambda r: r["score_reranking"], reverse=True)
@@ -717,22 +764,21 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
     # muestra "No se encontraron resultados" cuando la lista viene vacía.
     if reranked:
         reranked = [
-            r for r in reranked
-            if r["score_reranking"] >= UMBRAL_MINIMO_SIMILARIDAD
+            r for r in reranked if r["score_reranking"] >= UMBRAL_MINIMO_SIMILARIDAD
         ]
     if reranked:
         mejor_score = reranked[0]["score_reranking"]
         limite_corte = mejor_score - MARGEN_CORTE
-        reranked = [
-            r for r in reranked if r["score_reranking"] >= limite_corte
-        ]
+        reranked = [r for r in reranked if r["score_reranking"] >= limite_corte]
 
     # Recortar a top_k y asignar la posición final
     final = []
     for posicion, r in enumerate(reranked[:top_k], start=1):
         r["posicion_final"] = posicion
         r["modelo"] = etiqueta_modelo
-        r["modelo_utilizado"] = f"{etiqueta_modelo}+color+estructura+patron+marco+franjas"
+        r["modelo_utilizado"] = (
+            f"{etiqueta_modelo}+color+estructura+patron+marco+franjas"
+        )
         final.append(r)
 
     return final
@@ -744,6 +790,7 @@ def search_similar_reranked(
     top_k: int = 5,
     candidatos_iniciales: int = 30,
     modelo: str = "clip",
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Búsqueda visual con reranking (Hito 2) con un solo modelo de embeddings.
@@ -758,9 +805,14 @@ def search_similar_reranked(
     SIEMPRE se calculan sobre data/images_normalized/ (carpeta única de
     búsqueda de imágenes).
     Paso 3: umbral dinámico que permite devolver menos de top_k resultados.
+    Los IDs en `exclude_ids` se excluyen matemáticamente (score -inf) antes
+    de la recuperación, por lo que nunca llegan al reranking.
     """
     candidatos = buscar_en_indice_normalizado(
-        query_embedding, top_k=candidatos_iniciales, modelo=modelo
+        query_embedding,
+        top_k=candidatos_iniciales,
+        modelo=modelo,
+        exclude_ids=exclude_ids,
     )
     return _rerank_candidatos(candidatos, query_image, etiqueta_modelo=modelo)
 
@@ -769,6 +821,7 @@ def recuperacion_fusion(
     query_embeddings: dict,
     top_k: int = 100,
     modelos=("clip", "openclip", "siglip"),
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Recuperación amplia robusta fusionando varios modelos de embeddings.
@@ -785,6 +838,80 @@ def recuperacion_fusion(
     así, si un "punto grande" tapa el diseño en un recorte, otro recorte
     que no lo tenga sigue reconociendo el producto (robustez a oclusión).
     """
+    indice_fusion = cargar_indice_normalizado(modelo="fusion")
+    if indice_fusion is not None:
+        faiss_index, embeddings_fusion, ids, df, valido = indice_fusion
+        
+        # Construir vectores de consulta unificados (concatenando CLIP, OpenCLIP, SigLIP)
+        is_list = False
+        for mod in modelos:
+            if mod in query_embeddings and isinstance(query_embeddings[mod], (list, tuple)):
+                is_list = True
+                break
+                
+        def _build_unified_query(idx_crop=None):
+            vecs = []
+            for mod in modelos:
+                q = query_embeddings.get(mod)
+                if q is None: return None
+                v = q[idx_crop] if idx_crop is not None else (q[0] if isinstance(q, (list, tuple)) else q)
+                v = np.array(v, dtype=np.float32).flatten()
+                norm = np.linalg.norm(v)
+                if norm == 0: return None
+                vecs.append(v / norm)
+            if len(vecs) != len(modelos): return None
+            v_uni = np.concatenate(vecs)
+            norm_uni = np.linalg.norm(v_uni)
+            if norm_uni == 0: return None
+            return v_uni / norm_uni
+            
+        unified_queries = []
+        if is_list:
+            num_crops = len(query_embeddings.get(modelos[0], []))
+            for i in range(num_crops):
+                vq = _build_unified_query(i)
+                if vq is not None: unified_queries.append(vq)
+        else:
+            vq = _build_unified_query(None)
+            if vq is not None: unified_queries.append(vq)
+            
+        if unified_queries:
+            queries = np.vstack(unified_queries).astype(np.float32)
+            search_k = top_k
+            if exclude_ids: search_k += len(exclude_ids)
+            search_k += int(np.sum(~valido))
+            search_k = min(search_k, faiss_index.ntotal)
+            
+            D, I = faiss_index.search(queries, search_k)
+            
+            best_scores = {}
+            for crop_idx in range(queries.shape[0]):
+                for j in range(search_k):
+                    idx = I[crop_idx, j]
+                    score = D[crop_idx, j]
+                    if idx == -1 or not valido[idx]: continue
+                    if idx not in best_scores or score > best_scores[idx]:
+                        best_scores[idx] = score
+                        
+            ex_set = set(str(eid) for eid in exclude_ids) if exclude_ids else set()
+            sorted_items = sorted(best_scores.items(), key=lambda x: x[1], reverse=True)
+            
+            resultados = []
+            for idx, score in sorted_items:
+                if str(ids[idx]) in ex_set: continue
+                row = df.iloc[idx]
+                resultados.append({
+                    "id": str(ids[idx]),
+                    "nombre": str(row.get("nombre_original", row.get("nombre", ""))),
+                    "imagen": str(row.get("imagen", "")),
+                    "url": str(row.get("url", "")),
+                    "proveedor": str(row.get("proveedor", "Designs Aimari")),
+                    "score": round(float(score), 4),
+                })
+                if len(resultados) >= top_k: break
+            return resultados
+
+    # --- FALLBACK: Promediado matemático manual ---
     scores_totales = None
     ids_uso = None
     df_uso = None
@@ -795,20 +922,15 @@ def recuperacion_fusion(
         indice = cargar_indice_normalizado(modelo=modelo)
         if indice is None:
             continue
-        embeddings, ids, df, valido = indice
+        faiss_index, embeddings, ids, df, valido = indice
 
-        # Normaliza un vector de consulta y devuelve sus cosenos
         def _cosenos(v_query):
             v_query = np.array(v_query, dtype=np.float32).flatten()
             if v_query.shape[0] != embeddings.shape[1]:
-                raise ValueError(
-                    f"El vector de consulta de '{modelo}' tiene "
-                    f"{v_query.shape[0]} dimensiones, se esperaban "
-                    f"{embeddings.shape[1]}."
-                )
+                raise ValueError(f"Dimensión incorrecta para '{modelo}'.")
             norm_q = np.linalg.norm(v_query)
             if norm_q == 0:
-                raise ValueError(f"El vector de consulta de '{modelo}' es nulo")
+                raise ValueError(f"Vector nulo en '{modelo}'.")
             s = np.dot(embeddings, v_query / norm_q)
             s[~valido] = np.nan
             return s
@@ -828,21 +950,20 @@ def recuperacion_fusion(
             df_uso = df
         else:
             if len(scores_totales) != len(scores_modelo):
-                raise ValueError(
-                    "Los índices de la fusión no tienen el mismo largo "
-                    f"({len(scores_totales)} vs {len(scores_modelo)})."
-                )
+                raise ValueError("Desfase de índices.")
             scores_totales = np.nanmean(
                 np.stack([scores_totales, scores_modelo], axis=1), axis=1
             )
 
     if scores_totales is None:
-        raise ValueError(
-            "No hay embeddings de consulta ni índices disponibles para la fusión."
-        )
+        raise ValueError("No hay índices disponibles.")
 
-    # Los productos con TODOS los modelos inválidos quedan fuera
     scores_totales = np.where(np.isnan(scores_totales), -np.inf, scores_totales)
+    if exclude_ids:
+        exclude_set = set(str(eid) for eid in exclude_ids)
+        for i, cid in enumerate(ids_uso):
+            if str(cid) in exclude_set:
+                scores_totales[i] = -np.inf
     top_idx = np.argsort(scores_totales)[::-1][:top_k]
 
     resultados = []
@@ -865,6 +986,7 @@ def search_similar_reranked_fusion(
     top_k: int = 5,
     candidatos_iniciales: int = 100,
     modelos=("clip", "openclip", "siglip"),
+    exclude_ids: list = None,
 ) -> list[dict]:
     """
     Motor Hito 2 robusto a oclusiones: recuperación amplia por FUSIÓN de
@@ -875,9 +997,14 @@ def search_similar_reranked_fusion(
     tolera que un "punto grande" u otro elemento tape parte del diseño: si
     un recorte contiene el punto, los demás lo compensan. Luego el reranking
     visual de `_rerank_candidatos` ordena el Top 5 final.
+    Los IDs en `exclude_ids` se excluyen matemáticamente (score -inf) antes
+    de la recuperación, por lo que nunca llegan al reranking.
     """
     candidatos = recuperacion_fusion(
-        query_embeddings, top_k=candidatos_iniciales, modelos=modelos
+        query_embeddings,
+        top_k=candidatos_iniciales,
+        modelos=modelos,
+        exclude_ids=exclude_ids,
     )
     etiqueta = "+".join(modelos)
     return _rerank_candidatos(candidatos, query_image, etiqueta_modelo=etiqueta)

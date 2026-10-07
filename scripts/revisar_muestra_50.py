@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 revisar_muestra_50.py  -  Sala 1 / Hito 2-3, Actividad 5
 ------------------------------------------------------
@@ -37,19 +36,20 @@ import numpy as np
 
 warnings.filterwarnings("ignore")
 
-BASE_DIR    = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-NORM_DIR    = os.path.join(BASE_DIR, "data", "images_normalized")
-DETALLE     = os.path.join(BASE_DIR, "data", "detalle_normalizacion.csv")
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+NORM_DIR = os.path.join(BASE_DIR, "data", "images_normalized")
+DETALLE = os.path.join(BASE_DIR, "data", "detalle_normalizacion.csv")
 
-CANVAS      = 700
-CANVAS_MIN  = 350   # lado mayor minimo: no se amplia mas de 2x
-UMBRAL      = 245   # brillo menor a esto => contenido
-BANDA       = 0.80  # densidad de fila para considerar banda continua
-BANDA_BRIL  = 170   # brillo medio de fila para considerar banda oscura
+CANVAS = 700
+CANVAS_MIN = 350  # lado mayor minimo: no se amplia mas de 2x
+UMBRAL = 245  # brillo menor a esto => contenido
+BANDA = 0.80  # densidad de fila para considerar banda continua
+BANDA_BRIL = 170  # brillo medio de fila para considerar banda oscura
 
 
 def abrir_rgb(ruta):
     from PIL import Image
+
     im = Image.open(ruta).convert("RGB")
     return np.asarray(im, dtype=np.float32)
 
@@ -67,7 +67,7 @@ def bandas_residuales(a, zona_frac=0.15):
     if len(filas_osc_dens) == 0:
         return None
     zona = int(zona_frac * h)
-    for lado, rango in (("sup", range(0, zona)), ("inf", range(h - zona, h))):
+    for lado, rango in (("sup", range(zona)), ("inf", range(h - zona, h))):
         filas = [y for y in filas_osc_dens if y in rango]
         if not filas:
             continue
@@ -149,7 +149,7 @@ def revisar_una(norm_path, estado_detalle):
 
     cobertura = float(mask.mean())
     izq = float(mask[:, : max(2, int(0.30 * w))].mean())
-    der = float(mask[:, int(0.70 * w):].mean())
+    der = float(mask[:, int(0.70 * w) :].mean())
     lado_mayor = max(w, h)
     lado_menor = min(w, h)
 
@@ -158,15 +158,23 @@ def revisar_una(norm_path, estado_detalle):
     marco = marco_residual(a)
 
     checks = {}
-    checks["solo_frente_espalda"] = "si" if (izq > 0.02 and der > 0.02 and
-                                             0.05 <= cobertura <= 0.98) else "no"
+    checks["solo_frente_espalda"] = (
+        "si" if (izq > 0.02 and der > 0.02 and 0.05 <= cobertura <= 0.98) else "no"
+    )
     checks["sin_logo"] = "no" if logo else "si"
     checks["sin_marco"] = "no" if marco else "si"
     checks["sin_cabecera_pie"] = "no" if band else "si"
     checks["sin_cortes"] = "si" if (izq > 0.02 and der > 0.02) else "no"
     checks["sin_deformacion"] = "si" if CANVAS_MIN <= lado_mayor <= CANVAS else "no"
-    checks["lienzo_ok"] = "si" if (CANVAS_MIN <= lado_mayor <= CANVAS and
-                                   lado_menor >= 120 and cobertura >= 0.05) else "no"
+    checks["lienzo_ok"] = (
+        "si"
+        if (
+            CANVAS_MIN <= lado_mayor <= CANVAS
+            and lado_menor >= 120
+            and cobertura >= 0.05
+        )
+        else "no"
+    )
 
     motivos = []
     if checks["solo_frente_espalda"] == "no":
@@ -201,20 +209,32 @@ def revisar_una(norm_path, estado_detalle):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Revision objetiva de la muestra humana")
-    parser.add_argument("--n", type=int, default=50,
-                        help="Tamano de la muestra (default 50, Hito 3: 100)")
-    parser.add_argument("--force", action="store_true",
-                        help="Reevaluar tambien las filas ya clasificadas")
+
+    parser = argparse.ArgumentParser(
+        description="Revision objetiva de la muestra humana"
+    )
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=50,
+        help="Tamano de la muestra (default 50, Hito 3: 100)",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Reevaluar tambien las filas ya clasificadas",
+    )
     args = parser.parse_args()
 
     n = args.n
     revision = os.path.join(BASE_DIR, "data", f"revision_humana_{n}.csv")
-    informe  = os.path.join(BASE_DIR, "data", f"informe_revision_humana_{n}.txt")
+    informe = os.path.join(BASE_DIR, "data", f"informe_revision_humana_{n}.txt")
 
     if not os.path.exists(revision):
-        sys.exit(f"No existe {revision} "
-                 f"(ejecutar normalizar_imagenes.py --solo-muestra --muestra {n})")
+        sys.exit(
+            f"No existe {revision} "
+            f"(ejecutar normalizar_imagenes.py --solo-muestra --muestra {n})"
+        )
 
     estado_por_id = {}
     if os.path.exists(DETALLE):
@@ -239,7 +259,9 @@ def main():
             total += 1
             resumen.append(r)
             continue
-        checks, clasif, obs, cov, izq, der = revisar_una(norm, estado_por_id.get(r["id"], ""))
+        checks, clasif, obs, cov, izq, der = revisar_una(
+            norm, estado_por_id.get(r["id"], "")
+        )
         r.update(checks)
         r["clasificacion"] = clasif
         r["observacion"] = obs
@@ -261,20 +283,28 @@ def main():
         f.write(f"REVISION DE LAS {n} IMAGENES NORMALIZADAS - SALA 1 / HITO 2-3\n")
         f.write("=" * 60 + "\n")
         f.write(f"Revisadas                 : {total}\n")
-        f.write(f"Correctas                 : {ok} ({100*ok/total:.0f}%)\n")
+        f.write(f"Correctas                 : {ok} ({100 * ok / total:.0f}%)\n")
         f.write(f"Dudosas (revisar)         : {dud}\n")
         f.write(f"Incorrectas               : {mal}\n")
         f.write(f"Con aviso del pipeline    : {con_detalle}\n")
         f.write("\nDetalle por criterio (cuantas cumplen):\n")
-        for campo in ("solo_frente_espalda", "sin_logo", "sin_marco",
-                      "sin_cabecera_pie", "sin_cortes", "sin_deformacion",
-                      "lienzo_ok"):
+        for campo in (
+            "solo_frente_espalda",
+            "sin_logo",
+            "sin_marco",
+            "sin_cabecera_pie",
+            "sin_cortes",
+            "sin_deformacion",
+            "lienzo_ok",
+        ):
             c = sum(1 for r in resumen if r.get(campo) == "si")
             f.write(f"  {campo:22s}: {c}/{total}\n")
         f.write("\nCasos no 'correcta' (pendientes de revision visual):\n")
         for r in resumen:
             if r["clasificacion"] != "correcta":
-                f.write(f"  [{r['clasificacion'].upper()}] {r['id']}  ->  {r['observacion']}\n")
+                f.write(
+                    f"  [{r['clasificacion'].upper()}] {r['id']}  ->  {r['observacion']}\n"
+                )
         f.write("=" * 60 + "\n")
         f.write("\nMetodo: criterios objetivos de pixel (brillo/densidad) cruzados\n")
         f.write("con el estado del pipeline (detalle_normalizacion.csv). La hoja de\n")
@@ -283,7 +313,7 @@ def main():
 
     print("=" * 60)
     print(f"Revisadas   : {total}")
-    print(f"Correctas   : {ok} ({100*ok/total:.0f}%)")
+    print(f"Correctas   : {ok} ({100 * ok / total:.0f}%)")
     print(f"Dudosas     : {dud}")
     print(f"Incorrectas : {mal}")
     print(f"CSV    : {revision}")

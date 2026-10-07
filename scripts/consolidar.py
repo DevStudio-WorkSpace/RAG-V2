@@ -1,8 +1,9 @@
+import csv
 import json
 import os
 import re
 import shutil
-import csv
+
 from PIL import Image  # pip install pillow
 
 # Imagenes legitimas muy grandes (PNG de ~219M px en el banco) disparan el
@@ -10,15 +11,15 @@ from PIL import Image  # pip install pillow
 # archivos excesivos se redimensionan antes de la validacion.
 Image.MAX_IMAGE_PIXELS = None
 MAX_PIXELES_POR_LADO = 4096  # lado mayor maximo tras el redimensionado
- 
+
 # ============================================================
 # CONFIGURACIÓN — AJUSTA ESTO SEGÚN TU PROYECTO
 # ============================================================
- 
+
 # Fuente: designsaimari.com
 PROVEEDOR_NOMBRE = "Designs Aimari"
 PROVEEDOR_PREFIJO = "AIM"
- 
+
 # Rutas base (raíz del proyecto WebScraping/data)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 RUTA_JSON = os.path.join(BASE_DIR, "data", "productos.json")
@@ -28,20 +29,23 @@ RUTA_IMAGENES_ORIGEN = os.path.join(BASE_DIR, "data", "images")
 # NOTA: si se regenera el banco desde el scraping, el resultado contendrá las
 # tarjetas tal cual vienen de la fuente (la normalización de Sala 1 ya no se
 # vuelve a aplicar porque normalizar_imagenes.py quedó como legacy).
-RUTA_IMAGENES_DESTINO = os.path.join(BASE_DIR, "data", "images_normalized")  # carpeta final a entregar
+RUTA_IMAGENES_DESTINO = os.path.join(
+    BASE_DIR, "data", "images_normalized"
+)  # carpeta final a entregar
 RUTA_CSV_SALIDA = os.path.join(BASE_DIR, "data", "products.csv")
- 
+
 # ============================================================
 # 1. CARGA DE DATOS
 # ============================================================
- 
+
+
 def cargar_productos():
     """
     Lee productos.json y devuelve una lista de diccionarios normalizados.
- 
+
     Estructura real de tu productos.json (confirmada):
     { "id": str, "numero": int, "nombre": str, "url": str, "archivo": str }
- 
+
     Tu JSON NO trae el campo "pagina" (número de página del scraping).
     Por defecto se asigna PAGINA_POR_DEFECTO a todos los registros.
     Si tu scraper sí paginó (ej. 20 productos por página), ajusta la
@@ -50,31 +54,33 @@ def cargar_productos():
     """
     with open(RUTA_JSON, "r", encoding="utf-8") as f:
         data = json.load(f)
- 
+
     productos = []
     for item in data:
-        productos.append({
-            "id_scraper": item.get("id"),
-            "numero": item.get("numero"),
-            "nombre_original": item.get("nombre"),
-            "imagen_original": item.get("archivo"),
-            "url": item.get("url") or "",
-            "pagina": calcular_pagina(item.get("numero")),
-        })
+        productos.append(
+            {
+                "id_scraper": item.get("id"),
+                "numero": item.get("numero"),
+                "nombre_original": item.get("nombre"),
+                "imagen_original": item.get("archivo"),
+                "url": item.get("url") or "",
+                "pagina": calcular_pagina(item.get("numero")),
+            }
+        )
     return productos
- 
- 
+
+
 # Confirmado en data/metadata.json: 60 productos por página (3 páginas -> 180 productos)
 PAGINA_POR_DEFECTO = 1
 PRODUCTOS_POR_PAGINA = 60
- 
- 
+
+
 def calcular_pagina(numero):
     if PRODUCTOS_POR_PAGINA and numero:
         return ((numero - 1) // PRODUCTOS_POR_PAGINA) + 1
     return PAGINA_POR_DEFECTO
- 
- 
+
+
 # ============================================================
 # 2. VALIDACIONES
 # ============================================================
@@ -108,7 +114,10 @@ def preparar_imagen(ruta_origen, ruta_destino, nombre_final):
         img = Image.open(ruta_origen)
         img.load()
     except Exception as e:
-        return None, f"[CORRUPTA] No se pudo abrir la imagen '{os.path.basename(ruta_origen)}': {e}"
+        return (
+            None,
+            f"[CORRUPTA] No se pudo abrir la imagen '{os.path.basename(ruta_origen)}': {e}",
+        )
 
     ext = os.path.splitext(ruta_origen)[1].lower()
 
@@ -135,11 +144,13 @@ def redimensionar_si_es_nec(img):
     if lado <= MAX_PIXELES_POR_LADO:
         return img
     escala = MAX_PIXELES_POR_LADO / lado
-    nuevo = (max(1, int(round(img.size[0] * escala))),
-             max(1, int(round(img.size[1] * escala))))
+    nuevo = (
+        max(1, int(round(img.size[0] * escala))),
+        max(1, int(round(img.size[1] * escala))),
+    )
     return img.resize(nuevo, Image.LANCZOS)
- 
- 
+
+
 def nomenclatura_valida(nombre_archivo):
     """
     Verifica que el nombre siga el patrón PROVEEDOR-Pxxx-xxx.ext
@@ -147,8 +158,8 @@ def nomenclatura_valida(nombre_archivo):
     """
     patron = rf"^{PROVEEDOR_PREFIJO}-P\d{{3}}-\d{{3,4}}\.(jpg|jpeg|png|gif)$"
     return re.match(patron, nombre_archivo, re.IGNORECASE) is not None
- 
- 
+
+
 def ejecutar_validaciones(registros, errores):
     """
     Corre todas las verificaciones pedidas por la sala sobre la lista final
@@ -183,31 +194,38 @@ def ejecutar_validaciones(registros, errores):
                 )
             else:
                 urls_vistas[r["url"]] = r["id"]
- 
+
         # c) Nomenclatura
         if not nomenclatura_valida(r["imagen"]):
-            errores.append(f"[NOMENCLATURA] '{r['imagen']}' no sigue el formato {PROVEEDOR_PREFIJO}-Pxxx-xxx.ext")
- 
-# d) El archivo debe existir físicamente y poder abrirse
+            errores.append(
+                f"[NOMENCLATURA] '{r['imagen']}' no sigue el formato {PROVEEDOR_PREFIJO}-Pxxx-xxx.ext"
+            )
+
+        # d) El archivo debe existir físicamente y poder abrirse
         ruta_final = os.path.join(RUTA_IMAGENES_DESTINO, r["imagen"])
         if not os.path.exists(ruta_final):
-            errores.append(f"[NO EXISTE] No se encontró el archivo físico: {ruta_final}")
+            errores.append(
+                f"[NO EXISTE] No se encontró el archivo físico: {ruta_final}"
+            )
         elif not validar_imagen_abre(ruta_final):
             errores.append(f"[CORRUPTA] El archivo no se pudo abrir: {ruta_final}")
 
     for a in avisos:
         print("  ⚠", a)
     if avisos:
-        print(f"  ({len(avisos)} URL(s) repetida(s) entre productos distintos; "
-              f"no son errores: cada producto conserva su propia imagen local.)")
+        print(
+            f"  ({len(avisos)} URL(s) repetida(s) entre productos distintos; "
+            f"no son errores: cada producto conserva su propia imagen local.)"
+        )
 
     return errores
- 
- 
+
+
 # ============================================================
 # 3. CONSOLIDACIÓN (renombrado + generación de IDs)
 # ============================================================
- 
+
+
 def indexar_imagenes_por_numero():
     """
     Recorre data/images_normalized y arma un índice { numero: ruta_completa }.
@@ -223,7 +241,8 @@ def indexar_imagenes_por_numero():
         if m:
             indice[int(m.group(1))] = os.path.join(RUTA_IMAGENES_ORIGEN, archivo)
     return indice
- 
+
+
 def consolidar():
     productos = cargar_productos()
     os.makedirs(RUTA_IMAGENES_DESTINO, exist_ok=True)
@@ -238,10 +257,7 @@ def consolidar():
     for p in productos:
         numero = p.get("numero")
 
-        origen = os.path.join(
-            RUTA_IMAGENES_ORIGEN,
-            p.get("imagen_original", "")
-        )
+        origen = os.path.join(RUTA_IMAGENES_ORIGEN, p.get("imagen_original", ""))
 
         if not os.path.exists(origen):
             # Fallback: localizar la imagen por su número de producto
@@ -265,10 +281,7 @@ def consolidar():
         id_registro = f"{PROVEEDOR_PREFIJO}-{pagina_str}-{numero_str}"
         nombre_final = f"{id_registro}{ext}"
 
-        destino = os.path.join(
-            RUTA_IMAGENES_DESTINO,
-            nombre_final
-        )
+        destino = os.path.join(RUTA_IMAGENES_DESTINO, nombre_final)
 
         # Copia/convertir con normas de nomenclatura y tamaño
         nombre_usado, error = preparar_imagen(origen, destino, nombre_final)
@@ -276,14 +289,16 @@ def consolidar():
             errores.append(error)
             continue
 
-        registros.append({
-            "id": id_registro,
-            "proveedor": PROVEEDOR_NOMBRE,
-            "pagina": p["pagina"],
-            "imagen": nombre_usado,
-            "nombre_original": p["nombre_original"],
-            "url": p["url"],
-        })
+        registros.append(
+            {
+                "id": id_registro,
+                "proveedor": PROVEEDOR_NOMBRE,
+                "pagina": p["pagina"],
+                "imagen": nombre_usado,
+                "nombre_original": p["nombre_original"],
+                "url": p["url"],
+            }
+        )
 
     # Validaciones finales
     ejecutar_validaciones(registros, errores)
@@ -298,8 +313,8 @@ def consolidar():
                 "pagina",
                 "imagen",
                 "nombre_original",
-                "url"
-            ]
+                "url",
+            ],
         )
 
         writer.writeheader()
@@ -327,7 +342,7 @@ def consolidar():
         print("\n🎉 Ninguna validación falló. Todo consistente.")
 
     return registros, errores
- 
- 
+
+
 if __name__ == "__main__":
     consolidar()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 regenerar_consultas.py
 ----------------------
@@ -67,10 +66,12 @@ def recorte_central(im, frac=0.55):
 
 def persona(im_shirt):
     from PIL import ImageDraw
+
     rng = random.Random(SEED)
     SIZE = 320
     try:
         import cv2
+
         arr = np.asarray(im_shirt.convert("RGB"))
         h, w = arr.shape[:2]
         M = cv2.getRotationMatrix2D((w / 2, h / 2), rng.uniform(-7, 7), 0.95)

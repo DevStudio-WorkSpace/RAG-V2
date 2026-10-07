@@ -1,5 +1,5 @@
 import os
-import json
+
 import pandas as pd
 
 
@@ -13,7 +13,9 @@ def cargar_productos_sala1(csv_path: str = None) -> pd.DataFrame:
         csv_path = os.path.join(base_dir, "data", "products.csv")
 
     if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"No se encontró el archivo products.csv de Sala 1 en: {csv_path}")
+        raise FileNotFoundError(
+            f"No se encontró el archivo products.csv de Sala 1 en: {csv_path}"
+        )
 
     df = pd.read_csv(csv_path, encoding="utf-8")
 

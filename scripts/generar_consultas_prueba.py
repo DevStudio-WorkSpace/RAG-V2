@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 generar_consultas_prueba.py  [LEGACY]
 -------------------------------------
@@ -60,20 +59,29 @@ def _elegir_ids(n):
     candidatos = []
     for _, row in df.iterrows():
         base_id = os.path.splitext(row["imagen"])[0]
-        if os.path.exists(os.path.join(IMAGES_FINAL, row["imagen"])) and \
-           os.path.exists(os.path.join(IMAGES_NORM, base_id + ".jpg")):
+        if os.path.exists(os.path.join(IMAGES_FINAL, row["imagen"])) and os.path.exists(
+            os.path.join(IMAGES_NORM, base_id + ".jpg")
+        ):
             candidatos.append((row["id"], row["imagen"], base_id + ".jpg"))
     rng = random.Random(SEMILLA)
     rng.shuffle(candidatos)
     if len(candidatos) < n:
-        print(f"AVISO: solo hay {len(candidatos)} ids con ambas versiones (se pedían {n})")
+        print(
+            f"AVISO: solo hay {len(candidatos)} ids con ambas versiones (se pedían {n})"
+        )
     return candidatos[:n]
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sala 3 - Consultas de la prueba integrada")
-    parser.add_argument("--n", type=int, default=10,
-                        help="Consultas por categoría derivable (default 10)")
+    parser = argparse.ArgumentParser(
+        description="Sala 3 - Consultas de la prueba integrada"
+    )
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=10,
+        help="Consultas por categoría derivable (default 10)",
+    )
     args = parser.parse_args()
 
     if not os.path.exists(PRODUCTS_CSV):
@@ -84,24 +92,34 @@ def main():
 
     # ── 10 EXACTAS: la misma imagen del banco ──
     for i, (pid, archivo, _) in enumerate(elegidos, start=1):
-        filas.append({
-            "consulta": f"exacta_{i:02d}_{archivo}",
-            "categoria": "exacta",
-            "ruta_imagen": os.path.join("data", "images_final", archivo).replace("\\", "/"),
-            "id_correcto": pid,
-        })
+        filas.append(
+            {
+                "consulta": f"exacta_{i:02d}_{archivo}",
+                "categoria": "exacta",
+                "ruta_imagen": os.path.join("data", "images_final", archivo).replace(
+                    "\\", "/"
+                ),
+                "id_correcto": pid,
+            }
+        )
 
     # ── 10 SIN MARCO: la normalizada del mismo diseño (mismo id) ──
     for i, (pid, _, norm) in enumerate(elegidos, start=1):
-        filas.append({
-            "consulta": f"sin_marco_{i:02d}_{norm}",
-            "categoria": "sin_marco",
-            "ruta_imagen": os.path.join("data", "images_normalized", norm).replace("\\", "/"),
-            "id_correcto": pid,
-        })
+        filas.append(
+            {
+                "consulta": f"sin_marco_{i:02d}_{norm}",
+                "categoria": "sin_marco",
+                "ruta_imagen": os.path.join("data", "images_normalized", norm).replace(
+                    "\\", "/"
+                ),
+                "id_correcto": pid,
+            }
+        )
 
     with open(SALIDA_CSV, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["consulta", "categoria", "ruta_imagen", "id_correcto"])
+        w = csv.DictWriter(
+            f, fieldnames=["consulta", "categoria", "ruta_imagen", "id_correcto"]
+        )
         w.writeheader()
         w.writerows(filas)
 
@@ -117,7 +135,9 @@ def main():
         f.write("| Categoría | Cantidad | Quién aporta | Estado |\n")
         f.write("|---|---|---|---|\n")
         f.write(f"| exacta | {args.n} | derivada del banco (images_final) | listo |\n")
-        f.write(f"| sin_marco | {args.n} | derivada de Sala 1 (images_normalized) | listo |\n")
+        f.write(
+            f"| sin_marco | {args.n} | derivada de Sala 1 (images_normalized) | listo |\n"
+        )
         f.write("| recoloreada | 10 | Sala 4 (conjunto de prueba) | pendiente |\n")
         f.write("| recortada | 10 | Sala 4 (conjunto de prueba) | pendiente |\n")
         f.write("| mockup_persona | 10 | Sala 2 (fotos reales) | pendiente |\n\n")
@@ -125,10 +145,14 @@ def main():
         f.write("Añadir filas al CSV `evaluation/consultas_hito2.csv` con el mismo\n")
         f.write("formato (o reemplazar el archivo completo):\n\n")
         f.write("```\nconsulta,categoria,ruta_imagen,id_correcto\n")
-        f.write("rec_01.png,recoloreada,evaluation/consultas_hito2/recoloreadas/rec_01.png,AIM-P001-001\n")
+        f.write(
+            "rec_01.png,recoloreada,evaluation/consultas_hito2/recoloreadas/rec_01.png,AIM-P001-001\n"
+        )
         f.write("```\n\n")
-        f.write("Las imágenes pueden vivir en `evaluation/consultas_hito2/` "
-                "(subcarpetas `recoloreadas/`, `recortadas/`, `mockups/`).\n")
+        f.write(
+            "Las imágenes pueden vivir en `evaluation/consultas_hito2/` "
+            "(subcarpetas `recoloreadas/`, `recortadas/`, `mockups/`).\n"
+        )
         f.write("scripts/compare_hito1_hito2.py toma automáticamente todas las filas\n")
         f.write("cuyo archivo exista y omite las demás.\n")
 
@@ -138,9 +162,9 @@ def main():
     print("=" * 60)
     print(f"exactas      : {args.n} (data/images_final/)")
     print(f"sin_marco    : {args.n} (data/images_normalized/)")
-    print(f"recoloreadas : pendiente (Sala 4)")
-    print(f"recortadas   : pendiente (Sala 4)")
-    print(f"mockup/persona: pendiente (Sala 2)")
+    print("recoloreadas : pendiente (Sala 4)")
+    print("recortadas   : pendiente (Sala 4)")
+    print("mockup/persona: pendiente (Sala 2)")
     print(f"Total listas : {total} de 50")
     print(f"CSV          : {SALIDA_CSV}")
     print(f"Instrucciones: {os.path.join(README_DIR, 'README.md')}")

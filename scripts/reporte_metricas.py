@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 reporte_metricas.py (Sala 2, rama sala-2-v2)
 ---------------------------------------------
@@ -59,17 +58,20 @@ def main():
     for consulta, g in df.groupby("consulta"):
         g = g.sort_values("posicion")
         top1_correcto = any(
-            (g["posicion"] == 1) & g["clasificacion_humana"].apply(clasificacion_correcta)
+            (g["posicion"] == 1)
+            & g["clasificacion_humana"].apply(clasificacion_correcta)
         )
         top5_util = any(g["clasificacion_humana"].apply(clasificacion_ok))
         obs = g["observacion"].dropna().astype(str)
         obs = obs[obs.str.strip() != ""]
-        filas.append({
-            "Consulta": consulta,
-            "Top 1 correcto": "Si" if top1_correcto else "No",
-            "Top 5 utiles": "Si" if top5_util else "No",
-            "Observacion": obs.iloc[-1] if not obs.empty else "",
-        })
+        filas.append(
+            {
+                "Consulta": consulta,
+                "Top 1 correcto": "Si" if top1_correcto else "No",
+                "Top 5 utiles": "Si" if top5_util else "No",
+                "Observacion": obs.iloc[-1] if not obs.empty else "",
+            }
+        )
 
     resumen = pd.DataFrame(filas)
 
@@ -78,7 +80,8 @@ def main():
     top5 = (resumen["Top 5 utiles"] == "Si").sum()
 
     falsos_positivos = df[
-        (df["clasificacion_humana"] == "Incorrecto") & (df["score"] >= UMBRAL_FALSO_POSITIVO)
+        (df["clasificacion_humana"] == "Incorrecto")
+        & (df["score"] >= UMBRAL_FALSO_POSITIVO)
     ]
     falsos_negativos = resumen[resumen["Top 5 utiles"] == "No"]
 
@@ -86,21 +89,39 @@ def main():
     print("REPORTE DE EVALUACION - SALA 2")
     print("=" * 60)
     print(f"Consultas evaluadas: {n_consultas} (la consigna pide 20)")
-    print(f"Precision Top 1 : {top1} de {n_consultas} ({top1 / n_consultas * 100:.1f}%)" if n_consultas else "Precision Top 1 : 0")
-    print(f"Precision Top 5 : {top5} de {n_consultas} ({top5 / n_consultas * 100:.1f}%)" if n_consultas else "Precision Top 5 : 0")
+    print(
+        f"Precision Top 1 : {top1} de {n_consultas} ({top1 / n_consultas * 100:.1f}%)"
+        if n_consultas
+        else "Precision Top 1 : 0"
+    )
+    print(
+        f"Precision Top 5 : {top5} de {n_consultas} ({top5 / n_consultas * 100:.1f}%)"
+        if n_consultas
+        else "Precision Top 5 : 0"
+    )
     if n_consultas:
         p1 = top1 / n_consultas * 100
         p5 = top5 / n_consultas * 100
-        print(f"Puntaje 50/50   : {puntaje_combinado_50_50(p1, p5)}/100 "
-              f"(0.5*Top1% + 0.5*Top5%)")
-    print(f"Falsos positivos (Incorrecto con score >= {UMBRAL_FALSO_POSITIVO}): {len(falsos_positivos)}")
-    print(f"Falsos negativos (consultas sin resultados relevantes): {len(falsos_negativos)}")
+        print(
+            f"Puntaje 50/50   : {puntaje_combinado_50_50(p1, p5)}/100 "
+            f"(0.5*Top1% + 0.5*Top5%)"
+        )
+    print(
+        f"Falsos positivos (Incorrecto con score >= {UMBRAL_FALSO_POSITIVO}): {len(falsos_positivos)}"
+    )
+    print(
+        f"Falsos negativos (consultas sin resultados relevantes): {len(falsos_negativos)}"
+    )
 
     if os.path.exists(TIEMPOS_CSV):
         tiempos = pd.read_csv(TIEMPOS_CSV, encoding="utf-8")
-        tiempos["tiempo_segundos"] = pd.to_numeric(tiempos["tiempo_segundos"], errors="coerce")
-        print(f"Tiempo promedio por consulta: {tiempos['tiempo_segundos'].mean():.3f} s "
-              f"(min {tiempos['tiempo_segundos'].min():.3f} / max {tiempos['tiempo_segundos'].max():.3f})")
+        tiempos["tiempo_segundos"] = pd.to_numeric(
+            tiempos["tiempo_segundos"], errors="coerce"
+        )
+        print(
+            f"Tiempo promedio por consulta: {tiempos['tiempo_segundos'].mean():.3f} s "
+            f"(min {tiempos['tiempo_segundos'].min():.3f} / max {tiempos['tiempo_segundos'].max():.3f})"
+        )
     else:
         print("Tiempo promedio por consulta: no disponible (falta data/tiempos.csv)")
 
@@ -108,13 +129,17 @@ def main():
     print(resumen.to_string(index=False))
     if not falsos_positivos.empty:
         print("\nDetalle falsos positivos:")
-        print(falsos_positivos[["consulta", "resultado_id", "posicion", "score"]].to_string(index=False))
+        print(
+            falsos_positivos[
+                ["consulta", "resultado_id", "posicion", "score"]
+            ].to_string(index=False)
+        )
     if not falsos_negativos.empty:
         print("\nConsultas con falsos negativos:")
         print(falsos_negativos[["Consulta", "Observacion"]].to_string(index=False))
 
     resumen.to_excel(os.path.join(DATA_DIR, "reporte_evaluacion.xlsx"), index=False)
-    print(f"\nGuardado: data/reporte_evaluacion.xlsx")
+    print("\nGuardado: data/reporte_evaluacion.xlsx")
 
 
 if __name__ == "__main__":

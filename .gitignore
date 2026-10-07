@@ -39,3 +39,14 @@ Thumbs.db
 
 # Preferencias locales de la interfaz
 frontend/.theme_pref.json
+
+.atl
+# Datos pesados
+# /data/
+/qdrant_data/
+/frontend/node_modules/
+/frontend/.next/
+*.pt
+*.rar
+*.sqlite
+*.npy

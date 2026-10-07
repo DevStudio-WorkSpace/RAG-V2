@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 precomputar_descriptores.py
 ---------------------------
@@ -36,7 +35,10 @@ import time
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, BASE_DIR)
 
-from api.descriptores_visuales import descriptores_de_bgr, leer_bgr_desde_ruta  # noqa: E402
+from api.descriptores_visuales import (
+    descriptores_de_bgr,
+    leer_bgr_desde_ruta,
+)
 
 DATA_DIR = os.path.join(BASE_DIR, "data")
 CSV_PATH = os.path.join(DATA_DIR, "products.csv")
@@ -55,9 +57,15 @@ def resolver_ruta(fila):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Precomputar descriptores visuales del catalogo")
-    parser.add_argument("--limite", type=int, default=None,
-                        help="Procesar solo las primeras N filas (pruebas)")
+    parser = argparse.ArgumentParser(
+        description="Precomputar descriptores visuales del catalogo"
+    )
+    parser.add_argument(
+        "--limite",
+        type=int,
+        default=None,
+        help="Procesar solo las primeras N filas (pruebas)",
+    )
     args = parser.parse_args()
 
     if not os.path.exists(CSV_PATH):
@@ -66,7 +74,7 @@ def main():
     with open(CSV_PATH, "r", encoding="utf-8") as f:
         filas = list(csv.DictReader(f))
     if args.limite:
-        filas = filas[:args.limite]
+        filas = filas[: args.limite]
 
     print("=" * 60)
     print("PRECOMPUTO DE DESCRIPTORES VISUALES AVANZADOS")

@@ -5,9 +5,7 @@ from config.settings import URL_BASE
 
 def obtener_html(pagina):
 
-    url = URL_BASE.format(
-        pagina=pagina
-    )
+    url = URL_BASE.format(pagina=pagina)
 
     respuesta = requests.get(url)
 

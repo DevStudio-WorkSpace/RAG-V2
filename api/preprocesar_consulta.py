@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 preprocesar_consulta.py (Sala 2 - Hito 2)
 -------------------------------------------
@@ -37,12 +36,14 @@ from PIL import Image
 
 try:
     import cv2
+
     _HAVE_CV2 = True
 except Exception:
     _HAVE_CV2 = False
 
 try:
     from rembg import new_session, remove
+
     _HAVE_REMBG = True
 except Exception:
     _HAVE_REMBG = False
@@ -75,7 +76,9 @@ def _mascara_grabcut(im):
     bgd = np.zeros((1, 65), dtype=np.float64)
     fgd = np.zeros((1, 65), dtype=np.float64)
     cv2.grabCut(arr, mask, rect, bgd, fgd, 3, cv2.GC_INIT_WITH_RECT)
-    mask = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+    mask = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(
+        np.uint8
+    )
     return mask
 
 
@@ -97,7 +100,7 @@ def _recortar_bordes(im, tol=5, frac=0.12):
     n_top = int(rows_top.sum())
 
     bot = int(h * frac)
-    r_bot = arr[h - bot:]
+    r_bot = arr[h - bot :]
     rows_bot = flat_rows(r_bot) if len(r_bot) else np.zeros(0, dtype=bool)
     n_bot = int(rows_bot.sum())
 

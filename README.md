@@ -51,7 +51,7 @@ El flujo completo es: **scrapear → consolidar → generar embeddings → levan
 ### 1. Scrapear el catálogo
 
 ```bash
-python main.py --paginas 1-20 --imagenes 1000 --modo fresh
+python main.py --paginas 1-20 --imagenes 1000
 ```
 
 **Parámetros de `main.py`:**
@@ -60,7 +60,7 @@ python main.py --paginas 1-20 --imagenes 1000 --modo fresh
 |---|---|---|
 | `--paginas` | `1-20`, `1,2,3`, `all` | Páginas del catálogo a scrapear. Un rango se escribe `inicio-fin`. `all` scrapea todo. |
 | `--imagenes` | número o `all` | Cantidad máxima de imágenes/productos a descargar. |
-| `--modo` | `fresh` o `update` | `fresh` **borra `data/` y re-descarga todo desde cero**. `update` fusiona con los productos existentes (evita re-descargar). |
+| `--modo` | `auto`, `update`, `fresh` | **Por defecto es `auto`**. Detecta si ya hay datos previos para no borrarlos y cambia a `update` de manera segura. `fresh` **borra `data/` y re-descarga todo desde cero**. `update` fusiona con los productos existentes (evita re-descargar). |
 
 Este paso genera:
 - `data/productos.json` — datos crudos del scraping.
@@ -91,17 +91,24 @@ python scripts/validate_dataset.py --benchmark   # mide tiempo en 1000 registros
 
 Reporta: registros totales/válidos, IDs duplicados, nombres vacíos, URLs vacías/repetidas, extensiones inválidas, imágenes faltantes/dañadas y duplicados por hash MD5.
 
-### 4. Generar los embeddings (Sala 4)
+### 4. Generar los embeddings (Sala 4 / Hito 2)
 
+**Opción Recomendada (Motor Nuevo Hito 2/3 - YOLO + Fashion-CLIP):**
+Primero, optimiza el modelo de detección para no saturar la memoria RAM:
+```bash
+yolo export model=yolov8n.pt format=onnx
+```
+Luego, genera los embeddings avanzados extrayendo solo el torso y detectando color:
+```bash
+python scripts/entrenar_nuevo_motor.py
+```
+*(Nota: Este script usa multiprocesamiento e incluye caché incremental para no reprocesar imágenes ya completadas).*
+
+**Opción Legacy (Motor Base CLIP Hito 1):**
 ```bash
 python scripts/generar_embeddings.py
 ```
-
-Lee `products.csv` en orden, abre cada imagen de `images_normalized/`, genera su vector con **CLIP** (`openai/clip-vit-base-patch32`), lo normaliza con L2 y guarda:
-- `data/embeddings.npy` — matriz `(N, 512)`.
-- `data/ids.npy` — IDs alineados por posición con los embeddings.
-
-> La correspondencia posición ↔ ID es obligatoria: si se altera el orden, el sistema devolvería nombres asociados a la imagen equivocada.
+Lee `products.csv`, abre cada imagen y genera su vector con **CLIP** (`openai/clip-vit-base-patch32`), guardando `embeddings.npy` e `ids.npy`.
 
 ### 5. Levantar la API (Sala 3)
 
@@ -126,16 +133,16 @@ curl -X POST -F "file=@data/images_normalized/AIM-P001-001.jpg" http://localhost
 ### 6. Levantar la interfaz (Sala 2)
 
 ```bash
-streamlit run frontend/app.py
+cd frontend
+npm install
+npm run dev
 ```
 
-Abre `http://localhost:8501` en el navegador:
-1. En el sidebar verifica "API OK · 1000 productos · 1000 embeddings".
-2. Elige el **modo de búsqueda** en el sidebar (auto / procesada / original / completo / legacy).
-3. Sube una imagen (JPG/JPEG/PNG).
-4. Revisa la vista **antes/después** (consulta original vs preparada por Sala 2) y el Top 5 (imagen, ID, nombre, proveedor, URL, score).
-5. En los modos con preparación, compara los rankings **Hito 1 vs Hito 2**.
-6. Clasifica cada resultado (**Correcto / Útil, pero no duplicado / Incorrecto**) y guarda la evaluación → `data/evaluation.csv`.
+Abre `http://localhost:3000` en el navegador:
+1. Sube una imagen (JPG/JPEG/PNG) o arrástrala a la zona de carga.
+2. La herramienta consultará la API (`POST /search/image` en modo auto) automáticamente.
+3. Revisa la vista con los 5 resultados devueltos (imagen, ID, nombre, URL, score).
+4. Clasifica cada resultado con los botones de juicio fijo (**Acierto / Sirve / No sirve**). Las decisiones se procesan sin recargar la página.
 
 ### 7. Normalizar el banco de imágenes (Sala 1 — Hito 2)
 
@@ -313,3 +320,27 @@ WebScraping/
 - Calibrar la clasificación humana de los grupos C y D para alcanzar el ≥70% de Top 5 útil del supervisor.
 - Migrar el índice a **PostgreSQL + pgvector** (o FAISS) para persistencia, filtros y concurrencia al escalar.
 - Fase siguiente del RAG: usar un LLM con los resultados recuperados para **proponer nombres y etiquetas**.
+
+## Tarea 1 · El cargador (Pipeline de Indexación) - Sublitex
+
+Para el procesamiento de los nuevos diseños de **Sublitex** sin interferir con el catálogo base de Aimari, se desarrolló un pipeline de indexación aislado. Este pipeline extrae características visuales utilizando exactamente el mismo modelo del Hito 2 (`YOLO + Fashion-CLIP`), aplica validación estricta de nomenclatura y enriquece los metadatos desde un archivo CSV.
+
+### Paso a paso de ejecución
+
+**1. Preparar los datos:**
+Asegúrate de tener una carpeta con los 40 PNGs a indexar y un archivo CSV (Control de exportación) que contenga al menos las siguientes columnas: `codigo`, `carpeta_origen`, `archivo_original`.
+
+**2. Ejecutar el script:**
+Corre el script apuntando a tu carpeta de imágenes y a tu archivo CSV:
+
+```bash
+python scripts/cargador_sublitex.py --image_folder ruta/a/carpeta_png --csv_path ruta/a/control_exportacion.csv
+```
+
+**Este proceso:**
+1. Lee las imágenes PNG y extrae el código del nombre del archivo.
+2. Rechaza y loguea cualquier archivo cuyo nombre no cumpla con la expresión regular estricta `^SBX-\d{2}-\d{4}$`.
+3. Cruza la información con el archivo CSV y extrae `codigo`, `carpeta_origen` y `archivo_original`.
+4. Utiliza el modelo avanzado para generar los vectores.
+5. Valida matemáticamente que $\text{longitud}(\text{vectores}) == \text{longitud}(\text{IDs})$. Si no coinciden, aborta la operación para evitar corrupción de datos.
+6. **Aislamiento**: Persiste los vectores y sus metadatos en una nueva colección independiente en Qdrant llamada `sublitex_fashion_v1`, manteniendo intacta la colección de Aimari. También genera respaldos `.npy` en `data/`.

@@ -55,4 +55,5 @@ if __name__ == "__main__":
         print(f"No se encontró el producto con id '{sys.argv[1]}'")
     else:
         import json
+
         print(json.dumps(resultado, indent=4, ensure_ascii=False))

@@ -10,7 +10,6 @@ def limitar_productos(productos, limite):
     if limite == "all":
         return productos
 
-
     limite = int(limite)
 
     return productos[:limite]

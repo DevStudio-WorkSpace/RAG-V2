@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 generar_embeddings.py
 ---------------------
@@ -108,7 +107,7 @@ def main():
     errores = 0
 
     for inicio in range(0, total_csv, BATCH_SIZE):
-        lote = filas[inicio:inicio + BATCH_SIZE]
+        lote = filas[inicio : inicio + BATCH_SIZE]
 
         indices_lote = []
         imagenes_lote = []
@@ -120,8 +119,10 @@ def main():
 
             ruta_imagen = resolver_ruta_imagen(fila)
             if ruta_imagen is None:
-                print(f"  [ERROR] Imagen no encontrada para {product_id}: "
-                      f"{fila['imagen']} ni equivalentes en {IMAGES_DIR}")
+                print(
+                    f"  [ERROR] Imagen no encontrada para {product_id}: "
+                    f"{fila['imagen']} ni equivalentes en {IMAGES_DIR}"
+                )
                 errores += 1
                 continue
 

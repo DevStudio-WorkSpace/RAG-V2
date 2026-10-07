@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 validate_dataset.py  -  Sala 1 / Hito 1
 ----------------------------------------
@@ -35,8 +34,8 @@ from PIL import Image
 # ─────────────────────────────────────────────
 # RUTAS
 # ─────────────────────────────────────────────
-BASE_DIR   = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-CSV_PATH   = os.path.join(BASE_DIR, "data", "products.csv")
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+CSV_PATH = os.path.join(BASE_DIR, "data", "products.csv")
 # Banco de imágenes usado por el índice (Sala 1 normalizada). La
 # normalización convierte todo a .jpg con el mismo ID, por lo que la
 # validación busca el nombre exacto del CSV o el equivalente <id>.jpg.
@@ -49,6 +48,7 @@ EXTENSIONES_PERMITIDAS = (".jpg", ".jpeg", ".png", ".gif")
 # CARGA
 # ─────────────────────────────────────────────
 
+
 def cargar_registros(csv_path: str = CSV_PATH):
     with open(csv_path, "r", encoding="utf-8") as f:
         return list(csv.DictReader(f))
@@ -57,6 +57,7 @@ def cargar_registros(csv_path: str = CSV_PATH):
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
+
 
 def imagen_abre(ruta: str) -> bool:
     """Devuelve True si Pillow puede abrir la imagen sin errores."""
@@ -94,31 +95,32 @@ def resolver_imagen(id_, imagen, images_dir: str = IMAGES_DIR):
 # VALIDACION PRINCIPAL
 # ─────────────────────────────────────────────
 
+
 def validar(registros, images_dir: str = IMAGES_DIR) -> dict:
     """
     Valida todos los registros del dataset.
     Devuelve un diccionario completo con todas las metricas requeridas.
     """
-    ids_vistos        = {}
-    ids_duplicados    = set()
-    urls_vistas       = {}
-    urls_repetidas    = set()
-    hashes_vistos     = {}
+    ids_vistos = {}
+    ids_duplicados = set()
+    urls_vistas = {}
+    urls_repetidas = set()
+    hashes_vistos = {}
     archivos_dup_hash = []
 
-    nombres_vacios    = []
-    urls_vacias       = []
+    nombres_vacios = []
+    urls_vacias = []
     imagenes_faltantes = []
-    imagenes_danadas  = []
+    imagenes_danadas = []
     extension_invalida = []
-    ids_vacios        = 0
+    ids_vacios = 0
     registros_validos = 0
 
     for r in registros:
-        id_     = (r.get("id")             or "").strip()
-        nombre  = (r.get("nombre_original") or r.get("nombre") or "").strip()
-        url     = (r.get("url")            or "").strip()
-        imagen  = (r.get("imagen")         or "").strip()
+        id_ = (r.get("id") or "").strip()
+        nombre = (r.get("nombre_original") or r.get("nombre") or "").strip()
+        url = (r.get("url") or "").strip()
+        imagen = (r.get("imagen") or "").strip()
         es_valido = True
 
         # 1. ID no vacio
@@ -180,23 +182,24 @@ def validar(registros, images_dir: str = IMAGES_DIR) -> dict:
             registros_validos += 1
 
     return {
-        "registros_totales"   : len(registros),
-        "registros_validos"   : registros_validos,
-        "ids_vacios"          : ids_vacios,
-        "ids_duplicados"      : sorted(ids_duplicados),
-        "nombres_vacios"      : nombres_vacios,
-        "urls_vacias"         : urls_vacias,
-        "urls_repetidas"      : sorted(urls_repetidas),
-        "extension_invalida"  : extension_invalida,
-        "imagenes_faltantes"  : imagenes_faltantes,
-        "imagenes_danadas"    : imagenes_danadas,
-        "archivos_dup_hash"   : archivos_dup_hash,
+        "registros_totales": len(registros),
+        "registros_validos": registros_validos,
+        "ids_vacios": ids_vacios,
+        "ids_duplicados": sorted(ids_duplicados),
+        "nombres_vacios": nombres_vacios,
+        "urls_vacias": urls_vacias,
+        "urls_repetidas": sorted(urls_repetidas),
+        "extension_invalida": extension_invalida,
+        "imagenes_faltantes": imagenes_faltantes,
+        "imagenes_danadas": imagenes_danadas,
+        "archivos_dup_hash": archivos_dup_hash,
     }
 
 
 # ─────────────────────────────────────────────
 # BENCHMARK  1.000 REGISTROS
 # ─────────────────────────────────────────────
+
 
 def benchmark_1000(registros_reales, images_dir: str = IMAGES_DIR):
     """
@@ -214,7 +217,7 @@ def benchmark_1000(registros_reales, images_dir: str = IMAGES_DIR):
     muestra_1000 = []
     for i, r in enumerate(base[:1000], start=1):
         fila = dict(r)
-        fila["id"] = f"BEN-P{i:04d}"       # ID unico sintetico
+        fila["id"] = f"BEN-P{i:04d}"  # ID unico sintetico
         fila["url"] = r.get("url", "") + f"?bench={i}"  # URL unica
         muestra_1000.append(fila)
 
@@ -223,9 +226,9 @@ def benchmark_1000(registros_reales, images_dir: str = IMAGES_DIR):
     fin = time.perf_counter()
 
     elapsed = fin - inicio
-    por_reg  = elapsed / 1000 * 1000  # ms por registro
+    por_reg = elapsed / 1000 * 1000  # ms por registro
 
-    print(f"Registros procesados : 1.000")
+    print("Registros procesados : 1.000")
     print(f"Tiempo total         : {elapsed:.3f} s")
     print(f"Tiempo por registro  : {por_reg:.3f} ms")
     print(f"Velocidad estimada   : {int(1000 / elapsed):,} registros/segundo")
@@ -235,6 +238,7 @@ def benchmark_1000(registros_reales, images_dir: str = IMAGES_DIR):
 # ─────────────────────────────────────────────
 # VALIDACION VISUAL DE MUESTRA
 # ─────────────────────────────────────────────
+
 
 def validacion_visual_muestra(registros, images_dir: str = IMAGES_DIR, n: int = 5):
     """
@@ -250,11 +254,11 @@ def validacion_visual_muestra(registros, images_dir: str = IMAGES_DIR, n: int = 
 
     muestra = random.sample(registros, min(n, len(registros)))
     for r in sorted(muestra, key=lambda x: x.get("id", "")):
-        id_     = r.get("id", "")
-        nombre  = (r.get("nombre_original") or r.get("nombre") or "")[:34]
-        imagen  = r.get("imagen", "")
-        ruta    = resolver_imagen(id_, imagen, images_dir)
-        existe  = "[OK]" if ruta else "[FALTA]"
+        id_ = r.get("id", "")
+        nombre = (r.get("nombre_original") or r.get("nombre") or "")[:34]
+        imagen = r.get("imagen", "")
+        ruta = resolver_imagen(id_, imagen, images_dir)
+        existe = "[OK]" if ruta else "[FALTA]"
         nombre_safe = nombre.encode("ascii", "ignore").decode()
         print(f"{id_:<18} {nombre_safe:<35} {imagen}  {existe}")
 
@@ -265,6 +269,7 @@ def validacion_visual_muestra(registros, images_dir: str = IMAGES_DIR, n: int = 
 # ─────────────────────────────────────────────
 # REPORTE
 # ─────────────────────────────────────────────
+
 
 def imprimir_reporte(reporte: dict):
     print()
@@ -314,6 +319,7 @@ def imprimir_reporte(reporte: dict):
 # ENTRYPOINT
 # ─────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Sala 1 — Validacion completa del dataset"
@@ -321,7 +327,7 @@ def main():
     parser.add_argument(
         "--benchmark",
         action="store_true",
-        help="Ejecutar benchmark de rendimiento con 1.000 registros"
+        help="Ejecutar benchmark de rendimiento con 1.000 registros",
     )
     args = parser.parse_args()
 
@@ -334,8 +340,10 @@ def main():
 
     imprimir_reporte(reporte)
 
-    print(f"\nTiempo de validacion ({reporte['registros_totales']} registros): "
-          f"{(t1 - t0):.3f} s")
+    print(
+        f"\nTiempo de validacion ({reporte['registros_totales']} registros): "
+        f"{(t1 - t0):.3f} s"
+    )
 
     # Muestra de pares ID/nombre/imagen
     validacion_visual_muestra(registros, n=5)

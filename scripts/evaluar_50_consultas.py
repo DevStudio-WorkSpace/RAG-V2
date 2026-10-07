@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 evaluar_50_consultas.py
 -----------------------
@@ -45,7 +44,9 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 CONSULTAS_DIR = os.path.join(DATA_DIR, "consultas")
 MONTAJES_DIR = os.path.join(DATA_DIR, "montajes")
 IMAGES_BANCO_DIR = os.path.join(DATA_DIR, "images_normalized")
-IMAGES_FINAL_DIR = os.path.join(DATA_DIR, "images_final")  # fallback histórico (eliminado en migración Hito 3)
+IMAGES_FINAL_DIR = os.path.join(
+    DATA_DIR, "images_final"
+)  # fallback histórico (eliminado en migración Hito 3)
 IDS_PATH = os.path.join(DATA_DIR, "ids.npy")
 TEST_SET_JSON = os.path.join(DATA_DIR, "consultas_test_50.json")
 EVAL_METRICS_CSV = os.path.join(DATA_DIR, "evaluation_metrics.csv")
@@ -67,6 +68,7 @@ def puntaje_combinado_50_50(precision_top1, precision_top5):
     top. Equivale a 0.5 * precision_top1 + 0.5 * precision_top5 (sobre 100).
     """
     return round(0.5 * float(precision_top1) + 0.5 * float(precision_top5), 2)
+
 
 VARIANTE_A_CATEGORIA = {
     "exacto": "exacta",
@@ -108,10 +110,13 @@ MODELOS = [
 # Conjunto de prueba
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def hash_perceptual(ruta, size=16):
     """Average-hash de la imagen (bool array). None si no se puede leer."""
     try:
-        a = np.asarray(Image.open(ruta).convert("L").resize((size, size)), dtype=np.float32)
+        a = np.asarray(
+            Image.open(ruta).convert("L").resize((size, size)), dtype=np.float32
+        )
     except Exception:
         return None
     return a > a.mean()
@@ -132,7 +137,9 @@ def derivar_ids_correctos():
     """
     banco = _banco_dir()
     if banco is None:
-        print("  [ERROR] no existe ningún banco de imágenes (images_normalized/images_final)")
+        print(
+            "  [ERROR] no existe ningún banco de imágenes (images_normalized/images_final)"
+        )
         return {}
     refs = {}
     for nombre in sorted(os.listdir(banco)):
@@ -151,18 +158,22 @@ def derivar_ids_correctos():
         h = hash_perceptual(os.path.join(CONSULTAS_DIR, archivo))
         if h is None:
             continue
-        sims = sorted(((int((h == ref).sum()), nombre) for nombre, ref in refs.items()),
-                      reverse=True)
+        sims = sorted(
+            ((int((h == ref).sum()), nombre) for nombre, ref in refs.items()),
+            reverse=True,
+        )
         if len(sims) < 2 or sims[0][0] <= sims[1][0]:
             print(f"  [AVISO] {prefijo}: coincidencia ambigua, se omite")
             continue
-        mapeo[prefijo[:-len("_exacto")]] = sims[0][1].split(".")[0]
+        mapeo[prefijo[: -len("_exacto")]] = sims[0][1].split(".")[0]
     return mapeo
 
 
 def generar_conjunto_prueba():
     """Crea data/consultas_test_50.json (10 consultas x 5 categorías)."""
-    print("  No existe data/consultas_test_50.json; generándolo desde data/consultas...")
+    print(
+        "  No existe data/consultas_test_50.json; generándolo desde data/consultas..."
+    )
     mapeo = derivar_ids_correctos()
     if not mapeo:
         sys.exit("Error: no se pudo derivar ningún id correcto desde data/consultas")
@@ -173,31 +184,44 @@ def generar_conjunto_prueba():
         candidatos = []
         for cXX, id_correcto in sorted(mapeo.items()):
             archivo = next(
-                (n for n in os.listdir(CONSULTAS_DIR)
-                 if n.startswith(f"{cXX}_{variante}")), None
+                (
+                    n
+                    for n in os.listdir(CONSULTAS_DIR)
+                    if n.startswith(f"{cXX}_{variante}")
+                ),
+                None,
             )
             if archivo is not None:
                 candidatos.append((cXX, archivo, id_correcto))
         rng.shuffle(candidatos)
         for cXX, archivo, id_correcto in candidatos[:POR_CATEGORIA]:
-            consultas.append({
-                "consulta": f"{cXX}_{variante}",
-                "categoria": categoria,
-                "archivo": archivo,
-                "ruta_imagen": os.path.join("data", "consultas", archivo).replace("\\", "/"),
-                "id_correcto": id_correcto,
-            })
+            consultas.append(
+                {
+                    "consulta": f"{cXX}_{variante}",
+                    "categoria": categoria,
+                    "archivo": archivo,
+                    "ruta_imagen": os.path.join("data", "consultas", archivo).replace(
+                        "\\", "/"
+                    ),
+                    "id_correcto": id_correcto,
+                }
+            )
 
     consultas.sort(key=lambda c: (c["categoria"], c["consulta"]))
     with open(TEST_SET_JSON, "w", encoding="utf-8") as f:
-        json.dump({
-            "version": 1,
-            "descripcion": "Conjunto de prueba de 50 consultas para la Sala 4 "
-                           "(5 categorias x 10, semilla 42). Los ids correctos se "
-                           "derivan por hash perceptual de las variantes exactas.",
-            "semilla": SEMILLA,
-            "consultas": consultas,
-        }, f, ensure_ascii=False, indent=2)
+        json.dump(
+            {
+                "version": 1,
+                "descripcion": "Conjunto de prueba de 50 consultas para la Sala 4 "
+                "(5 categorias x 10, semilla 42). Los ids correctos se "
+                "derivan por hash perceptual de las variantes exactas.",
+                "semilla": SEMILLA,
+                "consultas": consultas,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
     return consultas
 
 
@@ -233,6 +257,7 @@ def resolver_ruta(consulta):
 # Tiempos
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def limpiar_tiempos_busqueda():
     """Quita filas previas `*__clip|openclip|siglip` para no duplicar."""
     if not os.path.exists(TIEMPOS_CSV):
@@ -242,7 +267,8 @@ def limpiar_tiempos_busqueda():
         lector = csv.DictReader(f)
         filas = [
             (row["consulta"], row.get("tiempo_segundos", ""))
-            for row in lector if not str(row.get("consulta", "")).endswith(sufijos)
+            for row in lector
+            if not str(row.get("consulta", "")).endswith(sufijos)
         ]
     with open(TIEMPOS_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -262,6 +288,7 @@ def registrar_tiempo(consulta, segundos):
 # ──────────────────────────────────────────────────────────────────────────
 # Evaluación
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def extraer_embeddings(features):
     if torch.is_tensor(features):
@@ -337,51 +364,63 @@ def evaluar(cfg, consultas, device):
         registrar_tiempo(f"{consulta}__{cfg['clave']}", tiempo_busqueda)
 
         for pos, (rid, score) in enumerate(zip(top5_ids, scores), start=1):
-            filas_revision.append({
-                "modelo": cfg["clave"],
-                "consulta": consulta,
-                "categoria": categoria,
-                "id_correcto": id_correcto,
-                "posicion": pos,
-                "resultado_id": rid,
-                "score": round(score, 4),
-                "clasificacion_humana": "Correcto" if rid == id_correcto else "",
-                "observacion": "",
-            })
+            filas_revision.append(
+                {
+                    "modelo": cfg["clave"],
+                    "consulta": consulta,
+                    "categoria": categoria,
+                    "id_correcto": id_correcto,
+                    "posicion": pos,
+                    "resultado_id": rid,
+                    "score": round(score, 4),
+                    "clasificacion_humana": "Correcto" if rid == id_correcto else "",
+                    "observacion": "",
+                }
+            )
 
     n = max(1, aciertos["n"])
     p1_global = round(100 * aciertos["top1"] / n, 2)
     p5_global = round(100 * aciertos["top5"] / n, 2)
     metricas_global = {
-        "modelo": cfg["clave"], "categoria": "global", "n_consultas": aciertos["n"],
+        "modelo": cfg["clave"],
+        "categoria": "global",
+        "n_consultas": aciertos["n"],
         "top1_correctos": aciertos["top1"],
         "precision_top1": p1_global,
         "top5_correctos": aciertos["top5"],
         "precision_top5": p5_global,
         "puntaje_combinado": puntaje_combinado_50_50(p1_global, p5_global),
-        "tiempo_busqueda_prom_ms": round(1000 * (sum(tiempos) / n), 2) if tiempos else 0.0,
+        "tiempo_busqueda_prom_ms": round(1000 * (sum(tiempos) / n), 2)
+        if tiempos
+        else 0.0,
     }
     metricas_por_categoria = []
     for categoria, m in sorted(por_categoria.items()):
         n_cat = max(1, m["n"])
         p1_cat = round(100 * m["top1"] / n_cat, 2)
         p5_cat = round(100 * m["top5"] / n_cat, 2)
-        metricas_por_categoria.append({
-            "modelo": cfg["clave"], "categoria": categoria, "n_consultas": m["n"],
-            "top1_correctos": m["top1"],
-            "precision_top1": p1_cat,
-            "top5_correctos": m["top5"],
-            "precision_top5": p5_cat,
-            "puntaje_combinado": puntaje_combinado_50_50(p1_cat, p5_cat),
-            "tiempo_busqueda_prom_ms": "",
-        })
+        metricas_por_categoria.append(
+            {
+                "modelo": cfg["clave"],
+                "categoria": categoria,
+                "n_consultas": m["n"],
+                "top1_correctos": m["top1"],
+                "precision_top1": p1_cat,
+                "top5_correctos": m["top5"],
+                "precision_top5": p5_cat,
+                "puntaje_combinado": puntaje_combinado_50_50(p1_cat, p5_cat),
+                "tiempo_busqueda_prom_ms": "",
+            }
+        )
 
-    print(f"  {cfg['etiqueta']}: Top1={aciertos['top1']}/{aciertos['n']} "
-          f"({metricas_global['precision_top1']:.1f}%)  "
-          f"Top5={aciertos['top5']}/{aciertos['n']} "
-          f"({metricas_global['precision_top5']:.1f}%)  "
-          f"Puntaje50/50={metricas_global['puntaje_combinado']:.1f}  "
-          f"tiempo prom={metricas_global['tiempo_busqueda_prom_ms']:.0f} ms")
+    print(
+        f"  {cfg['etiqueta']}: Top1={aciertos['top1']}/{aciertos['n']} "
+        f"({metricas_global['precision_top1']:.1f}%)  "
+        f"Top5={aciertos['top5']}/{aciertos['n']} "
+        f"({metricas_global['precision_top5']:.1f}%)  "
+        f"Puntaje50/50={metricas_global['puntaje_combinado']:.1f}  "
+        f"tiempo prom={metricas_global['tiempo_busqueda_prom_ms']:.0f} ms"
+    )
     return metricas_global, metricas_por_categoria, filas_revision
 
 
@@ -396,8 +435,7 @@ def main():
     consultas = cargar_conjunto_prueba()
     if not consultas:
         sys.exit("Error: el conjunto de prueba está vacío.")
-    print(f"Consultas de prueba: {len(consultas)} "
-          f"(desde {TEST_SET_JSON})")
+    print(f"Consultas de prueba: {len(consultas)} (desde {TEST_SET_JSON})")
 
     limpiar_tiempos_busqueda()
 
@@ -416,17 +454,34 @@ def main():
         filas_revision.extend(revision)
 
     # ── evaluation_metrics.csv (reporte técnico) ──
-    columnas = ["modelo", "categoria", "n_consultas", "top1_correctos",
-                "precision_top1", "top5_correctos", "precision_top5",
-                "puntaje_combinado", "tiempo_busqueda_prom_ms"]
+    columnas = [
+        "modelo",
+        "categoria",
+        "n_consultas",
+        "top1_correctos",
+        "precision_top1",
+        "top5_correctos",
+        "precision_top5",
+        "puntaje_combinado",
+        "tiempo_busqueda_prom_ms",
+    ]
     with open(EVAL_METRICS_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=columnas)
         writer.writeheader()
         writer.writerows(filas_metricas)
 
     # ── revision_humana_50.csv (estructura de revisión cualitativa) ──
-    columnas_rev = ["modelo", "consulta", "categoria", "id_correcto", "posicion",
-                    "resultado_id", "score", "clasificacion_humana", "observacion"]
+    columnas_rev = [
+        "modelo",
+        "consulta",
+        "categoria",
+        "id_correcto",
+        "posicion",
+        "resultado_id",
+        "score",
+        "clasificacion_humana",
+        "observacion",
+    ]
     with open(REVISION_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=columnas_rev)
         writer.writeheader()
@@ -437,10 +492,12 @@ def main():
     print("=" * 72)
     for m in filas_metricas:
         if m["categoria"] == "global":
-            print(f"  {m['modelo']:<10s} Top1={m['precision_top1']:6.2f}%  "
-                  f"Top5={m['precision_top5']:6.2f}%  "
-                  f"P50/50={m['puntaje_combinado']:6.2f}/100  "
-                  f"({m['n_consultas']} consultas)")
+            print(
+                f"  {m['modelo']:<10s} Top1={m['precision_top1']:6.2f}%  "
+                f"Top5={m['precision_top5']:6.2f}%  "
+                f"P50/50={m['puntaje_combinado']:6.2f}/100  "
+                f"({m['n_consultas']} consultas)"
+            )
     print(f"Reporte técnico : {EVAL_METRICS_CSV}")
     print(f"Revisión humana : {REVISION_CSV}")
     print(f"Tiempos anexados: {TIEMPOS_CSV}")

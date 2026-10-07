@@ -7,66 +7,61 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-from scraper.scraper import obtener_html
 from scraper.downloader import descargar_imagenes
+from scraper.parser import contar_imagenes, extraer_productos
+from scraper.scraper import obtener_html
 from storage.exporter import exportar_excel
-from utils.limits import limitar_productos
-from utils.update import fusionar_productos
-
-from scraper.parser import (
-    extraer_productos,
-    contar_imagenes
+from utils.helpers import (
+    actualizar_metadata_pagina,
+    guardar_productos,
+    leer_productos,
+    limpiar_data,
 )
-
+from utils.limits import limitar_productos
 from utils.pagination import (
-    obtener_inicio_pagina,
     convertir_paginas,
+    obtener_inicio_pagina,
     obtener_paginas_all,
     obtener_paginas_hasta_maximo,
-    obtener_paginas_sin_metadata
+    obtener_paginas_sin_metadata,
 )
+from utils.update import fusionar_productos
 
-from utils.helpers import (
-    guardar_html,
-    guardar_productos,
-    actualizar_metadata_pagina,
-    leer_productos,
-    limpiar_data
-)
 # ===========================================================
+
 
 def obtener_argumentos():
 
-    parser = argparse.ArgumentParser(
-        description="Aimari Web Scraper"
+    parser = argparse.ArgumentParser(description="Aimari Web Scraper")
+
+    parser.add_argument(
+        "--imagenes", default="all", help="Cantidad de imágenes: número o all"
     )
 
     parser.add_argument(
-        "--imagenes",
-        default="all",
-        help="Cantidad de imágenes: número o all"
+        "--paginas", default="1", help="Páginas a scrapear: ejemplo 1,2,3 o all"
     )
 
     parser.add_argument(
-        "--paginas",
-        default="1",
-        help="Páginas a scrapear: ejemplo 1,2,3 o all"
-    )
-
-    parser.add_argument(
-        "--modo",
-        choices=["fresh", "update"],
-        default="fresh",
-        help="Modo de ejecución"
+        "--modo", choices=["fresh", "update", "auto"], default="auto", help="Modo de ejecución"
     )
 
     return parser.parse_args()
 
 
-
 def main():
     args = obtener_argumentos()
 
+    from pathlib import Path
+    from utils.helpers import DATA_DIR
+
+    if args.modo == "auto":
+        archivo_productos = Path(DATA_DIR) / "productos.json"
+        if archivo_productos.exists():
+            print("\n[INFO] Datos previos detectados. Cambiando automáticamente a modo 'update' para no borrarlos.")
+            args.modo = "update"
+        else:
+            args.modo = "fresh"
 
     print("Configuración:")
     print("----------------")
@@ -84,34 +79,28 @@ def main():
     else:
         paginas_solicitadas = convertir_paginas(args.paginas)
 
-# =====================================
-# 1) COMPLETAR METADATA FALTANTE
-# =====================================
+    # =====================================
+    # 1) COMPLETAR METADATA FALTANTE
+    # =====================================
 
     paginas_necesarias = obtener_paginas_hasta_maximo(paginas_solicitadas)
 
-
     paginas_faltantes = obtener_paginas_sin_metadata(paginas_necesarias)
 
-
     if paginas_faltantes:
-
         print("\nCompletando metadata:")
 
         for pagina in paginas_faltantes:
-
             print(f"Obteniendo información página {pagina}")
 
             html = obtener_html(pagina)
 
             cantidad = contar_imagenes(html)
 
-            actualizar_metadata_pagina(pagina,cantidad)
-
+            actualizar_metadata_pagina(pagina, cantidad)
 
     else:
         print("\nMetadata completa")
-
 
     # =====================================
     # 2) SCRAPING REAL
@@ -120,34 +109,29 @@ def main():
     productos_totales = []
 
     for pagina in paginas_solicitadas:
-
         print(f"\nProcesando página {pagina}")
 
         html = obtener_html(pagina)
 
         inicio = obtener_inicio_pagina(pagina)
 
-        productos = extraer_productos(html,inicio=inicio,pagina=pagina)
+        productos = extraer_productos(html, inicio=inicio, pagina=pagina)
 
-        actualizar_metadata_pagina( pagina,len(productos))
+        actualizar_metadata_pagina(pagina, len(productos))
 
         productos_totales.extend(productos)
-
 
     productos_scrapeados = limitar_productos(productos_totales, args.imagenes)
 
     if args.modo == "update":
-
         print("\nActualizando productos existentes...")
 
         productos_actuales = leer_productos()
 
-        productos = fusionar_productos(productos_actuales,productos_scrapeados)
+        productos = fusionar_productos(productos_actuales, productos_scrapeados)
 
     else:
-
         productos = productos_scrapeados
-    
 
     print(f"Productos encontrados: {len(productos_totales)}")
     print(f"Productos seleccionados: {len(productos)}")
@@ -157,7 +141,6 @@ def main():
     descargar_imagenes()
 
     exportar_excel()
-
 
 
 if __name__ == "__main__":

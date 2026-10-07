@@ -1,11 +1,12 @@
 import re
 import time
-import requests
 from pathlib import Path
 
+import requests
+
 from utils.helpers import (
-    leer_productos,
     IMAGES_DIR,
+    leer_productos,
 )
 
 
@@ -27,12 +28,8 @@ def limpiar_nombre_archivo(nombre):
 def descargar_una_imagen(url, ruta, intentos=5):
 
     for intento in range(1, intentos + 1):
-
         try:
-            respuesta = requests.get(
-                url,
-                timeout=30
-            )
+            respuesta = requests.get(url, timeout=30)
 
             respuesta.raise_for_status()
 
@@ -42,24 +39,15 @@ def descargar_una_imagen(url, ruta, intentos=5):
             return True
 
         except (requests.RequestException, OSError) as error:
-
             espera = 2
 
             if isinstance(error, requests.HTTPError):
-
-                codigo = (
-                    error.response.status_code
-                    if error.response is not None
-                    else 0
-                )
+                codigo = error.response.status_code if error.response is not None else 0
 
                 if codigo in (502, 503, 504, 429):
                     espera = 5
 
-            print(
-                f"[ERROR] Intento {intento}/{intentos} "
-                f"→ {ruta.name}: {error}"
-            )
+            print(f"[ERROR] Intento {intento}/{intentos} → {ruta.name}: {error}")
 
             if intento < intentos:
                 time.sleep(espera)
@@ -73,10 +61,7 @@ def descargar_imagenes():
 
     ruta_imagenes = Path(IMAGES_DIR)
 
-    ruta_imagenes.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    ruta_imagenes.mkdir(parents=True, exist_ok=True)
 
     print(f"Verificando {len(productos)} imágenes...\n")
 
@@ -85,12 +70,9 @@ def descargar_imagenes():
     fallidas = 0
 
     for producto in productos:
-
         nombre_archivo_original = producto["archivo"]
 
-        nombre_archivo = limpiar_nombre_archivo(
-            nombre_archivo_original
-        )
+        nombre_archivo = limpiar_nombre_archivo(nombre_archivo_original)
 
         ruta_archivo = ruta_imagenes / nombre_archivo
 
@@ -101,10 +83,7 @@ def descargar_imagenes():
             continue
 
         # Descargar solamente las que faltan
-        if descargar_una_imagen(
-            producto["url"],
-            ruta_archivo
-        ):
+        if descargar_una_imagen(producto["url"], ruta_archivo):
             print(f"[OK] {nombre_archivo}")
             descargadas += 1
 

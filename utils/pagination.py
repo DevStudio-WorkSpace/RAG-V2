@@ -1,6 +1,3 @@
-from utils.helpers import leer_metadata
-
-
 import math
 import re
 
@@ -29,31 +26,23 @@ def convertir_paginas(valor):
     partes = valor.split(",")
 
     for parte in partes:
-
         parte = parte.strip()
 
         # Caso rango: 2-10
         if "-" in parte:
-
             inicio, fin = parte.split("-")
 
             inicio = int(inicio)
             fin = int(fin)
 
-            paginas.update(
-                range(inicio, fin + 1)
-            )
+            paginas.update(range(inicio, fin + 1))
 
         # Caso número: 25
         else:
-
             numero = int(parte)
 
             # Un número significa desde 1 hasta ese número
-            paginas.update(
-                range(1, numero + 1)
-            )
-
+            paginas.update(range(1, numero + 1))
 
     return sorted(paginas)
 
@@ -72,10 +61,7 @@ def total_productos_desde_html(html):
     if resumen is None:
         return None
 
-    match = re.search(
-        r"de\s+(\d+)",
-        resumen.get_text(" ", strip=True)
-    )
+    match = re.search(r"de\s+(\d+)", resumen.get_text(" ", strip=True))
 
     if not match:
         return None
@@ -108,11 +94,12 @@ def obtener_paginas_all():
 
     paginas = math.ceil(total / por_pagina)
 
-    print(f"Catálogo descubierto: {total} productos, "
-          f"{por_pagina} por página → {paginas} páginas")
+    print(
+        f"Catálogo descubierto: {total} productos, "
+        f"{por_pagina} por página → {paginas} páginas"
+    )
 
     return list(range(1, paginas + 1))
-
 
 
 def obtener_inicio_pagina(pagina):
@@ -134,24 +121,15 @@ def obtener_inicio_pagina(pagina):
 
     total = 0
 
-
     for numero_pagina in range(1, pagina):
-
-        datos = paginas_metadata.get(
-            str(numero_pagina)
-        )
+        datos = paginas_metadata.get(str(numero_pagina))
 
         if datos is None:
-            raise Exception(
-                f"Falta metadata de página {numero_pagina}"
-            )
-
+            raise Exception(f"Falta metadata de página {numero_pagina}")
 
         total += datos["cantidad"]
 
-
     return total + 1
-
 
 
 def obtener_paginas_faltantes(paginas):
@@ -166,24 +144,19 @@ def obtener_paginas_faltantes(paginas):
 
     faltantes = []
 
-
     for pagina in paginas:
-
         if str(pagina) not in paginas_existentes:
-
             faltantes.append(pagina)
 
-
     return faltantes
-
 
 
 def obtener_maxima_pagina(paginas):
     return max(paginas)
 
+
 # =============================
 def obtener_paginas_hasta_maximo(paginas):
-
     """
     Devuelve todas las páginas necesarias
     desde 1 hasta la mayor solicitada.
@@ -203,6 +176,7 @@ def obtener_paginas_hasta_maximo(paginas):
 
     return list(range(1, maxima + 1))
 
+
 # ============================
 def obtener_paginas_sin_metadata(paginas):
     metadata = leer_metadata()
@@ -210,9 +184,7 @@ def obtener_paginas_sin_metadata(paginas):
     faltantes = []
 
     for pagina in paginas:
-
         if str(pagina) not in existentes:
-
             faltantes.append(pagina)
-            
+
     return faltantes

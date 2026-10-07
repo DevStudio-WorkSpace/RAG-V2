@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 descriptores_visuales.py
 ------------------------
@@ -30,14 +29,15 @@ from PIL import Image
 
 try:
     import cv2
+
     _HAVE_CV2 = True
 except Exception:
     _HAVE_CV2 = False
 
-K_COLORES = 4           # numero de colores dominantes (k-means)
-BINS_GAMA = (8, 4, 4)   # bins del histograma de gama cromatica (H, S, V)
-GRID_PATRON = 8         # grilla de textura (GRID x GRID)
-MUESTREO_MAX = 2000     # pixeles maximo para el k-means de colores
+K_COLORES = 4  # numero de colores dominantes (k-means)
+BINS_GAMA = (8, 4, 4)  # bins del histograma de gama cromatica (H, S, V)
+GRID_PATRON = 8  # grilla de textura (GRID x GRID)
+MUESTREO_MAX = 2000  # pixeles maximo para el k-means de colores
 
 
 def leer_bgr_desde_ruta(ruta):
@@ -53,6 +53,7 @@ def leer_bgr_desde_ruta(ruta):
 # ─────────────────────────────────────────────
 # UTILIDADES DE COLOR
 # ─────────────────────────────────────────────
+
 
 def _a_gris(bgr):
     """Escala de grises (float32) a partir de un arreglo BGR."""
@@ -152,6 +153,7 @@ def _kmeans(pix, k=K_COLORES, iteraciones=8):
 # DESCRIPTORES
 # ─────────────────────────────────────────────
 
+
 def colores_dominantes(bgr, k=K_COLORES):
     """
     Colores dominantes de la imagen en (H, S, V) con su peso (fraccion de
@@ -239,12 +241,12 @@ def detectar_marco(bgr, frac=0.04):
     t = max(2, int(min(h, w) * frac))
     if t >= h // 2 or t >= w // 2:
         return {"fraccion_marco": 0.0, "tiene_marco": False}
-    interior = gris[t:h - t, t:w - t]
+    interior = gris[t : h - t, t : w - t]
     if interior.size == 0:
         return {"fraccion_marco": 0.0, "tiene_marco": False}
     med_int = float(interior.mean())
     lados = 0
-    for banda in (gris[:t, :], gris[h - t:, :], gris[:, :t], gris[:, w - t:]):
+    for banda in (gris[:t, :], gris[h - t :, :], gris[:, :t], gris[:, w - t :]):
         if banda.size == 0:
             continue
         if float(banda.std()) < 20 and abs(float(banda.mean()) - med_int) > 14:
@@ -282,14 +284,18 @@ def detectar_franjas(bgr):
     y0, y1 = int(h * 0.15), int(h * 0.85)
     x0, x1 = int(w * 0.15), int(w * 0.85)
     if y1 - y0 < 8 or x1 - x0 < 8:
-        return {"franjas_horizontales": 0.0, "franjas_verticales": 0.0, "banda_central": 0.0}
+        return {
+            "franjas_horizontales": 0.0,
+            "franjas_verticales": 0.0,
+            "banda_central": 0.0,
+        }
     region = gris[y0:y1, x0:x1]
     perfil_filas = region.mean(axis=1)  # variacion en filas -> franjas horizontales
-    perfil_cols = region.mean(axis=0)   # variacion en columnas -> franjas verticales
+    perfil_cols = region.mean(axis=0)  # variacion en columnas -> franjas verticales
     score_h = _periodicidad(perfil_filas)
     score_v = _periodicidad(perfil_cols)
     mitad = region.shape[0] // 2
-    banda = region[max(0, mitad - 2):mitad + 2, :]
+    banda = region[max(0, mitad - 2) : mitad + 2, :]
     contraste = float(abs(banda.mean() - region.mean()) / 128.0)
     return {
         "franjas_horizontales": round(min(1.0, score_h), 4),
@@ -319,6 +325,7 @@ def descriptores_de_bgr(bgr):
 # ─────────────────────────────────────────────
 # SIMILITUDES POR ATRIBUTO (todas en [0, 1])
 # ─────────────────────────────────────────────
+
 
 def _correlacion(a, b):
     """Coeficiente de correlacion de Pearson recortado a [0,1].
@@ -377,18 +384,37 @@ def sim_marco(q, c):
 def sim_franjas(q, c):
     def _get(d, k):
         return (d or {}).get(k, 0.0)
-    return float(max(0.0, min(1.0, 1.0
-        - 0.5 * abs(_get(q, "franjas_horizontales") - _get(c, "franjas_horizontales"))
-        - 0.25 * abs(_get(q, "franjas_verticales") - _get(c, "franjas_verticales"))
-        - 0.25 * abs(_get(q, "banda_central") - _get(c, "banda_central")))))
+
+    return float(
+        max(
+            0.0,
+            min(
+                1.0,
+                1.0
+                - 0.5
+                * abs(_get(q, "franjas_horizontales") - _get(c, "franjas_horizontales"))
+                - 0.25
+                * abs(_get(q, "franjas_verticales") - _get(c, "franjas_verticales"))
+                - 0.25 * abs(_get(q, "banda_central") - _get(c, "banda_central")),
+            ),
+        )
+    )
 
 
 def similitudes_visuales(q, c):
     """Similitudes por atributo entre dos descriptores completos (dict 0..1)."""
     if q is None or c is None:
-        return {"color_dominante": 0.0, "gama": 0.0, "patron": 0.0, "marco": 0.0, "franjas": 0.0}
+        return {
+            "color_dominante": 0.0,
+            "gama": 0.0,
+            "patron": 0.0,
+            "marco": 0.0,
+            "franjas": 0.0,
+        }
     return {
-        "color_dominante": sim_color_dominante(q.get("color_dominante"), c.get("color_dominante")),
+        "color_dominante": sim_color_dominante(
+            q.get("color_dominante"), c.get("color_dominante")
+        ),
         "gama": sim_gama(q.get("gama"), c.get("gama")),
         "patron": sim_patron(q.get("patron"), c.get("patron")),
         "marco": sim_marco(q.get("marco"), c.get("marco")),

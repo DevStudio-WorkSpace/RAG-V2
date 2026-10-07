@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 reporte_comparativo.py
 ----------------------
@@ -81,7 +80,7 @@ def cargar_tiempos():
             except ValueError:
                 continue
             if consulta.startswith("generacion_"):
-                generacion[consulta[len("generacion_"):]] = segundos
+                generacion[consulta[len("generacion_") :]] = segundos
     for clave in MODELO_CLAVE:
         sufijo = f"__{clave}"
         acum = 0.0
@@ -106,8 +105,9 @@ def cargar_revision():
     resumen = {}
     if not os.path.exists(REVISION_CSV):
         return resumen
-    contadores = {clave: {"total": 0, "clasificadas": 0, "correctas": 0}
-                  for clave in MODELO_CLAVE}
+    contadores = {
+        clave: {"total": 0, "clasificadas": 0, "correctas": 0} for clave in MODELO_CLAVE
+    }
     with open(REVISION_CSV, encoding="utf-8") as f:
         for r in csv.DictReader(f):
             clave = r.get("modelo", "")
@@ -134,8 +134,10 @@ def imprimir_tabla(globales, tiempos_gen, tiempos_busq, revision):
 
     print("\nTabla consolidada por modelo:")
     print("-" * 96)
-    print(f"{'Modelo':<10s}{'Top1%':>9s}{'Top5%':>9s}{'P50/50':>9s}{'N':>5s}"
-          f"{'Gen (s)':>10s}{'Búsq (ms)':>12s}{'Rev':>14s}")
+    print(
+        f"{'Modelo':<10s}{'Top1%':>9s}{'Top5%':>9s}{'P50/50':>9s}{'N':>5s}"
+        f"{'Gen (s)':>10s}{'Búsq (ms)':>12s}{'Rev':>14s}"
+    )
     print("-" * 96)
 
     candidatos = []
@@ -149,20 +151,28 @@ def imprimir_tabla(globales, tiempos_gen, tiempos_busq, revision):
         gen_txt = f"{gen:>9.1f}" if gen is not None else "     n/d"
         busq_txt = f"{busq:>11.1f}" if busq is not None else "         n/d"
         pc = puntaje_combinado_50_50(r["precision_top1"], r["precision_top5"])
-        print(f"{nombre:<10s}{r['precision_top1']:>8.2f}%{r['precision_top5']:>8.2f}%"
-              f"{pc:>8.2f}{r['n_consultas']:>5d}{gen_txt:>10s}{busq_txt:>12s}{rev_txt:>14s}")
-        candidatos.append({
-            "clave": clave, "nombre": nombre,
-            "top1": r["precision_top1"], "top5": r["precision_top5"],
-            "puntaje": pc,
-            "busq_ms": busq,
-        })
+        print(
+            f"{nombre:<10s}{r['precision_top1']:>8.2f}%{r['precision_top5']:>8.2f}%"
+            f"{pc:>8.2f}{r['n_consultas']:>5d}{gen_txt:>10s}{busq_txt:>12s}{rev_txt:>14s}"
+        )
+        candidatos.append(
+            {
+                "clave": clave,
+                "nombre": nombre,
+                "top1": r["precision_top1"],
+                "top5": r["precision_top5"],
+                "puntaje": pc,
+                "busq_ms": busq,
+            }
+        )
 
     print("-" * 96)
-    print("Top1% / Top5% = precisión sobre las 50 consultas. P50/50 = métrica\n"
-          "combinada 0.5*Top1% + 0.5*Top5% (cada bloque aporta máx. 50 puntos).\n"
-          "Gen = tiempo de generación del índice. Búsq = tiempo promedio por\n"
-          "consulta. Rev = filas clasificadas/total en data/revision_humana_50.csv.")
+    print(
+        "Top1% / Top5% = precisión sobre las 50 consultas. P50/50 = métrica\n"
+        "combinada 0.5*Top1% + 0.5*Top5% (cada bloque aporta máx. 50 puntos).\n"
+        "Gen = tiempo de generación del índice. Búsq = tiempo promedio por\n"
+        "consulta. Rev = filas clasificadas/total en data/revision_humana_50.csv."
+    )
 
     return candidatos
 
@@ -179,7 +189,9 @@ def imprimir_por_categoria(por_categoria):
         partes = []
         for r in sorted(fila, key=lambda x: MODELO_CLAVE.get(x["modelo"], x["modelo"])):
             nombre = MODELO_CLAVE.get(r["modelo"], r["modelo"])
-            partes.append(f"{nombre} {r['precision_top1']:.1f}/{r['precision_top5']:.1f}")
+            partes.append(
+                f"{nombre} {r['precision_top1']:.1f}/{r['precision_top5']:.1f}"
+            )
         print(f"  {categoria:<12s} " + "   |   ".join(partes))
     print("-" * 96)
 
@@ -189,20 +201,28 @@ def declarar_ganador(candidatos):
         return
     ganador = max(
         candidatos,
-        key=lambda c: (c["puntaje"], c["top1"], c["top5"],
-                       -(c["busq_ms"] if c["busq_ms"] is not None else 1e18)),
+        key=lambda c: (
+            c["puntaje"],
+            c["top1"],
+            c["top5"],
+            -(c["busq_ms"] if c["busq_ms"] is not None else 1e18),
+        ),
     )
     print("\n" + "=" * 96)
-    print(f"MODELO GANADOR: {ganador['nombre']}  "
-          f"(P50/50 {ganador['puntaje']:.2f}/100 · "
-          f"Top1 {ganador['top1']:.2f}% / Top5 {ganador['top5']:.2f}%)")
+    print(
+        f"MODELO GANADOR: {ganador['nombre']}  "
+        f"(P50/50 {ganador['puntaje']:.2f}/100 · "
+        f"Top1 {ganador['top1']:.2f}% / Top5 {ganador['top5']:.2f}%)"
+    )
     print("=" * 96)
-    print("Criterio (Hito 3): mayor métrica combinada 50/50\n"
-          "(0.5*Top1% + 0.5*Top5%; cada bloque aporta máx. 50 puntos), para no\n"
-          "sacrificar la recuperación del Top 5 en pos de la precisión del Top 1\n"
-          "ni viceversa. Desempate por Top1, luego Top5 y luego tiempo promedio\n"
-          "de búsqueda. Confirmar con la revisión humana de\n"
-          "data/revision_humana_50.csv (utilidad cualitativa de los Top 2-5).")
+    print(
+        "Criterio (Hito 3): mayor métrica combinada 50/50\n"
+        "(0.5*Top1% + 0.5*Top5%; cada bloque aporta máx. 50 puntos), para no\n"
+        "sacrificar la recuperación del Top 5 en pos de la precisión del Top 1\n"
+        "ni viceversa. Desempate por Top1, luego Top5 y luego tiempo promedio\n"
+        "de búsqueda. Confirmar con la revisión humana de\n"
+        "data/revision_humana_50.csv (utilidad cualitativa de los Top 2-5)."
+    )
 
 
 def main():

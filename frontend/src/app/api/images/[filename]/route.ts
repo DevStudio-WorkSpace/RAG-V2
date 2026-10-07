@@ -20,10 +20,18 @@ export async function GET(
 
     // Ruta a las imágenes normalizadas
     const dataDir = path.join(process.cwd(), '..', 'data', 'images_normalized');
-    const filePath = path.join(dataDir, filename);
+    let filePath = path.join(dataDir, filename);
 
     if (!fs.existsSync(filePath)) {
-      return new NextResponse('Image not found', { status: 404 });
+      // La base de datos puede pedir .png o .gif, pero el normalizador las convirtió a .jpg
+      const parsedPath = path.parse(filename);
+      const fallbackPath = path.join(dataDir, `${parsedPath.name}.jpg`);
+      
+      if (fs.existsSync(fallbackPath)) {
+        filePath = fallbackPath;
+      } else {
+        return new NextResponse('Image not found', { status: 404 });
+      }
     }
 
     // MEJORA 2 (MIME Types): Añadimos soporte ampliado para más formatos
