@@ -1,0 +1,137 @@
+{
+  "precision_at_1": 0.7,
+  "recall_at_5": 0.8,
+  "resultados": [
+    {
+      "consulta": "SBX-03-0001_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0001",
+      "color_detectado": "Marron",
+      "top1": "SBX-03-0001",
+      "top1_correcto": true,
+      "top5_correcto": true,
+      "posicion": 1,
+      "top5_ids": [
+        "SBX-03-0001",
+        "SBX-03-0005",
+        "SBX-03-0036",
+        "SBX-03-0040",
+        "SBX-03-0015"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0005_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0005",
+      "color_detectado": "Gris",
+      "top1": "SBX-03-0005",
+      "top1_correcto": true,
+      "top5_correcto": true,
+      "posicion": 1,
+      "top5_ids": [
+        "SBX-03-0005"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0010_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0010",
+      "color_detectado": "Gris",
+      "top1": "SBX-03-0019",
+      "top1_correcto": false,
+      "top5_correcto": false,
+      "posicion": null,
+      "top5_ids": [
+        "SBX-03-0019",
+        "SBX-03-0011"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0015_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0015",
+      "color_detectado": "Negro",
+      "top1": "SBX-03-0015",
+      "top1_correcto": true,
+      "top5_correcto": true,
+      "posicion": 1,
+      "top5_ids": [
+        "SBX-03-0015"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0020_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0020",
+      "color_detectado": "Rosa",
+      "top1": "SBX-03-0001",
+      "top1_correcto": false,
+      "top5_correcto": true,
+      "posicion": 2,
+      "top5_ids": [
+        "SBX-03-0001",
+        "SBX-03-0020"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0025_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0025",
+      "color_detectado": "Gris",
+      "top1": "SBX-03-0025",
+      "top1_correcto": true,
+      "top5_correcto": true,
+      "posicion": 1,
+      "top5_ids": [
+        "SBX-03-0025",
+        "SBX-03-0027",
+        "SBX-03-0004",
+        "SBX-03-0035"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0030_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0030",
+      "color_detectado": "Negro",
+      "top1": "SBX-03-0030",
+      "top1_correcto": true,
+      "top5_correcto": true,
+      "posicion": 1,
+      "top5_ids": [
+        "SBX-03-0030"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0035_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0035",
+      "color_detectado": "Rosa",
+      "top1": "SBX-03-0013",
+      "top1_correcto": false,
+      "top5_correcto": false,
+      "posicion": null,
+      "top5_ids": [
+        "SBX-03-0013",
+        "SBX-03-0027"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0040_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0040",
+      "color_detectado": "Negro",
+      "top1": "SBX-03-0040",
+      "top1_correcto": true,
+      "top5_correcto": true,
+      "posicion": 1,
+      "top5_ids": [
+        "SBX-03-0040"
+      ]
+    },
+    {
+      "consulta": "SBX-03-0008_foto_prueba.jpg",
+      "codigo_esperado": "SBX-03-0008",
+      "color_detectado": "Negro",
+      "top1": "SBX-03-0008",
+      "top1_correcto": true,
+      "top5_correcto": true,
+      "posicion": 1,
+      "top5_ids": [
+        "SBX-03-0008",
+        "SBX-03-0021"
+      ]
+    }
+  ]
+}
