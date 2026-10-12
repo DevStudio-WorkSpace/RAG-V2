@@ -17,65 +17,32 @@ from core.search_service import perform_hybrid_search
 pipeline = None
 qdrant_db = None
 
+# Colección del banco de imágenes propio (se indexa con
+# scripts/indexar_banco_propio.py). Ya NO se usa la colección de Aimari
+# (camisetas_fashion_v3) ni su migración automática desde embeddings.npy.
+COLECCION_BANCO = "banco_propio_v1"
+
 def cargar_indice():
     """
     Inicializa la conexión con Qdrant y carga los modelos de IA en memoria.
-    Reemplaza la antigua lógica que cargaba FAISS y los .npy.
+    Apunta a la colección del banco propio (banco_propio_v1), que se puebla
+    con scripts/indexar_banco_propio.py.
     """
     global pipeline, qdrant_db
-    print("Inicializando Motor de IA (YOLO + Rembg + Fashion-CLIP)...")
+    print("Inicializando Motor de IA (YOLO + Rembg + SigLIP)...")
     pipeline = VisionPipeline()
-    
-    print("Conectando a Qdrant...")
-    qdrant_db = QdrantManager()
-    
-    # Auto-migrar datos si Qdrant está vacío
-    if qdrant_db.client.count(qdrant_db.collection_name).count == 0:
-        print("Qdrant está vacío. Migrando datos desde .npy (esto tomará unos segundos)...")
-        import pandas as pd
-        from qdrant_client.http.models import PointStruct
-        
-        try:
-            emb_path = os.path.join("data", "embeddings.npy")
-            df_path = os.path.join("data", "products.csv")
-            
-            if os.path.exists(emb_path) and os.path.exists(df_path):
-                embeddings = np.load(emb_path)
-                df = pd.read_csv(df_path)
-                
-                points = []
-                # Evitamos vectores nulos (fallidos en generación original)
-                valido = np.linalg.norm(embeddings, axis=1) > 0
-                
-                for idx, row in df.iterrows():
-                    if idx < len(embeddings) and valido[idx]:
-                        # Qdrant requiere UUID o integer. Generamos uno aleatorio y guardamos el original en el payload
-                        point_id = str(uuid.uuid4())
-                        original_id = str(row["id"]) if "id" in row else point_id
-                        # Limpiamos NaN en el filename por si acaso
-                        filename = str(row["imagen"]) if pd.notna(row.get("imagen")) else f"{original_id}.jpg"
-                        
-                        point = PointStruct(
-                            id=point_id,
-                            vector=embeddings[idx].tolist(),
-                            payload={"filename": filename, "color": "Desconocido", "original_id": original_id}
-                        )
-                        points.append(point)
-                        
-                        # Subir en lotes para no saturar la memoria
-                        if len(points) >= 500:
-                            qdrant_db.upsert_vectors(points)
-                            points = []
-                            
-                if points:
-                    qdrant_db.upsert_vectors(points)
-                    
-                print(f"Migración completada. Se ingestaron {qdrant_db.client.count(qdrant_db.collection_name).count} vectores.")
-            else:
-                print("No se encontraron los archivos data/embeddings.npy o data/products.csv para migrar.")
-        except Exception as e:
-            print(f"Error migrando datos a Qdrant: {e}")
-            
+
+    print(f"Conectando a Qdrant (colección: {COLECCION_BANCO})...")
+    qdrant_db = QdrantManager(collection_name=COLECCION_BANCO)
+
+    total = qdrant_db.client.count(qdrant_db.collection_name).count
+    print(f"Colección '{COLECCION_BANCO}' lista con {total} vectores.")
+    if total == 0:
+        print(
+            "AVISO: la colección está vacía. Indexá tu banco con: "
+            "python scripts/indexar_banco_propio.py"
+        )
+
     print("Sistemas operativos. Motor de búsqueda listo.")
 
 def search_similar(imagen: Image.Image, color_filtro: str = None, top_k: int = 5):
@@ -107,7 +74,7 @@ def search_similar(imagen: Image.Image, color_filtro: str = None, top_k: int = 5
             "nombre": filename.split('.')[0] if filename else f"Producto {original_id}",
             "imagen": filename,
             "url": "",
-            "proveedor": "Catálogo Local",
+            "proveedor": "Banco propio",
             "score": round(float(r.score), 4),
         })
         

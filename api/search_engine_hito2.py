@@ -71,7 +71,11 @@ from api.descriptores_visuales import (
     descriptores_de_bgr,
     similitudes_visuales,
 )
-from api.search_engine import DATADIR, search_similar
+
+# Ruta base de datos (data/). Antes se importaba de api.search_engine, pero eso
+# creaba un import circular (search_engine importa _rerank_candidatos de este
+# módulo). Se define aquí de forma independiente.
+DATADIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
 # ── PESOS DEL SCORE FINAL (probar, no asumir) ────────────────────────────
 # Score_final = Σ peso_atributo * score_atributo, con el score de embeddings
@@ -124,7 +128,14 @@ UMBRAL_MINIMO_SIMILARIDAD = 0.40
 # Sala 1). Tanto el índice del Hito 2 (embeddings_clip/openclip/siglip) como
 # los descriptores de color/estructura se calculan sobre ESTA misma carpeta,
 # así que el score de embeddings y los descriptores visuales son coherentes.
-CARPETA_IMAGENES = os.path.join(DATADIR, "images_normalized")
+# Carpeta(s) del banco de imágenes nuevo (usadas para el reranking visual).
+# El banco vive en data/imagenes_normalized (JPG); se admite además el PNG del
+# demo (SBX) como respaldo.
+CARPETA_IMAGENES = os.path.join(DATADIR, "imagenes_normalized")
+CARPETAS_IMAGENES_BUSQUEDA = [
+    CARPETA_IMAGENES,
+    os.path.join(DATADIR, "demo_sublitex", "png_publicados"),
+]
 
 # Índices del Hito 2 (Sala 4): generados por scripts/generar_indices_comparativos.py
 # sobre data/images_normalized/. Todos con la MISMA estructura: embeddings L2
@@ -377,10 +388,12 @@ def _resolver_imagen(nombre_archivo, id_catalogo=None):
     candidatas = [str(nombre_archivo)]
     if id_catalogo:
         candidatas.append(str(id_catalogo) + ".jpg")
-    for nombre in candidatas:
-        ruta = os.path.join(CARPETA_IMAGENES, nombre)
-        if os.path.exists(ruta):
-            return ruta
+        candidatas.append(str(id_catalogo) + ".png")
+    for carpeta in CARPETAS_IMAGENES_BUSQUEDA:
+        for nombre in candidatas:
+            ruta = os.path.join(carpeta, nombre)
+            if os.path.exists(ruta):
+                return ruta
     return None
 
 
@@ -527,6 +540,8 @@ def buscar_en_indice_normalizado(
         # Sin índice de Sala 4 para este modelo: cae al índice del Hito 1
         # (embeddings.npy). Los descriptores visuales SIEMPRE se calculan
         # sobre images_normalized/ (carpeta única de búsqueda).
+        # Import tardío: evita el ciclo de importación con api.search_engine.
+        from api.search_engine import search_similar
         return search_similar(query_embedding, top_k=top_k, exclude_ids=exclude_ids)
 
     faiss_index, embeddings, ids, df, valido = indice
