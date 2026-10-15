@@ -41,6 +41,9 @@ Thumbs.db
 frontend/.theme_pref.json
 
 .atl
+# Bitácoras locales de trabajo (no versionar)
+/odd/
+
 # Datos pesados
 # /data/
 /qdrant_data/
