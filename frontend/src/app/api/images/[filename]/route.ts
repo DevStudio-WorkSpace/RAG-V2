@@ -4,49 +4,58 @@ import path from 'path';
 
 export async function GET(
   request: Request,
-  { params }: { params: any }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const resolvedParams = await Promise.resolve(params);
+    const resolvedParams = await params;
     
-    // MEJORA 1 (Seguridad): Usamos path.basename para prevenir ataques de "Path Traversal"
-    // Esto asegura que el input "foo/../bar.jpg" se convierta siempre en "bar.jpg"
-    const rawFilename = resolvedParams.filename as string;
+    // Path traversal safety
+    const rawFilename = resolvedParams.filename;
     const filename = path.basename(rawFilename);
 
     if (!filename) {
       return new NextResponse('Filename is required', { status: 400 });
     }
 
-    // Ruta a las imágenes normalizadas
-    const dataDir = path.join(process.cwd(), '..', 'data', 'images_normalized');
-    let filePath = path.join(dataDir, filename);
+    // Candidate directories to look for images
+    const candidateDirs = [
+      path.join(process.cwd(), 'public', 'images'),
+      path.join(process.cwd(), 'public'),
+      path.join(process.cwd(), 'src', 'assets', 'images'),
+      path.join(process.cwd(), '..', 'data', 'images_normalized'),
+    ];
 
-    if (!fs.existsSync(filePath)) {
-      // La base de datos puede pedir .png o .gif, pero el normalizador las convirtió a .jpg
-      const parsedPath = path.parse(filename);
-      const fallbackPath = path.join(dataDir, `${parsedPath.name}.jpg`);
-      
+    let foundPath: string | null = null;
+
+    for (const dir of candidateDirs) {
+      const candidatePath = path.join(dir, filename);
+      if (fs.existsSync(candidatePath)) {
+        foundPath = candidatePath;
+        break;
+      }
+      // Check .jpg fallback if name lacks extension
+      const parsed = path.parse(filename);
+      const fallbackPath = path.join(dir, `${parsed.name}.jpg`);
       if (fs.existsSync(fallbackPath)) {
-        filePath = fallbackPath;
-      } else {
-        return new NextResponse('Image not found', { status: 404 });
+        foundPath = fallbackPath;
+        break;
       }
     }
 
-    // MEJORA 2 (MIME Types): Añadimos soporte ampliado para más formatos
+    if (!foundPath) {
+      return new NextResponse('Image not found', { status: 404 });
+    }
+
     let contentType = 'image/jpeg';
-    const lowerName = filename.toLowerCase();
+    const lowerName = foundPath.toLowerCase();
     if (lowerName.endsWith('.png')) contentType = 'image/png';
     else if (lowerName.endsWith('.webp')) contentType = 'image/webp';
     else if (lowerName.endsWith('.gif')) contentType = 'image/gif';
     else if (lowerName.endsWith('.svg')) contentType = 'image/svg+xml';
 
-    // MEJORA 3 (Rendimiento): Usamos un Stream de lectura para no saturar la memoria RAM
-    const stat = fs.statSync(filePath);
-    const fileStream = fs.createReadStream(filePath);
+    const stat = fs.statSync(foundPath);
+    const fileStream = fs.createReadStream(foundPath);
     
-    // Adaptamos el stream nativo de Node.js al ReadableStream web de Next.js
     const webStream = new ReadableStream({
       start(controller) {
         fileStream.on('data', (chunk: Buffer | string) => controller.enqueue(typeof chunk === 'string' ? Buffer.from(chunk) : chunk));
@@ -61,7 +70,7 @@ export async function GET(
     return new NextResponse(webStream, {
       headers: {
         'Content-Type': contentType,
-        'Content-Length': stat.size.toString(), // Ayuda al cliente a conocer el peso total
+        'Content-Length': stat.size.toString(),
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });

@@ -1,460 +1,286 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTheme } from "./ThemeProvider";
-import type { HealthInfo } from "@/lib/types";
-import { healthCheck } from "@/lib/api";
+import { Icons } from "./Icons";
+import { CATALOG_JERSEYS } from "@/lib/catalog";
 
-type Tab = "search" | "test" | "config";
-
-const TABS: { id: Tab; label: string; icon: string; href?: string }[] = [
-  { id: "search", label: "Búsqueda", icon: "🔍", href: "/search" },
-  { id: "test", label: "Test", icon: "🧪", href: "/eval" },
-  { id: "config", label: "Config", icon: "⚙️" },
-];
-
-function SidebarContent({
-  activeTab,
-  setActiveTab,
-  pathname,
-  apiUrl,
-  urlInput,
-  setUrlInput,
-  health,
-  healthError,
-  checking,
-  handleCheck,
-  theme,
-  toggleTheme,
-  howOpen,
-  setHowOpen,
-}: {
-  activeTab: Tab;
-  setActiveTab: (t: Tab) => void;
-  pathname: string;
-  apiUrl: string;
-  urlInput: string;
-  setUrlInput: (v: string) => void;
-  health: HealthInfo | null;
-  healthError: string | null;
-  checking: boolean;
-  handleCheck: () => void;
-  theme: string;
-  toggleTheme: () => void;
-  howOpen: boolean;
-  setHowOpen: (v: boolean) => void;
-}) {
-  return (
-    <>
-      {/* ── Tab buttons ── */}
-      <div className="flex flex-col border-b border-[var(--border)]">
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const isNav = !!tab.href;
-
-          // Búsqueda y Test son links que navegan directo
-          if (isNav && tab.href) {
-            return (
-              <Link
-                key={tab.id}
-                href={tab.href}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors relative
-                  ${
-                    isActive
-                      ? "text-[var(--foreground)] bg-white/5"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/[0.03]"
-                  }
-                `}
-              >
-                <span className="text-base flex-shrink-0">{tab.icon}</span>
-                <span>{tab.label}</span>
-                {isActive && (
-                  <span className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-[#00a8ff] to-[#00d2ff] rounded-r-full" />
-                )}
-              </Link>
-            );
-          }
-
-          // Config es tab local (no navega)
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors relative
-                ${
-                  isActive
-                    ? "text-[var(--foreground)] bg-white/5"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/[0.03]"
-                }
-              `}
-            >
-              <span className="text-base flex-shrink-0">{tab.icon}</span>
-              <span>{tab.label}</span>
-              {isActive && (
-                <span className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-[#00a8ff] to-[#00d2ff] rounded-r-full" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Tab content ── */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-        {/* ══════════ Búsqueda ══════════ */}
-        {activeTab === "search" && (
-          <>
-            <div>
-              <h3 className="text-[0.7rem] font-bold uppercase tracking-[.16em] text-[var(--accent)] mb-2">
-                Motor activo
-              </h3>
-              <div className="p-3.5 rounded-xl border border-[rgba(0,210,255,0.3)] bg-gradient-to-br from-[rgba(0,210,255,0.08)] to-[rgba(58,123,213,0.05)]">
-                <div className="font-bold text-[#00d2ff] text-sm mb-1">⚡ Fusión</div>
-                <div className="text-[0.78rem] text-[var(--muted)] leading-relaxed">
-                  CLIP + OpenCLIP + SigLIP. Combina 3 modelos de visión para
-                  ser robusto a oclusiones y variaciones.
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-[0.7rem] font-bold uppercase tracking-[.16em] text-[var(--accent)] mb-2">
-                Identificación
-              </h3>
-              <div className="p-3 rounded-xl border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.05)] text-[0.78rem] text-[#8ef0c1] leading-relaxed">
-                Identifica <b>país</b> y <b>equipo</b> por colores,
-                patrón y elementos distintivos.
-              </div>
-            </div>
-
-            <hr className="border-[var(--border)]" />
-
-            <div>
-              <button
-                onClick={() => setHowOpen(!howOpen)}
-                className="w-full flex items-center justify-between text-sm font-semibold text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
-              >
-                <span>Cómo funciona</span>
-                <span className={`text-xs transition-transform ${howOpen ? "rotate-180" : ""}`}>▾</span>
-              </button>
-              {howOpen && (
-                <ol className="mt-3 text-[0.78rem] text-[var(--muted)] space-y-2 list-decimal list-inside leading-relaxed">
-                  <li><b>Subís</b> una imagen (JPG/JPEG/PNG).</li>
-                  <li>La <b>API</b> la prepara y genera embeddings.</li>
-                  <li>El <b>motor</b> recupera 200 candidatos y los reordena.</li>
-                  <li>El sistema <b>identifica</b> país y equipo.</li>
-                  <li>Se muestran las <b>5 más parecidas</b> con score.</li>
-                </ol>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* ══════════ Test ══════════ */}
-        {activeTab === "test" && (
-          <>
-            <div>
-              <h3 className="text-[0.7rem] font-bold uppercase tracking-[.16em] text-[var(--accent)] mb-2">
-                Criterios de juicio
-              </h3>
-              <p className="text-[0.72rem] text-[var(--muted)] mb-2">Fijos — el evaluador no los decide:</p>
-              <div className="space-y-1.5">
-                <div className="flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold text-xs w-16 flex-shrink-0">Acierto</span>
-                  <span className="text-[0.72rem] text-[var(--muted)]">
-                    Es el mismo diseño, aunque cambie color, año, escudo o sponsor.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-amber-400 font-bold text-xs w-16 flex-shrink-0">Sirve</span>
-                  <span className="text-[0.72rem] text-[var(--muted)]">
-                    No es el mismo, pero se lo mostrarías al cliente.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-rose-400 font-bold text-xs w-16 flex-shrink-0">No sirve</span>
-                  <span className="text-[0.72rem] text-[var(--muted)]">Es otro diseño.</span>
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-[var(--border)]" />
-
-            <div>
-              <h3 className="text-[0.7rem] font-bold uppercase tracking-[.16em] text-[var(--accent)] mb-2">
-                Métricas
-              </h3>
-              <div className="space-y-2 text-[0.78rem]">
-                <div className="flex items-start gap-2">
-                  <span className="text-[#7fd4ff] font-mono font-bold">P@1</span>
-                  <span className="text-[var(--muted)]">¿El primero es el bueno?</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-[#7fd4ff] font-mono font-bold">R@5</span>
-                  <span className="text-[var(--muted)]">¿El bueno aparece en los 5?</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-[#7fd4ff] font-mono font-bold">Util</span>
-                  <span className="text-[var(--muted)]">¿Los otros 4 sirven?</span>
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-[var(--border)]" />
-
-            <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-              <h3 className="text-[0.7rem] font-bold uppercase tracking-[.16em] text-amber-400 mb-1.5">Reglas</h3>
-              <ul className="text-[0.72rem] text-[var(--muted)] space-y-1 list-disc list-inside leading-relaxed">
-                <li><b>Nunca</b> usar imágenes del catálogo como consulta</li>
-                <li><b>Nunca</b> tocar el buscador ni los embeddings</li>
-              </ul>
-            </div>
-          </>
-        )}
-
-        {/* ══════════ Config ══════════ */}
-        {activeTab === "config" && (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[var(--muted)]">Tema claro</span>
-              <button
-                onClick={toggleTheme}
-                className={`relative w-11 h-6 rounded-full transition-colors ${
-                  theme === "light" ? "bg-[#00d2ff]" : "bg-[var(--muted)]"
-                }`}
-                aria-label="Toggle theme"
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow ${
-                    theme === "light" ? "translate-x-5" : ""
-                  }`}
-                />
-              </button>
-            </div>
-
-            <hr className="border-[var(--border)]" />
-
-            <div>
-              <h3 className="text-[0.7rem] font-bold uppercase tracking-[.16em] text-[var(--accent)] mb-2">
-                URL de la API
-              </h3>
-              <input
-                type="text"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="http://localhost:8000"
-                className="w-full px-3 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--border)] text-[var(--foreground)] text-sm font-mono focus:outline-none focus:border-[#00d2ff]/50 transition-colors"
-              />
-            </div>
-
-            <button
-              onClick={handleCheck}
-              disabled={checking}
-              className="w-full py-2.5 rounded-xl font-bold text-sm text-[var(--btn-primary-text)] bg-gradient-to-r from-[#00a8ff] to-[#00d2ff] hover:shadow-[0_10px_32px_rgba(0,190,255,.4)] transition-all disabled:opacity-50 active:scale-[0.98]"
-            >
-              {checking ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Verificando...
-                </span>
-              ) : (
-                "Verificar conexión"
-              )}
-            </button>
-
-            {healthError && (
-              <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                {healthError}
-              </div>
-            )}
-            {health && (
-              <div className="p-3 rounded-xl bg-[#34d399]/8 border border-[#34d399]/20 space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#34d399] shadow-[0_0_8px_rgba(52,211,153,.7)]" />
-                  <span className="text-sm text-[var(--foreground)] font-semibold">API OK</span>
-                </div>
-                <div className="text-sm text-[var(--muted)]">
-                  {health.products?.toLocaleString()} productos · {health.embeddings?.toLocaleString()} embeddings
-                </div>
-                <div className="text-xs text-[var(--muted)]">Modelo: {health.model}</div>
-                {health.desfase_detectado && (
-                  <div className="text-xs text-amber-400 mt-1">⚠ Desfase detectado entre IDs y embeddings</div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </>
-  );
+interface SidebarProps {
+  sidebarOpen: boolean;
+  onClose: () => void;
+  onSelectSample?: (sampleId: string) => void;
 }
 
 export default function Sidebar({
-  apiUrl,
-  onApiUrlChange,
-  health,
-  onHealthChange,
   sidebarOpen,
-  onToggle,
   onClose,
-}: {
-  apiUrl: string;
-  onApiUrlChange: (url: string) => void;
-  health: HealthInfo | null;
-  onHealthChange: (h: HealthInfo | null) => void;
-  sidebarOpen: boolean;
-  onToggle: () => void;
-  onClose: () => void;
-}) {
-  const pathname = usePathname();
-  const { theme, toggle } = useTheme();
-  const [activeTab, setActiveTab] = useState<Tab>(
-    pathname.startsWith("/eval") ? "test" : "search"
+  onSelectSample,
+}: SidebarProps) {
+  const [quantity, setQuantity] = useState(14);
+  const [selectedFabric, setSelectedFabric] = useState("Win Micro-Perforado Dry-Max");
+  const [selectedCollar, setSelectedCollar] = useState("Cuello en V Anatómico");
+  const [includeNames, setIncludeNames] = useState(true);
+  const [includeShield, setIncludeShield] = useState(true);
+
+  // Unit pricing calculation based on volume tiers
+  const unitPrice = useMemo(() => {
+    if (quantity >= 30) return 32;
+    if (quantity >= 12) return 38;
+    return 48;
+  }, [quantity]);
+
+  const estimatedTotal = useMemo(() => {
+    return quantity * unitPrice;
+  }, [quantity, unitPrice]);
+
+  const whatsappMessage = encodeURIComponent(
+    `Hola Atelier Sublitex, deseo cotizar una confección de camisetas personalizadas:
+• Cantidad: ${quantity} unidades
+• Precio estimado: S/ ${unitPrice} c/u (Total aprox: S/ ${estimatedTotal})
+• Tejido: ${selectedFabric}
+• Cuello: ${selectedCollar}
+• Nombres y dorsales: ${includeNames ? "Sí" : "No"}
+• Escudo de equipo: ${includeShield ? "Sí" : "No"}
+
+¿Podrían indicarme los tiempos de entrega y métodos de pago?`
   );
-  const [urlInput, setUrlInput] = useState(apiUrl);
-  const [healthError, setHealthError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [howOpen, setHowOpen] = useState(false);
-
-  // Hover state for desktop collapse
-  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleMouseEnter = useCallback(() => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-    if (!sidebarOpen) onToggle();
-  }, [sidebarOpen, onToggle]);
-
-  const handleMouseLeave = useCallback(() => {
-    hoverTimeout.current = setTimeout(() => {
-      if (sidebarOpen) onToggle();
-    }, 200);
-  }, [sidebarOpen, onToggle]);
-
-  const handleCheck = async () => {
-    onApiUrlChange(urlInput);
-    setChecking(true);
-    setHealthError(null);
-    const { data, error } = await healthCheck(urlInput);
-    setChecking(false);
-    if (error) {
-      setHealthError(error);
-      onHealthChange(null);
-    } else {
-      onHealthChange(data);
-    }
-  };
-
-  const sharedProps = {
-    activeTab,
-    setActiveTab,
-    pathname,
-    apiUrl,
-    urlInput,
-    setUrlInput,
-    health,
-    healthError,
-    checking,
-    handleCheck,
-    theme,
-    toggleTheme: toggle,
-    howOpen,
-    setHowOpen,
-  };
 
   return (
     <>
-      {/* ═══ Mobile: slide-over with backdrop ═══ */}
-      <div className="lg:hidden">
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-40 transition-opacity"
-            onClick={onClose}
-          />
-        )}
-        <aside
-          className={`fixed top-0 left-0 z-50 h-full w-72 flex flex-col
-            transition-transform duration-300 ease-in-out
-            bg-[var(--sidebar-bg)] border-r border-[var(--border)]
-            backdrop-blur-[14px]
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          `}
-        >
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border)]">
-            <span className="text-sm font-bold text-[var(--foreground)]">Menú</span>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/10 transition-colors"
-              aria-label="Cerrar menú"
-            >
-              ✕
-            </button>
-          </div>
-          <SidebarContent {...sharedProps} />
-        </aside>
-      </div>
+      {/* Background Dim Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${
+          sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      {/* ═══ Desktop: hover expand/collapse ═══ */}
+      {/* Slide-over Atelier Drawer */}
       <aside
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        style={{
-          width: sidebarOpen ? "18rem" : "3.5rem",
-          minWidth: sidebarOpen ? "18rem" : "3.5rem",
-        }}
-        className={`hidden lg:flex fixed top-0 left-0 z-50 h-full flex-col
-          transition-all duration-300 ease-in-out
-          bg-[var(--sidebar-bg)] border-r border-[var(--border)]
-          backdrop-blur-[14px]
-        `}
+        className={`fixed top-0 right-0 z-50 h-full w-full max-w-md bg-[var(--bg-subtle)] border-l border-[var(--border)] shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
+          sidebarOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
-        {sidebarOpen ? (
-          <>
-            {/* Toggle button */}
-            <div className="flex items-center justify-end px-3 py-2.5 border-b border-[var(--border)]">
-              <button
-                onClick={onToggle}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/10 transition-colors"
-                aria-label="Contraer sidebar"
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M10 3L5 8l5 5" />
-                </svg>
-              </button>
+        {/* Drawer Header */}
+        <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-semibold tracking-[0.2em] text-[#C5A880] uppercase">
+              Sastrería & Confección Deportiva
             </div>
-            <SidebarContent {...sharedProps} />
-          </>
-        ) : (
-          /* Collapsed: just icons */
-          <div className="flex flex-col items-center py-3 gap-3">
-            {TABS.map((tab) => (
-              <Link
-                key={tab.id}
-                href={tab.href || "#"}
-                onClick={(e) => {
-                  if (!tab.href) {
-                    e.preventDefault();
-                    setActiveTab(tab.id);
-                    onToggle();
-                  }
-                }}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-white/10 text-[var(--foreground)]"
-                    : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/5"
-                }`}
-                title={tab.label}
-              >
-                {tab.icon}
-              </Link>
-            ))}
+            <h2 className="text-base font-bold text-[var(--foreground-heading)] mt-0.5">
+              Cotizador & Atelier a Medida
+            </h2>
           </div>
-        )}
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 transition-colors cursor-pointer"
+            aria-label="Cerrar panel"
+          >
+            <Icons.X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Drawer Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-7">
+          {/* 1. Volume Calculator */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
+                1. Cantidad de Camisetas
+              </span>
+              <span className="text-sm font-bold font-mono text-[#C5A880] tabular-nums">
+                {quantity} prendas
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min="1"
+              max="60"
+              step="1"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              className="w-full accent-[#C5A880] cursor-pointer"
+            />
+
+            <div className="flex justify-between text-[11px] text-[var(--foreground-subtle)]">
+              <span>1 unidad (Muestra)</span>
+              <span>12 (Equipo)</span>
+              <span>30+ (Liga / Mayor)</span>
+            </div>
+
+            {/* Price Preview Box */}
+            <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] flex items-center justify-between">
+              <div>
+                <div className="text-xs text-[var(--foreground-muted)]">Precio unitario escala</div>
+                <div className="text-lg font-bold font-mono text-[var(--foreground-heading)] tabular-nums">
+                  S/ {unitPrice} <span className="text-xs font-normal text-[var(--foreground-subtle)]">/ camiseta</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-[var(--foreground-muted)]">Subtotal estimado</div>
+                <div className="text-lg font-bold font-mono text-[#C5A880] tabular-nums">
+                  S/ {estimatedTotal}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. Fabric Selection */}
+          <section className="space-y-3">
+            <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider block">
+              2. Tejido Deportivo Técnico
+            </span>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                {
+                  name: "Win Micro-Perforado Dry-Max",
+                  desc: "145g · Alta transpirabilidad con protección UV",
+                },
+                {
+                  name: "Poliéster Piqué Interlock Heavy",
+                  desc: "180g · Tacto formal, ideal para polos y retro",
+                },
+                {
+                  name: "Micro-Mesh Jacquard Pro",
+                  desc: "135g · Máxima ligereza para alta competencia",
+                },
+              ].map((fabric) => (
+                <button
+                  key={fabric.name}
+                  onClick={() => setSelectedFabric(fabric.name)}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    selectedFabric === fabric.name
+                      ? "border-[#C5A880] bg-[rgba(197,168,128,0.06)]"
+                      : "border-[var(--border)] bg-[var(--input-bg)] hover:border-[var(--border-strong)]"
+                  }`}
+                >
+                  <div className="text-xs font-semibold text-[var(--foreground-heading)]">
+                    {fabric.name}
+                  </div>
+                  <div className="text-[11px] text-[var(--foreground-muted)] mt-0.5">
+                    {fabric.desc}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* 3. Collar Style */}
+          <section className="space-y-3">
+            <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider block">
+              3. Tipo de Cuello & Acabado
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {["Cuello en V Anatómico", "Cuello Polo Camisero", "Cuello Redondo Match"].map(
+                (collar) => (
+                  <button
+                    key={collar}
+                    onClick={() => setSelectedCollar(collar)}
+                    className={`p-2.5 rounded-xl border text-center transition-all text-xs cursor-pointer ${
+                      selectedCollar === collar
+                        ? "border-[#C5A880] bg-[rgba(197,168,128,0.08)] text-[var(--foreground-heading)] font-semibold"
+                        : "border-[var(--border)] bg-[var(--input-bg)] text-[var(--foreground-muted)] hover:text-white"
+                    }`}
+                  >
+                    {collar}
+                  </button>
+                )
+              )}
+            </div>
+          </section>
+
+          {/* 4. Customization Toggles */}
+          <section className="space-y-2.5">
+            <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider block">
+              4. Personalización Incluida
+            </span>
+            <div className="space-y-2 text-xs">
+              <label className="flex items-center justify-between p-3 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] cursor-pointer">
+                <span className="text-[var(--foreground)]">Dorsales y nombres individuales</span>
+                <input
+                  type="checkbox"
+                  checked={includeNames}
+                  onChange={(e) => setIncludeNames(e.target.checked)}
+                  className="w-4 h-4 accent-[#C5A880] rounded cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] cursor-pointer">
+                <span className="text-[var(--foreground)]">Escudo del club sublimado HD</span>
+                <input
+                  type="checkbox"
+                  checked={includeShield}
+                  onChange={(e) => setIncludeShield(e.target.checked)}
+                  className="w-4 h-4 accent-[#C5A880] rounded cursor-pointer"
+                />
+              </label>
+            </div>
+          </section>
+
+          {/* 5. Quick Sample Presets */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
+                Modelos de Referencia
+              </span>
+              <Link
+                href="/catalog"
+                onClick={onClose}
+                className="text-xs text-[#C5A880] hover:underline"
+              >
+                Ver Catálogo Completo →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {CATALOG_JERSEYS.slice(0, 4).map((j) => (
+                <div
+                  key={j.id}
+                  onClick={() => {
+                    if (onSelectSample && j.sampleQueryId) {
+                      onSelectSample(j.sampleQueryId);
+                    }
+                    onClose();
+                  }}
+                  className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] hover:border-[#C5A880]/50 transition-all cursor-pointer group"
+                >
+                  <div className="aspect-[4/3] rounded-lg overflow-hidden bg-black/20 mb-2">
+                    <img
+                      src={j.image}
+                      alt={j.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="text-xs font-semibold text-[var(--foreground-heading)] truncate">
+                    {j.name}
+                  </div>
+                  <div className="text-[11px] text-[var(--foreground-muted)]">
+                    S/ {j.priceTeam} en equipo
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* Drawer Action Footer */}
+        <div className="p-6 border-t border-[var(--border)] space-y-3">
+          <a
+            href={`https://wa.me/?text=${whatsappMessage}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+          >
+            <Icons.MessageCircle className="w-4 h-4" />
+            <span>Solicitar Cotización por WhatsApp</span>
+          </a>
+          <p className="text-[11px] text-center text-[var(--foreground-subtle)]">
+            Asesoría directa con nuestro maestro de confección y patronaje textil.
+          </p>
+        </div>
       </aside>
     </>
   );
