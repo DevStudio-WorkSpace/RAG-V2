@@ -768,3 +768,47 @@ tal cual (sin normalización); normalizar_imagenes.py quedó como referencia.
 ### Prompt - elimina todos los .md que no sirven y que se quede lo importante
 **Propósito:** Quedarse solo con la documentación base para el banco nuevo.
 **Resultado:** Eliminados `REPORTES_HITO1.md`, `REPORTES_HITO2.md`, `REPORTES_HIT3.md`, `REPORTES_HITO3_OPTIMIZACION.md`, `HITO3.md`, `evaluation/README.md`, `evaluation/INFORME_SALA2_HITO2.md` (todos atados al banco Aimari). Conservados `AGENTS.md`, `README.md`, `TRABAJO.md`, `AI_LOG.md`. `evaluation/` queda vacío para la evaluación del banco nuevo.
+
+## Fecha: 2026-10-17 (documentación del último commit)
+
+### Prompt - hasme un md segun lo que se hizo en el ultimo commit registrado el cual es nueva interfaz grafica y boton directo a whtassap, entre otros, facil de comprender por humano y por ia
+**Propósito:** Documentar en un solo `.md` todo lo que trajo el último commit
+registrado (`643dcebd`, merge del PR #2 desde `feature/subida-sala5`), que en
+contenido real corresponde al commit `1b863a2f` de la rama `sala-5`.
+**Resultado:** Creado `RESUMEN_ULTIMO_COMMIT.md` con: identificación del commit,
+tabla archivo-por-archivo con conteo de líneas, y el detalle de las funciones
+nuevas — rediseño visual "Atelier Sublitex" con tema claro/oscuro, buscador
+`/search` (drag & drop, `Ctrl+V`, presets, skeletons, 3 modales), catálogo
+comercial `/catalog` (buscador, filtros, modal de ficha técnica), cotizador
+deslizante en `components/Sidebar.tsx`, **6 botones directos a WhatsApp**
+(`wa.me/?text=` con mensaje prellenado), `lib/api.ts` con timeout de 2.5 s y
+fallback simulado, `lib/catalog.ts` con 8 productos, route handler de imágenes
+con 4 directorios candidatos, `next.config.ts` con `output: "standalone"`,
+dependencias `lucide-react` + `motion`, y ajustes de ESLint/`metadata.json`.
+Incluye sección de riesgos: `.next/` commiteado, `frontend/src` ausente en `main`,
+`/eval` degradado (se perdió el evaluador del Hito 2 con métricas y CSV), fallback
+que oculta caídas de la API, WhatsApp sin número fijo, `motion` sin uso.
+
+## Fecha: 2026-10-19 (reescritura del md de mejora de UI)
+
+### Prompt - 'mejora del UI.md' modificalo, no es md del ultimo commit hecho es sobre el cambio a la UI de la pagina puedes hacer un md de eso
+**Propósito:** Convertir el documento en una descripción del **cambio de UI de
+la página**, no en un informe de commit.
+**Resultado:** Reescrito `mejora del UI.md` centrado en la interfaz: tabla
+Antes→Después, sistema de diseño "Atelier Sublitex" (tema claro/oscuro, tokens),
+estructura de la página (barra superior, footer, `/` → `/search`), detalle de
+pantallas (`/search` con drag&drop y Ctrl+V, `/catalog` con buscador y filtros,
+cotizador deslizante, `/eval` degradado a muestrario), tabla de los 6 botones de
+WhatsApp, tabla de componentes/datos nuevos, nota del "modo demo" de `lib/api.ts`,
+cómo ejecutar la interfaz y sección final de dónde está el código (`sala-5`,
+`frontend/src` ausente en `main`, `.next/` commiteado). Se eliminó la
+identificación de commits como eje del documento (quedó solo la referencia
+mínima para ubicar el código).
+
+### Prompt - modifica en una parte lo que se puede entender facil por persona y otro lado lo que va a leer la ia, ademas solo pon los cambios no cosas como la instalacion
+**Propósito:** Separar `mejora del UI.md` en dos lecturas y dejarlo solo con cambios.
+**Resultado:** Reestructurado en **Parte 1 (personas)** — lenguaje simple, qué se
+nota al usar la página, tabla Antes→Después — y **Parte 2 (IA)** — ubicación del
+código en git, rutas, tabla de pantallas/componentes con deltas, WhatsApp (6
+`wa.me`), fallback de `lib/api.ts`, config/dependencias y pendientes. Eliminada
+la sección de instalación/ejecución (`npm install`, `npm run dev`).
