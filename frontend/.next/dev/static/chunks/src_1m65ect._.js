@@ -771,10 +771,12 @@ function SearchPage() {
                         className: "grid grid-cols-1 gap-5",
                         children: resultados.map((r, idx)=>{
                             const rank = idx + 1;
-                            const pct = Math.max(0, Math.min(100, (r.score_reranking ?? r.score) * 100));
+                            const scoreValue = r.score_reranking ?? r.score ?? 0;
+                            const pct = Math.max(0, Math.min(100, scoreValue * 100));
+                            const imgSrc = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["imageUrl"])(r.imagen);
                             const country = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$countries$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["identifyCountry"])(r.nombre, r.id);
                             const matchedJersey = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$catalog$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CATALOG_JERSEYS"].find((j)=>j.id === r.id || r.nombre.includes(j.team) || j.name.includes(r.nombre));
-                            const whatsappText = encodeURIComponent(`Hola Atelier Sublitex, vi la camiseta ${r.nombre} (ID: ${r.id}) en su buscador con ${pct.toFixed(1)}% de coincidencia y deseo cotizar la confección para mi equipo.`);
+                            const whatsappText = encodeURIComponent(`Hola Atelier Sublitex, vi la camiseta ${r.nombre} (ID: ${r.id}) en su buscador con score de similitud ${scoreValue.toFixed(4)} y deseo cotizar la confección para mi equipo.`);
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "p-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] hover:border-[#C5A880]/50 transition-all flex flex-col md:flex-row items-start gap-6 shadow-lg group",
                                 children: [
@@ -783,12 +785,17 @@ function SearchPage() {
                                         className: "relative w-full md:w-56 aspect-[4/3] md:aspect-square rounded-xl overflow-hidden bg-black/30 border border-[var(--border)] flex-shrink-0 cursor-pointer group/img",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
-                                                src: r.imagen,
+                                                src: imgSrc ?? undefined,
                                                 alt: r.nombre,
-                                                className: "w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
+                                                className: "w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300",
+                                                loading: "lazy",
+                                                onError: (e)=>{
+                                                    // Si el proxy falla, mostrar placeholder en vez de imagen rota
+                                                    e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='100%' height='100%' fill='%231a2030'/><text x='50%' y='50%' fill='%238899aa' font-size='14' text-anchor='middle' dominant-baseline='middle'>Sin imagen</text></svg>";
+                                                }
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 363,
+                                                lineNumber: 365,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -798,26 +805,26 @@ function SearchPage() {
                                                         className: "w-4 h-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 369,
+                                                        lineNumber: 377,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                         children: "Ver Ficha Técnica"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 370,
+                                                        lineNumber: 378,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 368,
+                                                lineNumber: 376,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/search/page.tsx",
-                                        lineNumber: 359,
+                                        lineNumber: 361,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -839,7 +846,7 @@ function SearchPage() {
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 380,
+                                                                        lineNumber: 388,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -847,7 +854,7 @@ function SearchPage() {
                                                                         children: "·"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 381,
+                                                                        lineNumber: 389,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -857,7 +864,7 @@ function SearchPage() {
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 382,
+                                                                        lineNumber: 390,
                                                                         columnNumber: 27
                                                                     }, this),
                                                                     matchedJersey && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -867,26 +874,26 @@ function SearchPage() {
                                                                                 children: "·"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                                lineNumber: 385,
+                                                                                lineNumber: 393,
                                                                                 columnNumber: 31
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                                 children: matchedJersey.collection
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                                lineNumber: 386,
+                                                                                lineNumber: 394,
                                                                                 columnNumber: 31
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 384,
+                                                                        lineNumber: 392,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 379,
+                                                                lineNumber: 387,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -894,13 +901,13 @@ function SearchPage() {
                                                                 children: r.nombre
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 390,
+                                                                lineNumber: 398,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 377,
+                                                        lineNumber: 385,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -908,33 +915,33 @@ function SearchPage() {
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 className: "text-xl font-extrabold font-mono text-[#C5A880] tabular-nums",
-                                                                children: [
-                                                                    pct.toFixed(1),
-                                                                    "%"
-                                                                ]
-                                                            }, void 0, true, {
+                                                                children: scoreValue.toFixed(4)
+                                                            }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 397,
+                                                                lineNumber: 405,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                                 className: "text-[11px] text-[var(--foreground-subtle)]",
-                                                                children: pct >= 95 ? "Coincidencia exacta" : pct >= 85 ? "Alta similitud" : "Alternativa de diseño"
-                                                            }, void 0, false, {
+                                                                children: [
+                                                                    "Score de similitud ",
+                                                                    pct >= 95 ? "· Coincidencia exacta" : pct >= 85 ? "· Alta similitud" : "· Alternativa de diseño"
+                                                                ]
+                                                            }, void 0, true, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 400,
+                                                                lineNumber: 408,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 396,
+                                                        lineNumber: 404,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 376,
+                                                lineNumber: 384,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -949,7 +956,7 @@ function SearchPage() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 409,
+                                                        lineNumber: 417,
                                                         columnNumber: 25
                                                     }, this),
                                                     matchedJersey && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -959,14 +966,14 @@ function SearchPage() {
                                                                 children: "·"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 413,
+                                                                lineNumber: 421,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 children: matchedJersey.league
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 414,
+                                                                lineNumber: 422,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -974,14 +981,14 @@ function SearchPage() {
                                                                 children: "·"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 415,
+                                                                lineNumber: 423,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 children: matchedJersey.season
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 416,
+                                                                lineNumber: 424,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -989,7 +996,7 @@ function SearchPage() {
                                                                 children: "·"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 417,
+                                                                lineNumber: 425,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -999,19 +1006,19 @@ function SearchPage() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 418,
+                                                                lineNumber: 426,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 412,
+                                                        lineNumber: 420,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 407,
+                                                lineNumber: 415,
                                                 columnNumber: 21
                                             }, this),
                                             matchedJersey && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1024,7 +1031,7 @@ function SearchPage() {
                                                                 children: "Tejido:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 427,
+                                                                lineNumber: 435,
                                                                 columnNumber: 27
                                                             }, this),
                                                             " ",
@@ -1033,13 +1040,13 @@ function SearchPage() {
                                                                 children: matchedJersey.sublimationSpecs.fabric
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 428,
+                                                                lineNumber: 436,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 426,
+                                                        lineNumber: 434,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1049,7 +1056,7 @@ function SearchPage() {
                                                                 children: "Precio equipo (12+):"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 433,
+                                                                lineNumber: 441,
                                                                 columnNumber: 27
                                                             }, this),
                                                             " ",
@@ -1062,13 +1069,13 @@ function SearchPage() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 434,
+                                                                lineNumber: 442,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 432,
+                                                        lineNumber: 440,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1078,7 +1085,7 @@ function SearchPage() {
                                                                 children: "Tiempo de entrega:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 439,
+                                                                lineNumber: 447,
                                                                 columnNumber: 27
                                                             }, this),
                                                             " ",
@@ -1087,19 +1094,19 @@ function SearchPage() {
                                                                 children: matchedJersey.turnaround
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 440,
+                                                                lineNumber: 448,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 438,
+                                                        lineNumber: 446,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 425,
+                                                lineNumber: 433,
                                                 columnNumber: 23
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1119,20 +1126,20 @@ function SearchPage() {
                                                                         className: "w-3.5 h-3.5 text-[#C5A880]"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 455,
+                                                                        lineNumber: 463,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                         children: "Comparar con mi foto"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 456,
+                                                                        lineNumber: 464,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 451,
+                                                                lineNumber: 459,
                                                                 columnNumber: 27
                                                             }, this),
                                                             matchedJersey && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1143,26 +1150,26 @@ function SearchPage() {
                                                                         className: "w-3.5 h-3.5"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 465,
+                                                                        lineNumber: 473,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                         children: "Ficha de Patronaje"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                                        lineNumber: 466,
+                                                                        lineNumber: 474,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 461,
+                                                                lineNumber: 469,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 449,
+                                                        lineNumber: 457,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
@@ -1175,38 +1182,38 @@ function SearchPage() {
                                                                 className: "w-4 h-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 478,
+                                                                lineNumber: 486,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 children: "Cotizar Confección"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                                lineNumber: 479,
+                                                                lineNumber: 487,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/search/page.tsx",
-                                                        lineNumber: 472,
+                                                        lineNumber: 480,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 448,
+                                                lineNumber: 456,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/search/page.tsx",
-                                        lineNumber: 375,
+                                        lineNumber: 383,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, r.id, true, {
                                 fileName: "[project]/src/app/search/page.tsx",
-                                lineNumber: 354,
+                                lineNumber: 356,
                                 columnNumber: 17
                             }, this);
                         })
@@ -1236,7 +1243,7 @@ function SearchPage() {
                                             children: "Comparador Visual de Similitud"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 496,
+                                            lineNumber: 504,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1244,13 +1251,13 @@ function SearchPage() {
                                             children: compareModal.match.nombre
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 499,
+                                            lineNumber: 507,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 495,
+                                    lineNumber: 503,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1260,18 +1267,18 @@ function SearchPage() {
                                         className: "w-5 h-5"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/search/page.tsx",
-                                        lineNumber: 507,
+                                        lineNumber: 515,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 503,
+                                    lineNumber: 511,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 494,
+                            lineNumber: 502,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1285,7 +1292,7 @@ function SearchPage() {
                                             children: "Foto de Consulta"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 513,
+                                            lineNumber: 521,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1296,18 +1303,18 @@ function SearchPage() {
                                                 className: "max-h-full max-w-full object-contain"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 517,
+                                                lineNumber: 525,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 516,
+                                            lineNumber: 524,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 512,
+                                    lineNumber: 520,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1316,41 +1323,41 @@ function SearchPage() {
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             className: "text-xs font-semibold text-[#C5A880] uppercase tracking-wider",
                                             children: [
-                                                "Resultado en Catálogo (",
-                                                ((compareModal.match.score_reranking ?? compareModal.match.score) * 100).toFixed(1),
-                                                "%)"
+                                                "Resultado en Catálogo · Score de similitud ",
+                                                ((compareModal.match.score_reranking ?? compareModal.match.score ?? 0) * 100).toFixed(1),
+                                                "%"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 526,
+                                            lineNumber: 534,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "aspect-[4/3] rounded-xl overflow-hidden bg-black/40 border border-[#C5A880]/40 flex items-center justify-center",
                                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
-                                                src: compareModal.match.imagen,
+                                                src: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["imageUrl"])(compareModal.match.imagen) ?? undefined,
                                                 alt: "Resultado",
                                                 className: "max-h-full max-w-full object-contain"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/search/page.tsx",
-                                                lineNumber: 530,
+                                                lineNumber: 538,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 529,
+                                            lineNumber: 537,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 525,
+                                    lineNumber: 533,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 511,
+                            lineNumber: 519,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1362,7 +1369,7 @@ function SearchPage() {
                                     children: "Cerrar"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 540,
+                                    lineNumber: 548,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
@@ -1375,37 +1382,37 @@ function SearchPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 554,
+                                            lineNumber: 562,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             children: "Cotizar Este Modelo"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 555,
+                                            lineNumber: 563,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 546,
+                                    lineNumber: 554,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 539,
+                            lineNumber: 547,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/search/page.tsx",
-                    lineNumber: 493,
+                    lineNumber: 501,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/search/page.tsx",
-                lineNumber: 492,
+                lineNumber: 500,
                 columnNumber: 9
             }, this),
             selectedJerseyModal && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1423,7 +1430,7 @@ function SearchPage() {
                                             children: "Ficha Técnica & Patronaje Atelier"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 568,
+                                            lineNumber: 576,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1431,13 +1438,13 @@ function SearchPage() {
                                             children: selectedJerseyModal.name
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 571,
+                                            lineNumber: 579,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 567,
+                                    lineNumber: 575,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1447,18 +1454,18 @@ function SearchPage() {
                                         className: "w-5 h-5"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/search/page.tsx",
-                                        lineNumber: 579,
+                                        lineNumber: 587,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 575,
+                                    lineNumber: 583,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 566,
+                            lineNumber: 574,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1469,12 +1476,12 @@ function SearchPage() {
                                 className: "w-full h-full object-cover"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/search/page.tsx",
-                                lineNumber: 584,
+                                lineNumber: 592,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 583,
+                            lineNumber: 591,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1482,7 +1489,7 @@ function SearchPage() {
                             children: selectedJerseyModal.description
                         }, void 0, false, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 591,
+                            lineNumber: 599,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1496,7 +1503,7 @@ function SearchPage() {
                                             children: "Tejido Técnico"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 598,
+                                            lineNumber: 606,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1504,13 +1511,13 @@ function SearchPage() {
                                             children: selectedJerseyModal.sublimationSpecs.fabric
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 599,
+                                            lineNumber: 607,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 597,
+                                    lineNumber: 605,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1521,7 +1528,7 @@ function SearchPage() {
                                             children: "Cuello & Acabado"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 604,
+                                            lineNumber: 612,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1529,13 +1536,13 @@ function SearchPage() {
                                             children: selectedJerseyModal.sublimationSpecs.collar
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 605,
+                                            lineNumber: 613,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 603,
+                                    lineNumber: 611,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1546,7 +1553,7 @@ function SearchPage() {
                                             children: "Corte & Mangas"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 610,
+                                            lineNumber: 618,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1554,13 +1561,13 @@ function SearchPage() {
                                             children: selectedJerseyModal.sublimationSpecs.sleeve
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 611,
+                                            lineNumber: 619,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 609,
+                                    lineNumber: 617,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1571,7 +1578,7 @@ function SearchPage() {
                                             children: "Técnica de Impresión"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 616,
+                                            lineNumber: 624,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1579,19 +1586,19 @@ function SearchPage() {
                                             children: selectedJerseyModal.sublimationSpecs.printType
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 617,
+                                            lineNumber: 625,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 615,
+                                    lineNumber: 623,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 596,
+                            lineNumber: 604,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1604,7 +1611,7 @@ function SearchPage() {
                                             children: "Muestra Individual"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 626,
+                                            lineNumber: 634,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1615,13 +1622,13 @@ function SearchPage() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 627,
+                                            lineNumber: 635,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 625,
+                                    lineNumber: 633,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1631,7 +1638,7 @@ function SearchPage() {
                                             children: "Equipo Completo (12+)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 632,
+                                            lineNumber: 640,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1643,13 +1650,13 @@ function SearchPage() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 633,
+                                            lineNumber: 641,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 631,
+                                    lineNumber: 639,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1659,7 +1666,7 @@ function SearchPage() {
                                             children: "Liga / Torneo (30+)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 638,
+                                            lineNumber: 646,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1671,19 +1678,19 @@ function SearchPage() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 639,
+                                            lineNumber: 647,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 637,
+                                    lineNumber: 645,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 624,
+                            lineNumber: 632,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1695,7 +1702,7 @@ function SearchPage() {
                                     children: "Cerrar"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 646,
+                                    lineNumber: 654,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
@@ -1708,37 +1715,37 @@ function SearchPage() {
                                             className: "w-4 h-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 660,
+                                            lineNumber: 668,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             children: "Cotizar por WhatsApp"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/search/page.tsx",
-                                            lineNumber: 661,
+                                            lineNumber: 669,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/search/page.tsx",
-                                    lineNumber: 652,
+                                    lineNumber: 660,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/search/page.tsx",
-                            lineNumber: 645,
+                            lineNumber: 653,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/search/page.tsx",
-                    lineNumber: 565,
+                    lineNumber: 573,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/search/page.tsx",
-                lineNumber: 564,
+                lineNumber: 572,
                 columnNumber: 9
             }, this)
         ]
@@ -1909,116 +1916,131 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 "use strict";
 
 __turbopack_context__.s([
+    "ApiError",
+    ()=>ApiError,
     "healthCheck",
     ()=>healthCheck,
+    "imageUrl",
+    ()=>imageUrl,
     "searchImage",
     ()=>searchImage
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$catalog$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/catalog.ts [app-client] (ecmascript)");
-;
+class ApiError extends Error {
+    status;
+    constructor(message, status){
+        super(message), this.status = status;
+        this.name = "ApiError";
+    }
+}
 async function healthCheck(apiUrl) {
     try {
         const resp = await fetch(`${apiUrl.replace(/\/+$/, "")}/health`, {
-            signal: AbortSignal.timeout(2500)
+            signal: AbortSignal.timeout(5000)
         });
-        if (resp.ok) {
+        if (!resp.ok) {
             return {
-                data: await resp.json(),
-                error: null
+                data: null,
+                error: `HTTP ${resp.status}`
             };
         }
-    } catch  {
-    // Graceful fallback to client-side catalog mode
+        return {
+            data: await resp.json(),
+            error: null
+        };
+    } catch (err) {
+        return {
+            data: null,
+            error: err instanceof Error ? err.message : "Error de red"
+        };
     }
-    // Fallback for public demonstration when backend is not connected
-    return {
-        data: {
-            status: "activo",
-            products: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$catalog$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CATALOG_JERSEYS"].length,
-            embeddings: 1840,
-            model: "Fashion-CLIP + YOLO (Catálogo Sublitex)"
-        },
-        error: null
-    };
 }
 async function searchImage(apiUrl, file, modelo = "fusion") {
+    const url = apiUrl.replace(/\/+$/, "");
+    // Validación cliente: tipo y tamaño ANTES de enviar (evita viajes inútiles)
+    if (!file.type.startsWith("image/")) {
+        return {
+            data: null,
+            error: "El archivo no es una imagen válida (JPG, PNG o WEBP)."
+        };
+    }
+    if (file.size === 0) {
+        return {
+            data: null,
+            error: "El archivo está vacío."
+        };
+    }
+    if (file.size > 15 * 1024 * 1024) {
+        return {
+            data: null,
+            error: "La imagen supera el máximo de 15 MB."
+        };
+    }
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("modo", "auto");
+    fd.append("modelo", modelo);
+    let resp;
     try {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("modo", "auto");
-        fd.append("modelo", modelo);
-        const resp = await fetch(`${apiUrl.replace(/\/+$/, "")}/search/image`, {
+        resp = await fetch(`${url}/search/image`, {
             method: "POST",
             body: fd,
-            signal: AbortSignal.timeout(2500)
+            // CLIP en CPU puede tardar: nada de timeouts agresivos de 2.5s.
+            signal: AbortSignal.timeout(180_000)
         });
-        if (resp.ok) {
-            const json = await resp.json();
+    } catch (err) {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
             return {
-                data: json,
-                error: null
+                data: null,
+                error: "La API tardó más de 3 minutos en responder. Verificá que esté activa en http://localhost:8000/health"
             };
         }
-    } catch  {
-    // Fallback to local intelligent catalog search
-    }
-    // Realistic local search simulation for public users
-    const fileName = file.name.toLowerCase();
-    // Sort catalog based on filename keywords or natural order
-    const scoredCatalog = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$catalog$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CATALOG_JERSEYS"].map((jersey, index)=>{
-        let baseScore = 0.88 - index * 0.05;
-        if (fileName.includes("atelier") && jersey.id.includes("ATL-BESPOKE")) baseScore = 0.992;
-        else if ((fileName.includes("heritage") || fileName.includes("retro")) && jersey.id.includes("ATL-HERITAGE")) baseScore = 0.988;
-        else if ((fileName.includes("emerald") || fileName.includes("mesh")) && jersey.id.includes("ATL-PRO-EMERALD")) baseScore = 0.984;
-        else if (fileName.includes("peru") && jersey.id.includes("PER")) baseScore = 0.985;
-        else if ((fileName.includes("arg") || fileName.includes("messi")) && jersey.id.includes("ARG")) baseScore = 0.978;
-        else if ((fileName.includes("madrid") || fileName.includes("real")) && jersey.id.includes("RMA")) baseScore = 0.965;
-        else if ((fileName.includes("barca") || fileName.includes("barcelona")) && jersey.id.includes("FCB")) baseScore = 0.962;
-        else if (fileName.includes("boca") && jersey.id.includes("BOC")) baseScore = 0.958;
         return {
-            jersey,
-            score: Math.min(0.99, Math.max(0.65, baseScore + (Math.random() * 0.03 - 0.015)))
+            data: null,
+            error: "No se pudo conectar con la API. ¿Está levantada? (uvicorn api.main:app --port 8000)"
         };
-    });
-    scoredCatalog.sort((a, b)=>b.score - a.score);
-    const resultados = scoredCatalog.map((item, idx)=>({
-            id: item.jersey.id,
-            nombre: item.jersey.name,
-            imagen: item.jersey.image,
-            url: item.jersey.image,
-            proveedor: "Sublitex Oficial",
-            score: Number(item.score.toFixed(4)),
-            score_reranking: Number(item.score.toFixed(4)),
-            score_recuperacion: Number((item.score * 0.95).toFixed(4)),
-            posicion_inicial: idx + 1,
-            posicion_final: idx + 1,
-            modelo_utilizado: "Fusión Multimodal Sublitex"
-        }));
-    // Simulate a very quick, realistic visual processing time
-    await new Promise((r)=>setTimeout(r, 600));
-    return {
-        data: {
-            resultados,
-            modo: "auto",
-            modelo: "fashion-clip-rerank-v2",
-            tiempo_segundos: 0.48,
-            query_id: `query_${Date.now()}`,
-            preprocesamiento: {
-                ok: true,
-                backend: "yolo-v8-jersey-detector",
-                tiempo_segundos: 0.12,
-                bbox: "0.15,0.08,0.85,0.92",
-                recorte_pct: 88,
-                pasos: [
-                    "Detección de camiseta y torso",
-                    "Normalización de ángulo y luz",
-                    "Extracción de vectores visuales",
-                    "Reordenamiento por similitud cromática"
-                ]
-            }
-        },
-        error: null
-    };
+    }
+    if (!resp.ok) {
+        let detalle = `HTTP ${resp.status}`;
+        try {
+            const body = await resp.json();
+            if (body?.error) detalle = String(body.error);
+        } catch  {
+        // respuesta no-JNA: mantener detalle genérico
+        }
+        return {
+            data: null,
+            error: detalle
+        };
+    }
+    try {
+        const json = await resp.json();
+        if (!Array.isArray(json.resultados)) {
+            return {
+                data: null,
+                error: "La API devolvió una respuesta inesperada."
+            };
+        }
+        return {
+            data: json,
+            error: null
+        };
+    } catch  {
+        return {
+            data: null,
+            error: "La API devolvió una respuesta ilegible."
+        };
+    }
+}
+function imageUrl(imagen) {
+    // La API devuelve el nombre de archivo puro (ej. "AIM-P001-001.jpg").
+    // El proxy /api/images/[filename] lo resuelve desde data/images_normalized.
+    if (!imagen) return null;
+    const limpio = imagen.trim();
+    if (!limpio) return null;
+    if (limpio.startsWith("http://") || limpio.startsWith("https://")) {
+        return limpio; // URL absoluta externa
+    }
+    return `/api/images/${encodeURIComponent(limpio)}`;
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);

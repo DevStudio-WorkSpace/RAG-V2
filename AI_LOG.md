@@ -763,6 +763,39 @@ tal cual (sin normalización); normalizar_imagenes.py quedó como referencia.
 - Conservado: `scripts/consolidar.py` (constructor del banco nuevo; sus constantes PROVEEDOR_NOMBRE/PREFIJO="Designs Aimari"/"AIM" hay que ajustarlas a la fuente nueva), reportes `.md` históricos, `evaluation/INFORME_SALA2_HITO2.md`+`README.md` como evidencia.
 - Verificado: `py_compile` OK en api, frontend y scripts canónicos.
 
+## Fecha: 2026-10-19 (levantar backend + frontend con el banco SBX)
+
+### Prompt - "LISTO ENTONCES EJECUTAR EL BACKEND Y EL FRONTEND"
+**Propósito:** Poner en marcha el sistema completo de búsqueda visual con el nuevo
+banco SBX (284 imágenes de data/DATA_NEW) para probar subiendo fotos.
+**Resultado:**
+- Se detectó que el venv del proyecto NO está en `sala-5\.venv` sino en
+  `C:\Users\lucia\Downloads\S5\.venv` (contiene fastapi, torch CPU, transformers,
+  cv2, uvicorn, streamlit). Con él se completó el pipeline:
+  1. `normalizar_data_new.py` → 284 imágenes a `data/images_normalized/*.jpg`.
+  2. `generar_embeddings.py` → `embeddings.npy` + `ids.npy` (284, 512 dims, 0 errores, 24,8 s).
+  3. `generar_indices_comparativos.py` → `embeddings_clip.npy` (512), `embeddings_openclip.npy` (512) y `embeddings_siglip.npy` (768); 284/284, 0 errores. Necesarios porque la interfaz usa el modelo `fusion` por defecto.
+- Backend FastAPI levantado: `uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload`.
+  `/health` → status ok, 284 productos, 284 embeddings, 512 dims, `desfase_detectado=false`.
+  `POST /search/image` (modo=auto, modelo=fusion) probado con `SBX-01-0001.jpg` →
+  Top 1 correcto con `score=0.9556`, `score_reranking=0.8579`, `modelo=clip+openclip+siglip`.
+- **IMPORTANTE:** `frontend/` ya NO es Streamlit; es una app **Next.js** (React 19,
+  Next 16.3.5) cliente de la API en `NEXT_PUBLIC_API_URL=http://localhost:8000`.
+  Se levantó con `npm run dev` → http://localhost:3000 (HTTP 200).
+  Su proxy `/api/images/[filename]` sirve las imágenes de `data/images_normalized/`
+  (probado: `SBX-01-0001.jpg` → HTTP 200 image/jpeg 482 KB).
+- El AGENTS.md describe un frontend Streamlit (`streamlit run frontend/app.py`) que
+  ya no existe; la estructura canónica real es Next.js.
+- NOTA: no se hizo commit ni push.
+
+## Fecha: 2026-10-19 (carga de banco SBX DATA_NEW)
+
+### Prompt - "Puedes decirme como cargar o actualizar la data ya que ahora tengo nuevas imagenes en data/DATA_NEW..."
+**Propósito:** El usuario tiene ~280 imágenes PNG nuevas en `data/DATA_NEW` con nomenclatura `SBX-###-NNNN.png` y necesita integrarlas al sistema de búsqueda visual. No existe `products.csv`, `embeddings.npy`, `ids.npy` ni `images_normalized/` (fueron eliminados en la limpieza del banco Aimari).
+**Resultado:**
+- `scripts/crear_csv_data_new.py`: genera `data/products.csv` a partir de `DATA_NEW`. Lee los archivos que cumplen el patrón `SBX-\d{2}-\d{4}.png`, crea el ID como el nombre sin extensión, asigna proveedor "SBX", página "1", y URL placeholder.
+- `scripts/normalizar_data_new.py`: copia las imágenes de `DATA_NEW` a `data/images_normalized/` convirtiéndolas a JPG con el mismo ID. No modifica los originales.
+
 ## Fecha: 2026-09-21 (limpieza .md viejos)
 
 ### Prompt - elimina todos los .md que no sirven y que se quede lo importante
