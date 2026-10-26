@@ -1,7 +1,0 @@
-{
-  "/api/images/[filename]/route": "app/api/images/[filename]/route.js",
-  "/catalog/page": "app/catalog/page.js",
-  "/eval/page": "app/eval/page.js",
-  "/page": "app/page.js",
-  "/search/page": "app/search/page.js"
-}

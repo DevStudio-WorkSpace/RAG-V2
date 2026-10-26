@@ -39,3 +39,6 @@ Thumbs.db
 
 # Preferencias locales de la interfaz
 frontend/.theme_pref.json
+
+# Qdrant (persistencia local reproducible con scripts/migrar_a_qdrant.py)
+/qdrant_data/

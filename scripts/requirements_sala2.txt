@@ -1,9 +1,0 @@
-streamlit
-sentence-transformers
-torch
-pillow
-scikit-learn
-numpy
-pandas
-openpyxl
-requests

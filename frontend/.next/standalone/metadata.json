@@ -1,8 +1,0 @@
-{
-  "name": "Aimari RAG Visual - Búsqueda de Camisetas",
-  "description": "Búsqueda visual RAG y evaluación de camisetas deportivas con Fashion-CLIP, YOLO y reranking.",
-  "permissions": [],
-  "capabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}

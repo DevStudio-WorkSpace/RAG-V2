@@ -1,0 +1,47 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: sublitex_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: sublitex_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./qdrant_data:/app/qdrant_data
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION_NAME=sublitex_fashion_v1
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CATALOG_PATH=/app/data/images_normalized
+    depends_on:
+      - qdrant
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sublitex_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/images_normalized:/data/images_normalized:ro
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api

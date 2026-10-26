@@ -845,3 +845,91 @@ nota al usar la página, tabla Antes→Después — y **Parte 2 (IA)** — ubica
 código en git, rutas, tabla de pantallas/componentes con deltas, WhatsApp (6
 `wa.me`), fallback de `lib/api.ts`, config/dependencias y pendientes. Eliminada
 la sección de instalación/ejecución (`npm install`, `npm run dev`).
+
+## Fecha: 2026-10-23 (actualización README.md)
+
+### Prompt - Guía de inicialización del sistema y carga de datos para actualizar datos ya obtenidos y cargar nuevo contenido
+**Propósito:** Actualizar `README.md` para reflejar el estado real del proyecto tras la migración del banco Aimari al banco SBX (284 imágenes). Incluir una guía de inicialización del sistema (pasos 1-7: crear CSV, normalizar imágenes, generar embeddings, generar índices comparativos, validar, levantar API, levantar frontend) y una sección de carga de datos para actualizar datos existentes y cargar nuevo contenido (caso A: banco completamente nuevo; caso B: actualizar/añadir imágenes).
+**Resultado:** `README.md` reescrito: descripción del proyecto con banco SBX (284 productos), diagrama de flujo actualizado (DATA_NEW → products.csv → images_normalized → embeddings.npy/ids.npy → embeddings_clip/openclip/siglip.npy → API FastAPI → frontend Next.js), requisitos previos (Python + Node.js), ubicación del venv (nivel arriba del repo), guía paso a paso de inicialización, flujo de carga de datos con casos A y B, reglas importantes de carga (products.csv única fuente, ids.npy alineado, imágenes_normalized banco canónico, índices prohibidos), contrato de respuesta, modos del endpoint, reglas de evaluación Hito 2, manejo de errores, estructura del proyecto, tabla de archivos generados clave, solución de problemas y próximos pasos. Frontend documentado como Next.js (cliente puro de la API) en lugar de Streamlit. Conteo actualizado: 284 productos, 284 embeddings (284×512 CLIP, 284×768 SigLIP).
+
+## Fecha: 2026-10-23 (actualización QA_REPORTE.md)
+
+### Prompt - Análisis exhaustivo de prueba y error del QA_REPORTE
+**Propósito:** Reescribir `QA_REPORTE.md` porque el anterior (fecha 2026-10-19) estaba desactualizado: refería al banco Sublitex antiguo, Qdrant/Docker como backend principal, y documentación de Streamlit. El sistema real ahora usa banco SBX (284 productos), índices `.npy` locales, API FastAPI y frontend Next.js.
+**Resultado:** `QA_REPORTE.md` reescrito con: estado actual del sistema (artefactos en data/, servicios activos en puertos 8000 y 3000), secuencia de carga de datos ejecutada paso a paso (5 scripts, 284 productos, 0 errores), matriz de pruebas individuales (GET /health PASS, POST /search/image clip PASS, POST /search_image fusion ⚠️ timeout en CPU, frontend Next.js PASS, alineación ids↔csv↔embeddings PASS), tabla de errores conocidos y resolución (E1-E6), matriz de cobertura Hito 2 (50 consultas pendientes), lista de pruebas pendientes críticas (sección 4) y veredicto QA final por componente.
+
+## Fecha: 2026-10-23 (actualización QA_REPORTE.md — incidentes operativos)
+
+### Prompt - Agregar sección de incidentes operativos al QA_REPORTE
+**Propósito:** Documentar en el QA_REPORTE los incidentes ocurridos durante la sesión de carga y levantamiento del sistema (uvicorn colgado, Invoke-WebRequest sin soporte multipart, timeout de fusion, log bloqueado).
+**Resultado:** Agregada sección 6 "Incidentes operativos de esta sesión" con tabla I1-I4 documentando cada incidente, síntoma, causa y resolución. Nota importante sobre que uvicorn debe mantenerse en proceso desvinculado (background) en Windows.
+
+## Fecha: 2026-10-23 (ejecución completa de pruebas y actualización QA_REPORTE)
+
+### Prompt - Ejecutar todas las pruebas pendientes y cumplir requisitos del Hito 2
+**Propósito:** Cumplir con todos los requisitos del proyecto: crear el conjunto de 50 consultas Hito 2, ejecutar pruebas de error obligatorias, ejecutar prueba de imagen externa, ejecutar comparación Hito 1 vs Hito 2, y actualizar QA_REPORTE con resultados reales.
+**Resultado:**
+- `scripts/generar_consultas_hito2.py` (nuevo): genera 50 consultas (10 diseños × 5 categorías: exacta, sin_marco, recoloreada, recortada, persona) con imágenes variantes en `data/consultas/` y CSV en `evaluation/consultas_hito2.csv` con `id_correcto` verificado. 50/50 generadas, 0 omitidas.
+- `test_errores.py` (temporal, ya eliminado): 3 pruebas ejecutadas — archivo inválido → HTTP 400 ✅; imagen 16×16 → HTTP 400 con mensaje claro ✅; imagen externa → HTTP 200 con 5 resultados ✅.
+- `scripts/compare_hito1_hito2.py` ejecutado en dos pases (--solo hito1 y --solo hito2) debido a que `fusion` es muy lento en CPU:
+  - Hito 1 (CLIP): Top1 43/50 (86%), Top5 47/50 (94%), P50/50 90/100, 2248 ms prom.
+  - Hito 2 (CLIP+reranking): Top1 44/50 (88%), Top5 48/50 (96%), P50/50 92/100, 4594 ms prom.
+  - Por categoría: recortada mejora de 6/10 a 7/10 en Top1; exacta y sin_marco 10/10 en ambos.
+- `QA_REPORTE.md` reescrito completamente con todos los resultados reales, matriz de cobertura 50/50 completada, comparación H1 vs H2 con números reales, veredicto final por componente, y sección de incidentes operativos I1-I4.
+- `AI_LOG.md` actualizado con esta entrada.
+
+Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en background), Frontend Next.js en http://localhost:3000.
+
+## Fecha: 2026-10-23 (mapa de secciones visuales del frontend)
+
+### Prompt - "Hazme un .md sobre el apartado web que carpeta o archivo altera cada apartado visual del frontend"
+
+**Propósito:** Crear un documento .md que responda qué carpeta o archivo del frontend (app Next.js en `frontend/`) altera cada sección visual de la interfaz.
+
+**Resultado:**
+- Creado `frontend/UI_SECCIONES.md`: mapa de cada sección visual → archivo(s) que la implementa o altera.
+- Secciones mapeadas: tema/tokens globales (`src/app/globals.css`, `src/components/ThemeProvider.tsx`, `src/app/layout.tsx`); layout TopBar/Drawer/Footer (`src/app/sidebar-layout.tsx`, `src/components/Sidebar.tsx`); home `/` (`src/app/page.tsx`); buscador `/search` (`src/app/search/page.tsx`, `src/components/Skeleton.tsx`, `src/lib/api.ts`, proxy `src/app/api/images/[filename]/route.ts`); catálogo `/catalog` (`src/app/catalog/page.tsx`, `src/lib/catalog.ts`, `src/lib/countries.ts`); muestrario `/eval` (`src/app/eval/page.tsx`); proxy de imágenes (`src/app/api/images/[filename]/route.ts`).
+- Incluye tabla resumen rápida, contexto de la mejora del UI (2026-10-19), pendientes que implican cambios visuales y pasos para verificar levantamiento.
+
+**Verificado:** documento nuevo de solo Markdown (sin cambios de código fuente).
+
+**Pendiente:** ninguno nuevo; documental.
+
+**Nota:** no se hizo commit ni push.
+
+## Fecha: 2026-10-25 (Fase 1 — auditoría de repositorio y limpieza hacia producción)
+
+### Prompt - "Actúa como Ingeniero de Software Principal y Arquitecto… auditar, limpiar y preparar para producción Sublitex (fases: auditoría, arquitectura RAG+Qdrant, checklist de producción, mentoría de lógica)"
+
+**Propósito:** Fase 1 — auditar el árbol de directorios de Sublitex, clasificar artefactos/código muerto/duplicados y aplicar la limpieza no destructiva del repositorio bajo esquema de co-coding guiado.
+
+**Resultado:**
+- Auditoría completa (1.561 archivos trackeados, 57 cambios pendientes previos): detectados 865 archivos de build `frontend/.next/` y 2 de `qdrant_data/` trackeados indebidamente; `yolov8n.pt` trackeado (decisión de LFS/setup pendiente); `data/DATA_NEW/` duplicado de `images_normalized/` y ~12 scripts de un solo uso difieren (usuario decidió dejarlos donde están por ahora); ~6 módulos `core/` sin importadores en Python (candidatos a código muerto, verificación pendiente).
+- `.gitignore` raíz: añadida regla `/qdrant_data/` (la única carencia real; `frontend/.gitignore` ya cubría `.next/` y `*.tsbuildinfo`).
+- `git rm -r --cached frontend/.next qdrant_data`: 867 archivos sacados del índice de git SIN borrar del disco. Corregido el diagnóstico inicial: el problema no era la ausencia de reglas, sino archivos trackeados a pesar de las reglas existentes.
+- **Hallazgo crítico nuevo:** `core/` (capa Qdrant completa), `api/qdrant_engine.py`, `scripts/migrar_a_qdrant.py`, `.env.example`, `QA_REPORTE.md`, `evaluation/` y `data/consultas/` (50 consultas Hito 2) están SIN trackear → toda la capa Qdrant de Sublitex y la evidencia de evaluación solo existen en esta máquina. Commit pendiente de autorización explícita del usuario.
+- Decisiones del usuario registradas: Sublitex = este repo; stack definitivo FastAPI + Qdrant + Next.js; Streamlit (`.streamlit/`) y motores npy Hito 1/2 quedan como legado documentado (regeneración de AGENTS.md/README = Fase 2).
+- Purga de artefactos del sistema ejecutada (autorizada por el usuario): eliminados **`frontend/.next/` (396 MB)** previa verificación de que no había `next dev` (puertos 3000/8000 libres; los 8 procesos `node` eran servidores MCP), 4 carpetas `__pycache__` (incluye bytecode huérfano de `scripts/auditoria_seccion00.py`, script ya inexistente), `api_output.log`, `frontend/tsconfig.tsbuildinfo` y `scripts/consolidar_output.txt` (este último sí estaba trackeado → `git rm` para llevar su borrado al índice). Total liberado en disco: ~372 MB.
+- NO eliminados por ser decisiones semánticas, no artefactos del sistema: `yolov8n.pt` (referenciado por `core/vision_pipeline.py:37` y auto-descargable por Ultralytics), `frontend/.git` (repo anidado real con 3 commits propios: Initial commit / feat: update architecture / refactor: rebrand — historial único), `.streamlit/` (legado Streamlit), `data/DATA_NEW/` (deferido por el usuario).
+
+**Pendiente:** decisión sobre `yolov8n.pt`, `frontend/.git` y `.streamlit/`; Fase 2 (arquitectura Clean Architecture: un solo motor activo, separación cliente Qdrant/embeddings/CRUD/API/UI) y Fase 3 (inyección de env vars, timeouts asíncronos, CORS, auto-creación de colecciones).
+
+## Fecha: 2026-10-25 (Fase 2 — Depuración definitiva, eliminación de archivos innecesarios y estructura para despliegue)
+
+### Prompt - "Análisis de todos los archivos sin sobrepensar y eliminar archivos innecesarios no conectados al RAG/sistema general, organizar todo de golpe con estructura limpia lista para desplegar (Qdrant, Python, Frontend) y reporte corto .md"
+
+**Propósito:** Eliminar archivos innecesarios, scripts legacy, módulos independientes huérfanos y binarios sobrantes para dejar la estructura limpia y lista para despliegue del sistema RAG con FastAPI, Qdrant y Next.js.
+
+**Acciones y Resultados:**
+- Eliminados módulos no conectados en `core/`: `database_sql.py`, `compound_segmentation.py`, `adaptador_imagenes.py`, `cdr_seguridad.py`, `sublitex.py`, `vision_pipeline.py`.
+- Eliminado modelo binario sobrante: `yolov8n.pt` (~6.5 MB).
+- Eliminada carpeta `prompts/` (no integrada al flujo RAG).
+- Eliminados 16 scripts huérfanos/legacy en `scripts/`: `GUIA_SALA4.txt`, `requirements.txt`, `requirements_sala2.txt`, `analizar_formatos.py`, `consolidar.py`, `normalizar_imagenes.py`, `revisar_muestra_50.py`, `validate_dataset.py`, `get_product.py`, `evidencia_hito2.py`, `reporte_metricas.py`, `reporte_comparativo.py`, `evaluar_hito2.py`, `regenerar_consultas.py`, `generar_consultas_prueba.py`, `generar_consultas_hito2.py`.
+- Eliminados índices duplicados no canónicos: `data/embeddings_banco_propio.npy` y `data/ids_banco_propio.npy`.
+- Eliminados residuos: `.streamlit/`, `mejora del UI.md`, `frontend/CLAUDE.md`.
+- Preservados únicamente los 9 scripts operativos requeridos para el pipeline RAG y evaluación.
+- Ajustadas configuraciones en `core/config.py`, `.env` y `.env.example` (`CATALOG_PATH=./data/images_normalized`).
+- Agregada dependencia faltante `pydantic-settings>=2.0.0` a `requirements.txt`.
+- Creados `Dockerfile.api` y `docker-compose.yml` para despliegue integral (FastAPI + Qdrant + Next.js).
+- Generado reporte completo de estado y readiness en `REPORTE_LIMPIEZA.md`.
+- Creada guía de despliegue para equipo en `PRODUCCION_SERVER.md` (instrucciones de verificación, empaquetado, configuración de IP pública y orquestación).
