@@ -219,7 +219,21 @@ html, body {
 }
 
 .dropzone-atelier:hover,
-.dropzone-atelier.is-active {
+.dropzone-atelier.is-active,
+.dropzone-atelier:focus-visible {
   border-color: var(--accent-gold);
   background: rgba(197, 168, 128, 0.04);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-gold-glow);
+}
+
+/* Focus visible for buttons/links */
+:focus-visible {
+  outline: 2px solid rgba(197, 168, 128, 0.7);
+  outline-offset: 2px;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
 }

@@ -41,6 +41,7 @@ import {
   Keyboard,
   Maximize2,
   AlertTriangle,
+  Menu,
 } from "lucide-react";
 
 export const Icons = {
@@ -88,4 +89,5 @@ export const Icons = {
   Keyboard,
   Maximize2,
   AlertTriangle,
+  Menu,
 };

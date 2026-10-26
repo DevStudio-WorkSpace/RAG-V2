@@ -1,34 +1,44 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { CATALOG_JERSEYS, type CatalogJersey } from "@/lib/catalog";
 import { Icons } from "@/components/Icons";
 
+const ITEMS_PER_PAGE = 24;
+
 export default function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCollection, setSelectedCollection] = useState<string>("all");
   const [selectedJersey, setSelectedJersey] = useState<CatalogJersey | null>(null);
-
-  const collections = useMemo(() => {
-    const list = Array.from(new Set(CATALOG_JERSEYS.map((j) => j.collection)));
-    return ["all", ...list];
-  }, []);
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q === "") return CATALOG_JERSEYS;
     return CATALOG_JERSEYS.filter((jersey) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        jersey.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        jersey.team.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        jersey.country.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesCollection =
-        selectedCollection === "all" || jersey.collection === selectedCollection;
-
-      return matchesSearch && matchesCollection;
+      return (
+        jersey.id.toLowerCase().includes(q) ||
+        jersey.name.toLowerCase().includes(q)
+      );
     });
-  }, [searchQuery, selectedCollection]);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * ITEMS_PER_PAGE;
+  const end = start + ITEMS_PER_PAGE;
+  const paged = filtered.slice(start, end);
+
+  const goToPage = (p: number) => {
+    setPage(Math.min(Math.max(1, p), totalPages));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   return (
     <div className="space-y-12">
@@ -37,11 +47,11 @@ export default function CatalogPage() {
         <div className="text-[11px] font-semibold tracking-[0.22em] text-[#C5A880] uppercase">
           Atelier Sublitex · Archivo & Confección Deportiva
         </div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[var(--foreground-heading)] [text-wrap:balance]">
-          Catálogo Oficial de Camisetas Deportivas
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[var(--foreground-heading)] [text-wrap:balance]">
+          Catálogo Oficial
         </h1>
         <p className="text-base sm:text-lg text-[var(--foreground-muted)] max-w-2xl leading-relaxed">
-          Explora nuestra colección de alta gama: ediciones bespoke, selecciones internacionales, clubes de élite y líneas retro preparadas para confección y sublimación de precisión.
+          Catálogo completo con todos los modelos disponibles. Todos los precios son <span className="text-[#C5A880] font-semibold">a consultar</span>. Cotiza directo por WhatsApp con cantidad, tallas y personalización.
         </p>
       </section>
 
@@ -51,47 +61,25 @@ export default function CatalogPage() {
         <div className="relative flex-1">
           <Icons.Search className="w-4 h-4 text-[var(--foreground-subtle)] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
-            type="text"
+            type="search"
             placeholder="Buscar por equipo, selección, código o país..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs text-[var(--foreground)] placeholder-[var(--foreground-subtle)] focus:outline-none focus:border-[#C5A880]/60 transition-all"
+            aria-label="Buscar en catálogo"
           />
         </div>
 
-        {/* Collection Selector */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          <button
-            onClick={() => setSelectedCollection("all")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-              selectedCollection === "all"
-                ? "bg-[#C5A880] text-[#0A0D14] font-bold"
-                : "bg-[var(--input-bg)] text-[var(--foreground-muted)] hover:text-white border border-[var(--border)]"
-            }`}
-          >
-            Todas las Colecciones
-          </button>
-          {collections
-            .filter((c) => c !== "all")
-            .map((col) => (
-              <button
-                key={col}
-                onClick={() => setSelectedCollection(col)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                  selectedCollection === col
-                    ? "bg-[#C5A880] text-[#0A0D14] font-bold"
-                    : "bg-[var(--input-bg)] text-[var(--foreground-muted)] hover:text-white border border-[var(--border)]"
-                }`}
-              >
-                {col}
-              </button>
-            ))}
+        <div className="flex items-center gap-2 text-xs text-[var(--foreground-muted)]">
+          <span className="px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--input-bg)]">
+            {filtered.length} modelos · Página {safePage} / {totalPages}
+          </span>
         </div>
       </section>
 
       {/* ── Product Grid ── */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
-        {filtered.map((jersey) => {
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {paged.map((jersey) => {
           const whatsappQuote = encodeURIComponent(
             `Hola Atelier Sublitex, me interesa cotizar la camiseta ${jersey.name} (Código: ${jersey.id}) que vi en su catálogo para mi equipo.`
           );
@@ -103,23 +91,26 @@ export default function CatalogPage() {
             >
               <div>
                 {/* Photo showcase with hover reveal */}
-                <div
-                  onClick={() => setSelectedJersey(jersey)}
-                  className="w-full aspect-[4/3] bg-black/30 overflow-hidden relative cursor-pointer"
-                >
-                  <img
-                    src={jersey.image}
-                    alt={jersey.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md text-white text-[11px] font-mono border border-white/10">
-                    {jersey.id}
-                  </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5">
-                    <Icons.Maximize2 className="w-4 h-4" />
-                    <span>Ver Ficha de Patronaje</span>
-                  </div>
+              <button
+                type="button"
+                onClick={() => setSelectedJersey(jersey)}
+                className="w-full aspect-[4/3] bg-black/30 overflow-hidden relative cursor-pointer text-left"
+                aria-label={`Ver ficha técnica de ${jersey.name}`}
+              >
+                <img
+                  src={jersey.image}
+                  alt={jersey.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+                <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md text-white text-[11px] font-mono border border-white/10">
+                  {jersey.id}
                 </div>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5">
+                  <Icons.Maximize2 className="w-4 h-4" />
+                  <span>Ver Ficha de Patronaje</span>
+                </div>
+              </button>
 
                 {/* Details */}
                 <div className="p-6 space-y-3.5">
@@ -144,37 +135,29 @@ export default function CatalogPage() {
                   {/* Pricing info */}
                   <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs">
                     <div>
-                      <span className="text-[var(--foreground-subtle)] block text-[11px]">En equipo (12+):</span>
-                      <span className="font-bold font-mono text-[#C5A880] text-sm tabular-nums">
-                        S/ {jersey.priceTeam} <span className="text-[11px] font-normal text-[var(--foreground-subtle)]">c/u</span>
-                      </span>
+                    <span className="text-[var(--foreground-subtle)] block text-[11px]">Precio:</span>
+                    <span className="font-bold font-mono text-[#C5A880] text-sm tabular-nums">
+                      A consultar
+                    </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[var(--foreground-subtle)] block text-[11px]">Entrega estimada:</span>
-                      <span className="font-semibold text-[var(--foreground)] text-xs">
-                        {jersey.turnaround}
-                      </span>
+                  <span className="text-[var(--foreground-subtle)] block text-[11px]">Entrega</span>
+                  <span className="font-semibold text-[var(--foreground)] text-xs">
+                    {jersey.turnaround}
+                  </span>
                     </div>
                   </div>
 
-                  {/* Color Swatches */}
                   <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[11px] text-[var(--foreground-subtle)] mr-1">Tonos:</span>
-                    {jersey.colorHexes.map((hex, i) => (
-                      <span
-                        key={i}
-                        className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-sm"
-                        style={{ backgroundColor: hex }}
-                        title={jersey.colors[i] || hex}
-                      />
-                    ))}
+                    <span className="text-[11px] text-[var(--foreground-subtle)]">Código:</span>
+                    <span className="text-[11px] font-mono text-[var(--foreground-heading)]">{jersey.id}</span>
                   </div>
                 </div>
               </div>
 
               {/* Card Footer Actions */}
-              <div className="p-6 pt-0 flex items-center gap-2.5">
+              <div className="p-5 sm:p-6 pt-0 flex items-center gap-2.5">
                 <Link
                   href="/search"
                   className="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold border border-[var(--border)] bg-[var(--input-bg)] text-[var(--foreground)] hover:border-[#C5A880]/50 flex items-center justify-center gap-1.5 transition-all text-center"
@@ -184,11 +167,11 @@ export default function CatalogPage() {
                 </Link>
 
                 <a
-                  href={`https://wa.me/?text=${whatsappQuote}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(`Hola Atelier Sublitex, me interesa cotizar el modelo ${jersey.id} (${jersey.name}) del catálogo oficial. Cantidad: ____ Tallas: ____ Nombres/dorsales: ____ Logos: ____`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95"
-                  title="Cotizar en WhatsApp"
+                  title="Cotizar por WhatsApp"
                 >
                   <Icons.MessageCircle className="w-4 h-4" />
                   <span>Cotizar</span>
@@ -198,6 +181,30 @@ export default function CatalogPage() {
           );
         })}
       </section>
+
+      {totalPages > 1 && (
+        <section className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)]">
+          <div className="text-xs text-[var(--foreground-muted)]">
+            Mostrando {start + 1}-{Math.min(end, filtered.length)} de {filtered.length}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => goToPage(safePage - 1)}
+              disabled={safePage === 1}
+              className="px-3 py-1.5 rounded-lg text-xs border border-[var(--border)] bg-[var(--input-bg)] disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#C5A880]/50"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => goToPage(safePage + 1)}
+              disabled={safePage === totalPages}
+              className="px-3 py-1.5 rounded-lg text-xs border border-[var(--border)] bg-[var(--input-bg)] disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#C5A880]/50"
+            >
+              Siguiente
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* ── Modal for Technical Specifications ── */}
       {selectedJersey && (

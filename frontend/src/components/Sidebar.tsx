@@ -1,78 +1,87 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { Icons } from "./Icons";
 import { CATALOG_JERSEYS } from "@/lib/catalog";
 
 interface SidebarProps {
   sidebarOpen: boolean;
   onClose: () => void;
-  onSelectSample?: (sampleId: string) => void;
 }
 
-export default function Sidebar({
-  sidebarOpen,
-  onClose,
-  onSelectSample,
-}: SidebarProps) {
-  const [quantity, setQuantity] = useState(14);
-  const [selectedFabric, setSelectedFabric] = useState("Win Micro-Perforado Dry-Max");
-  const [selectedCollar, setSelectedCollar] = useState("Cuello en V Anatómico");
-  const [includeNames, setIncludeNames] = useState(true);
-  const [includeShield, setIncludeShield] = useState(true);
+const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
 
-  // Unit pricing calculation based on volume tiers
-  const unitPrice = useMemo(() => {
-    if (quantity >= 30) return 32;
-    if (quantity >= 12) return 38;
-    return 48;
-  }, [quantity]);
+export default function Sidebar({ sidebarOpen, onClose }: SidebarProps) {
+  const [productId, setProductId] = useState<string>("");
+  const [quantity, setQuantity] = useState(12);
+  const [sizes, setSizes] = useState<Record<string, number>>({
+    XS: 0, S: 2, M: 4, L: 4, XL: 2, XXL: 0, "3XL": 0,
+  });
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [team, setTeam] = useState("");
+  const [colors, setColors] = useState("");
+  const [notes, setNotes] = useState("");
+  const [namesNumbers, setNamesNumbers] = useState(true);
+  const [logos, setLogos] = useState(true);
 
-  const estimatedTotal = useMemo(() => {
-    return quantity * unitPrice;
-  }, [quantity, unitPrice]);
+  const totalQty = Object.values(sizes).reduce((a, b) => a + b, 0);
+  const qty = totalQty > 0 ? totalQty : quantity;
+
+  const selectedProduct = CATALOG_JERSEYS.find((j) => j.id === productId);
+
+  const toggleSize = (s: string, delta: number) => {
+    setSizes((prev) => {
+      const next = { ...prev, [s]: Math.max(0, (prev[s] || 0) + delta) };
+      return next;
+    });
+  };
+
+  const sizesText = SIZES.filter((s) => (sizes[s] || 0) > 0)
+    .map((s) => `${s}: ${sizes[s]}`)
+    .join(" | ");
 
   const whatsappMessage = encodeURIComponent(
-    `Hola Atelier Sublitex, deseo cotizar una confección de camisetas personalizadas:
-• Cantidad: ${quantity} unidades
-• Precio estimado: S/ ${unitPrice} c/u (Total aprox: S/ ${estimatedTotal})
-• Tejido: ${selectedFabric}
-• Cuello: ${selectedCollar}
-• Nombres y dorsales: ${includeNames ? "Sí" : "No"}
-• Escudo de equipo: ${includeShield ? "Sí" : "No"}
-
-¿Podrían indicarme los tiempos de entrega y métodos de pago?`
+    `*COTIZACIÓN ATELIER SUBLITEX*\n\n` +
+    `*Producto:* ${selectedProduct ? `${selectedProduct.id} - ${selectedProduct.name}` : "Por definir / A partir de imagen"}\n` +
+    `*Cantidad total:* ${qty} unidades\n` +
+    `*Tallas:* ${sizesText || `General ${qty} unidades`}\n\n` +
+    `*Datos:* \n` +
+    `- Nombre/Contacto: ${name || "No indicado"}\n` +
+    `- Teléfono/WhatsApp: ${phone || "No indicado"}\n` +
+    `- Equipo/Club: ${team || "No indicado"}\n\n` +
+    `*Personalización:* \n` +
+    `- Colores/Diseño: ${colors || "Según modelo / Enviar imagen/referencia"}\n` +
+    `- Nombres y dorsales: ${namesNumbers ? "Sí" : "No"}\n` +
+    `- Logos/Escudos: ${logos ? "Sí" : "No"}\n\n` +
+    `*Notas:* ${notes || "Sin notas"}\n\n` +
+    `Quisiera recibir cotización con precio por unidad, total, tiempo de entrega y forma de pago.`
   );
 
   return (
     <>
-      {/* Background Dim Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-black/75 backdrop-blur-sm transition-opacity duration-300 ${
           sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Slide-over Atelier Drawer */}
       <aside
         className={`fixed top-0 right-0 z-50 h-full w-full max-w-md bg-[var(--bg-subtle)] border-l border-[var(--border)] shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
           sidebarOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Drawer Header */}
-        <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
+        <div className="p-5 sm:p-6 border-b border-[var(--border)] flex items-center justify-between">
           <div>
             <div className="text-[11px] font-semibold tracking-[0.2em] text-[#C5A880] uppercase">
-              Sastrería & Confección Deportiva
+              Cotizador Rápido
             </div>
             <h2 className="text-base font-bold text-[var(--foreground-heading)] mt-0.5">
-              Cotizador & Atelier a Medida
+              Cotización por WhatsApp
             </h2>
           </div>
-
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-white/5 transition-colors cursor-pointer"
@@ -82,203 +91,104 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Drawer Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-7">
-          {/* 1. Volume Calculator */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
-                1. Cantidad de Camisetas
-              </span>
-              <span className="text-sm font-bold font-mono text-[#C5A880] tabular-nums">
-                {quantity} prendas
-              </span>
-            </div>
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+          <section className="space-y-2">
+            <label className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
+              1) Modelo del catálogo
+            </label>
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[#C5A880]/60"
+            >
+              <option value="">Por definir (enviar imagen/referencia)</option>
+              {CATALOG_JERSEYS.slice(0, 80).map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.id} - {j.name}
+                </option>
+              ))}
+            </select>
+            {selectedProduct && (
+              <div className="flex items-center gap-3 p-2.5 rounded-xl border border-[var(--border)] bg-[var(--input-bg)]">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-black/30 flex-shrink-0">
+                  <img src={selectedProduct.image} alt={selectedProduct.id} className="w-full h-full object-cover" />
+                </div>
+                <div className="text-xs">
+                  <div className="font-semibold text-[var(--foreground-heading)]">{selectedProduct.id}</div>
+                  <div className="text-[var(--foreground-muted)]">Precio: A consultar</div>
+                </div>
+              </div>
+            )}
+          </section>
 
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
+                2) Tallas y cantidades
+              </label>
+              <span className="text-xs font-mono text-[#C5A880]">Total: {qty}</span>
+            </div>
+            <div className="grid grid-cols-7 gap-1.5">
+              {SIZES.map((s) => (
+                <div key={s} className="flex flex-col items-center gap-1">
+                  <div className="text-[10px] text-[var(--foreground-muted)]">{s}</div>
+                  <div className="flex flex-col items-center rounded-lg border border-[var(--border)] overflow-hidden">
+                    <button onClick={() => toggleSize(s, 1)} className="px-1.5 py-0.5 text-xs hover:bg-white/5">+</button>
+                    <div className="px-1.5 py-0.5 text-xs font-mono w-full text-center bg-[var(--input-bg)]">{sizes[s]}</div>
+                    <button onClick={() => toggleSize(s, -1)} className="px-1.5 py-0.5 text-xs hover:bg-white/5">-</button>
+                  </div>
+                </div>
+              ))}
+            </div>
             <input
-              type="range"
-              min="1"
-              max="60"
-              step="1"
+              type="number"
+              min={1}
               value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              className="w-full accent-[#C5A880] cursor-pointer"
+              onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+              className="w-full px-3 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs"
+              placeholder="O cantidad total si no desglosas tallas"
             />
-
-            <div className="flex justify-between text-[11px] text-[var(--foreground-subtle)]">
-              <span>1 unidad (Muestra)</span>
-              <span>12 (Equipo)</span>
-              <span>30+ (Liga / Mayor)</span>
-            </div>
-
-            {/* Price Preview Box */}
-            <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] flex items-center justify-between">
-              <div>
-                <div className="text-xs text-[var(--foreground-muted)]">Precio unitario escala</div>
-                <div className="text-lg font-bold font-mono text-[var(--foreground-heading)] tabular-nums">
-                  S/ {unitPrice} <span className="text-xs font-normal text-[var(--foreground-subtle)]">/ camiseta</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-[var(--foreground-muted)]">Subtotal estimado</div>
-                <div className="text-lg font-bold font-mono text-[#C5A880] tabular-nums">
-                  S/ {estimatedTotal}
-                </div>
-              </div>
-            </div>
           </section>
 
-          {/* 2. Fabric Selection */}
-          <section className="space-y-3">
-            <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider block">
-              2. Tejido Deportivo Técnico
-            </span>
-            <div className="grid grid-cols-1 gap-2">
-              {[
-                {
-                  name: "Win Micro-Perforado Dry-Max",
-                  desc: "145g · Alta transpirabilidad con protección UV",
-                },
-                {
-                  name: "Poliéster Piqué Interlock Heavy",
-                  desc: "180g · Tacto formal, ideal para polos y retro",
-                },
-                {
-                  name: "Micro-Mesh Jacquard Pro",
-                  desc: "135g · Máxima ligereza para alta competencia",
-                },
-              ].map((fabric) => (
-                <button
-                  key={fabric.name}
-                  onClick={() => setSelectedFabric(fabric.name)}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                    selectedFabric === fabric.name
-                      ? "border-[#C5A880] bg-[rgba(197,168,128,0.06)]"
-                      : "border-[var(--border)] bg-[var(--input-bg)] hover:border-[var(--border-strong)]"
-                  }`}
-                >
-                  <div className="text-xs font-semibold text-[var(--foreground-heading)]">
-                    {fabric.name}
-                  </div>
-                  <div className="text-[11px] text-[var(--foreground-muted)] mt-0.5">
-                    {fabric.desc}
-                  </div>
-                </button>
-              ))}
-            </div>
+          <section className="space-y-2">
+            <label className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
+              3) Datos de contacto
+            </label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre y apellido" className="w-full px-3 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs" />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono / WhatsApp" className="w-full px-3 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs" />
+            <input value={team} onChange={(e) => setTeam(e.target.value)} placeholder="Equipo / Club / Empresa" className="w-full px-3 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs" />
           </section>
 
-          {/* 3. Collar Style */}
-          <section className="space-y-3">
-            <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider block">
-              3. Tipo de Cuello & Acabado
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              {["Cuello en V Anatómico", "Cuello Polo Camisero", "Cuello Redondo Match"].map(
-                (collar) => (
-                  <button
-                    key={collar}
-                    onClick={() => setSelectedCollar(collar)}
-                    className={`p-2.5 rounded-xl border text-center transition-all text-xs cursor-pointer ${
-                      selectedCollar === collar
-                        ? "border-[#C5A880] bg-[rgba(197,168,128,0.08)] text-[var(--foreground-heading)] font-semibold"
-                        : "border-[var(--border)] bg-[var(--input-bg)] text-[var(--foreground-muted)] hover:text-white"
-                    }`}
-                  >
-                    {collar}
-                  </button>
-                )
-              )}
-            </div>
-          </section>
-
-          {/* 4. Customization Toggles */}
-          <section className="space-y-2.5">
-            <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider block">
-              4. Personalización Incluida
-            </span>
-            <div className="space-y-2 text-xs">
-              <label className="flex items-center justify-between p-3 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] cursor-pointer">
-                <span className="text-[var(--foreground)]">Dorsales y nombres individuales</span>
-                <input
-                  type="checkbox"
-                  checked={includeNames}
-                  onChange={(e) => setIncludeNames(e.target.checked)}
-                  className="w-4 h-4 accent-[#C5A880] rounded cursor-pointer"
-                />
-              </label>
-
-              <label className="flex items-center justify-between p-3 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] cursor-pointer">
-                <span className="text-[var(--foreground)]">Escudo del club sublimado HD</span>
-                <input
-                  type="checkbox"
-                  checked={includeShield}
-                  onChange={(e) => setIncludeShield(e.target.checked)}
-                  className="w-4 h-4 accent-[#C5A880] rounded cursor-pointer"
-                />
-              </label>
-            </div>
-          </section>
-
-          {/* 5. Quick Sample Presets */}
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
-                Modelos de Referencia
-              </span>
-              <Link
-                href="/catalog"
-                onClick={onClose}
-                className="text-xs text-[#C5A880] hover:underline"
-              >
-                Ver Catálogo Completo →
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {CATALOG_JERSEYS.slice(0, 4).map((j) => (
-                <div
-                  key={j.id}
-                  onClick={() => {
-                    if (onSelectSample && j.sampleQueryId) {
-                      onSelectSample(j.sampleQueryId);
-                    }
-                    onClose();
-                  }}
-                  className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] hover:border-[#C5A880]/50 transition-all cursor-pointer group"
-                >
-                  <div className="aspect-[4/3] rounded-lg overflow-hidden bg-black/20 mb-2">
-                    <img
-                      src={j.image}
-                      alt={j.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="text-xs font-semibold text-[var(--foreground-heading)] truncate">
-                    {j.name}
-                  </div>
-                  <div className="text-[11px] text-[var(--foreground-muted)]">
-                    S/ {j.priceTeam} en equipo
-                  </div>
-                </div>
-              ))}
-            </div>
+          <section className="space-y-2">
+            <label className="text-xs font-bold text-[var(--foreground-heading)] uppercase tracking-wider">
+              4) Personalización
+            </label>
+            <input value={colors} onChange={(e) => setColors(e.target.value)} placeholder="Colores o referencia (nombre/código)" className="w-full px-3 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs" />
+            <label className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-xs">
+              <span>Nombres y dorsales</span>
+              <input type="checkbox" checked={namesNumbers} onChange={(e) => setNamesNumbers(e.target.checked)} className="accent-[#C5A880]" />
+            </label>
+            <label className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-xs">
+              <span>Logos / Escudos</span>
+              <input type="checkbox" checked={logos} onChange={(e) => setLogos(e.target.checked)} className="accent-[#C5A880]" />
+            </label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales (telas, acabados, plazo, etc.)" className="w-full px-3 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs min-h-[70px]" />
           </section>
         </div>
 
-        {/* Drawer Action Footer */}
-        <div className="p-6 border-t border-[var(--border)] space-y-3">
+        <div className="p-5 sm:p-6 border-t border-[var(--border)] space-y-2">
           <a
             href={`https://wa.me/?text=${whatsappMessage}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+            onClick={onClose}
+            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
           >
             <Icons.MessageCircle className="w-4 h-4" />
-            <span>Solicitar Cotización por WhatsApp</span>
+            <span>Enviar cotización por WhatsApp</span>
           </a>
-          <p className="text-[11px] text-center text-[var(--foreground-subtle)]">
-            Asesoría directa con nuestro maestro de confección y patronaje textil.
+          <p className="text-[10px] text-center text-[var(--foreground-subtle)]">
+            Te responderemos con precio, tiempo de entrega y forma de pago.
           </p>
         </div>
       </aside>

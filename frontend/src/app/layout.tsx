@@ -15,11 +15,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aimari RAG Visual - Búsqueda de Camisetas",
-  description: "Búsqueda visual RAG y evaluación de camisetas deportivas con Fashion-CLIP, YOLO y reranking.",
+  title: "Atelier Sublitex | Búsqueda Visual de Camisetas",
+  description: "Atelier Sublitex - Búsqueda visual por imagen para encontrar camisetas deportivas y cotizar confección a medida con IA.",
+  applicationName: "Atelier Sublitex",
   openGraph: {
-    title: "Aimari RAG Visual - Búsqueda de Camisetas",
-    description: "Búsqueda visual RAG y evaluación de camisetas deportivas con Fashion-CLIP, YOLO y reranking.",
+    title: "Atelier Sublitex | Búsqueda Visual de Camisetas",
+    description: "Encuentra camisetas deportivas por imagen y cotiza confección a medida.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Atelier Sublitex | Búsqueda Visual de Camisetas",
+    description: "Encuentra camisetas deportivas por imagen y cotiza confección a medida.",
   },
 };
 

@@ -5,17 +5,17 @@ export interface CatalogJersey {
   country: string;
   league: string;
   season: string;
-  collection: "Bespoke Atelier" | "Selecciones" | "Clubes Élite" | "Heritage Retro" | "Kits de Competición";
-  type: "Local" | "Visitante" | "Alternativa" | "Retro" | "Bespoke";
+  collection: "Catálogo Oficial";
+  type: "Standard";
   colors: string[];
   colorHexes: string[];
   image: string;
   description: string;
-  priceRetail: number;
-  priceTeam: number; // 12+ units
-  priceLeague: number; // 30+ units
-  turnaround: string;
-  fit: "Athletic Pro Slim" | "Tailored Regular" | "Classic Match";
+  priceRetail: null;
+  priceTeam: null;
+  priceLeague: null;
+  turnaround: "A consultar";
+  fit: "A medida";
   sublimationSpecs: {
     fabric: string;
     collar: string;
@@ -25,213 +25,60 @@ export interface CatalogJersey {
   sampleQueryId?: string;
 }
 
-export const CATALOG_JERSEYS: CatalogJersey[] = [
-  {
-    id: "ATL-BESPOKE-01",
-    name: "Atelier Sublitex Gold Edition — Navy & Champagne",
-    team: "Atelier Haute Sportswear",
-    country: "Internacional",
-    league: "Colección Privada Atelier",
-    season: "2025 / 2026",
-    collection: "Bespoke Atelier",
-    type: "Bespoke",
-    colors: ["Azul Noche", "Champagne Gold", "Marfil"],
-    colorHexes: ["#0B132B", "#C5A880", "#F5F3EF"],
-    image: "/images/hero_atelier_jersey.jpg",
-    description: "Confección de alta sastrería deportiva con patronaje geométrico sublimado en tonos oro champán sobre base azul noche, cuello tipo polo tejido a medida y corte ergonómico de alta competición.",
-    priceRetail: 59,
-    priceTeam: 42,
-    priceLeague: 35,
-    turnaround: "4 a 6 días hábiles",
-    fit: "Athletic Pro Slim",
-    sublimationSpecs: {
-      fabric: "Win Micro-Perforado Dry-Max 150g (Tratamiento antibacteriano)",
-      collar: "Cuello polo con tejido canalé personalizado en hilo dorado",
-      sleeve: "Manga anatómica con remate invisible termosellado",
-      printType: "Sublimación digital UltraHD 1440 DPI con tintas italianas",
-    },
-    sampleQueryId: "atelier",
-  },
-  {
-    id: "ATL-HERITAGE-99",
-    name: "Heritage Tailored Striped Polo — Royal & Aurum",
-    team: "Heritage Football Club",
-    country: "Europa / Tradición",
-    league: "Colección Archivo Retro",
-    season: "Edición Histórica",
-    collection: "Heritage Retro",
-    type: "Retro",
-    colors: ["Azul Marino", "Dorado Antiguo", "Blanco Hueso"],
-    colorHexes: ["#0A192F", "#D4AF37", "#EDE8DF"],
-    image: "/images/catalog_heritage_retro.jpg",
-    description: "Inspirada en las camisetas clásicas de finales de siglo: bastones verticales equilibrados, cuello camisero con tapeta de dos botones y escudo bordado de alta densidad con hilo metálico.",
-    priceRetail: 65,
-    priceTeam: 45,
-    priceLeague: 38,
-    turnaround: "5 a 7 días hábiles",
-    fit: "Tailored Regular",
-    sublimationSpecs: {
-      fabric: "Poliéster Piqué Interlock Heavy 180g tacto algodón técnico",
-      collar: "Cuello camisero formal con botón grabado y solapa interior",
-      sleeve: "Puño clásico elástico en canalé 1x1 contrastado",
-      printType: "Sublimación ecológica a 205°C libre de solventes",
-    },
-    sampleQueryId: "heritage",
-  },
-  {
-    id: "ATL-PRO-EMERALD",
-    name: "Sublitex Pro Athletic Mesh — Esmeralda & Aurum",
-    team: "División Técnica Sublitex",
-    country: "Perú / Internacional",
-    league: "Kits de Competición",
-    season: "2025 Pro",
-    collection: "Kits de Competición",
-    type: "Bespoke",
-    colors: ["Verde Esmeralda", "Oro Mate", "Negro Ónix"],
-    colorHexes: ["#064E3B", "#D4AF37", "#0B0F17"],
-    image: "/images/custom_sublimation_pro.jpg",
-    description: "Ingeniería textil para condiciones de alta exigencia física: micro-malla transpirable con tecnología de transporte de humedad capilar y costuras planas flatlock antirozaduras.",
-    priceRetail: 52,
-    priceTeam: 38,
-    priceLeague: 32,
-    turnaround: "3 a 5 días hábiles",
-    fit: "Athletic Pro Slim",
-    sublimationSpecs: {
-      fabric: "Micro-Mesh Jacquard 135g con protección solar UPF 40+",
-      collar: "Cuello en V ergonómico sin costura posterior",
-      sleeve: "Corte raglán continuo para máxima libertad de movimiento",
-      printType: "Transfer por sublimación continua de pigmento reactivo",
-    },
-    sampleQueryId: "emerald",
-  },
-  {
-    id: "ATL-PER-2024",
-    name: "Perú 2024 / 2025 — Franja Oficial Titular",
-    team: "Selección Peruana de Fútbol",
-    country: "Perú",
-    league: "Conmebol / Clasificatorias",
-    season: "2024 / 2025",
-    collection: "Selecciones",
-    type: "Local",
-    colors: ["Blanco Puro", "Rojo Sangre", "Dorado"],
-    colorHexes: ["#FFFFFF", "#D90429", "#C5A880"],
-    image: "/images/peru_home.jpg",
-    description: "La emblemática franja diagonal roja sobre fondo blanco puro con ribete dorado en cuello y escudo de la FPF en transfer de silicona 3D de alta definición.",
-    priceRetail: 49,
-    priceTeam: 36,
-    priceLeague: 30,
-    turnaround: "3 a 5 días hábiles",
-    fit: "Classic Match",
-    sublimationSpecs: {
-      fabric: "Win Dry-Tech 145g con acabado hidrofílico",
-      collar: "Cuello en V tejido con inserción elástica posterior",
-      sleeve: "Manga anatómica con puño acanalado rojo",
-      printType: "Sublimación directa con fidelidad cromática Pantone oficial",
-    },
-    sampleQueryId: "peru",
-  },
-  {
-    id: "ATL-ARG-2024",
-    name: "Argentina 2024 — Tres Estrellas Conmemorativa",
-    team: "Selección Argentina de Fútbol",
-    country: "Argentina",
-    league: "Conmebol / Campeón del Mundo",
-    season: "2024",
-    collection: "Selecciones",
-    type: "Local",
-    colors: ["Celeste Cielo", "Blanco Puro", "Dorado Campeón"],
-    colorHexes: ["#75AADB", "#FFFFFF", "#D4AF37"],
-    image: "/images/argentina.jpg",
-    description: "Diseño clásico de bastones celestes y blancos con escudo conmemorativo de 3 estrellas y parche dorado oficial de campeón del mundo en el centro del pecho.",
-    priceRetail: 52,
-    priceTeam: 38,
-    priceLeague: 32,
-    turnaround: "3 a 5 días hábiles",
-    fit: "Classic Match",
-    sublimationSpecs: {
-      fabric: "Dry-Action Pro 140g ventilación continua",
-      collar: "Cuello en V cruzado con vivo celeste",
-      sleeve: "Manga con terminación reforzada y transfer térmico",
-      printType: "Sublimación digital fotográfica de alta resolución",
-    },
-    sampleQueryId: "argentina",
-  },
-  {
-    id: "ATL-RMA-2024",
-    name: "Real Madrid 2024 — Edición Blanca Clásica",
-    team: "Real Madrid CF",
-    country: "España",
-    league: "La Liga / Champions League",
-    season: "2023 / 2024",
-    collection: "Clubes Élite",
-    type: "Local",
-    colors: ["Blanco Puro", "Dorado Aurum", "Azul Noche"],
-    colorHexes: ["#FFFFFF", "#D4AF37", "#0B163B"],
-    image: "/images/real_madrid.jpg",
-    description: "La pureza del blanco madridista realzada con sutiles acentos dorados en hombros y cuello, corte estilizado y escudo de alta definición texturizado.",
-    priceRetail: 54,
-    priceTeam: 39,
-    priceLeague: 33,
-    turnaround: "4 a 6 días hábiles",
-    fit: "Athletic Pro Slim",
-    sublimationSpecs: {
-      fabric: "Interlock transpirable 150g acabado tacto seda",
-      collar: "Cuello redondo con costura de refuerzo en cuello y hombros",
-      sleeve: "Manga con puño doble ancho en rib contrastado",
-      printType: "Sublimación y transfer térmico de microfibra",
-    },
-    sampleQueryId: "madrid",
-  },
-  {
-    id: "ATL-FCB-2024",
-    name: "FC Barcelona 2024 — Blaugrana Tradicional",
-    team: "FC Barcelona",
-    country: "España",
-    league: "La Liga",
-    season: "2024 / 2025",
-    collection: "Clubes Élite",
-    type: "Local",
-    colors: ["Azul Real", "Granate", "Oro"],
-    colorHexes: ["#004D98", "#A50044", "#EDBB00"],
-    image: "/images/barcelona.jpg",
-    description: "Franjas emblemáticas azul y grana en proporciones áureas, detalles sutiles de la Senyera catalana en la nuca y escudo termofijado de precisión.",
-    priceRetail: 54,
-    priceTeam: 39,
-    priceLeague: 33,
-    turnaround: "4 a 6 días hábiles",
-    fit: "Classic Match",
-    sublimationSpecs: {
-      fabric: "Microfibra deportiva Win Cool con filtro UV",
-      collar: "Cuello redondo elástico de máxima durabilidad",
-      sleeve: "Manga ajustada con inserción de malla en axila",
-      printType: "Sublimación reactiva de alta solidez al lavado",
-    },
-    sampleQueryId: "barcelona",
-  },
-  {
-    id: "ATL-BOC-2024",
-    name: "Boca Juniors 2024 — Azul y Oro Bombonera",
-    team: "Club Atlético Boca Juniors",
-    country: "Argentina",
-    league: "Liga Profesional de Fútbol",
-    season: "2024",
-    collection: "Clubes Élite",
-    type: "Local",
-    colors: ["Azul Rey", "Amarillo Oro"],
-    colorHexes: ["#003882", "#FFC72C"],
-    image: "/images/boca_juniors.jpg",
-    description: "Azul profundo con la histórica franja dorada en el centro del pecho, cuello polo ligero con detalles bordados y tejido de alta ventilación.",
-    priceRetail: 49,
-    priceTeam: 36,
-    priceLeague: 30,
-    turnaround: "3 a 5 días hábiles",
-    fit: "Classic Match",
-    sublimationSpecs: {
-      fabric: "Win Cool 140g textura nido de abeja",
-      collar: "Rib elastizado con refuerzo posterior",
-      sleeve: "Manga clásica con vivo amarillo sublimado",
-      printType: "Sublimación digital a 200°C con tintas de alto anclaje",
-    },
-    sampleQueryId: "boca",
-  },
+function makeName(id: string): string {
+  const num = id.replace("SBX-", "").replace(/-/g, " ");
+  return `Camiseta Sublitex ${id}`;
+}
+
+const IMAGES = [
+  "SBX-01-0001.jpg","SBX-01-0002.jpg","SBX-01-0003.jpg","SBX-01-0004.jpg","SBX-01-0005.jpg","SBX-01-0006.jpg","SBX-01-0007.jpg","SBX-01-0008.jpg","SBX-01-0009.jpg","SBX-01-0010.jpg",
+  "SBX-01-0011.jpg","SBX-01-0012.jpg","SBX-01-0013.jpg","SBX-01-0014.jpg","SBX-01-0015.jpg","SBX-01-0016.jpg","SBX-01-0017.jpg","SBX-01-0018.jpg","SBX-01-0019.jpg","SBX-01-0020.jpg",
+  "SBX-01-0021.jpg","SBX-01-0022.jpg","SBX-01-0023.jpg","SBX-01-0024.jpg","SBX-01-0025.jpg","SBX-01-0026.jpg","SBX-01-0027.jpg","SBX-01-0028.jpg","SBX-01-0029.jpg","SBX-01-0030.jpg",
+  "SBX-01-0031.jpg","SBX-01-0032.jpg","SBX-01-0033.jpg","SBX-01-0034.jpg","SBX-01-0035.jpg","SBX-01-0036.jpg","SBX-01-0037.jpg","SBX-01-0038.jpg","SBX-01-0039.jpg","SBX-01-0040.jpg",
+  "SBX-02-0001.jpg","SBX-02-0002.jpg","SBX-02-0003.jpg","SBX-02-0004.jpg","SBX-02-0005.jpg","SBX-02-0006.jpg","SBX-02-0007.jpg","SBX-02-0008.jpg","SBX-02-0009.jpg","SBX-02-0010.jpg",
+  "SBX-02-0011.jpg","SBX-02-0012.jpg","SBX-02-0013.jpg","SBX-02-0014.jpg","SBX-02-0015.jpg","SBX-02-0016.jpg","SBX-02-0017.jpg","SBX-02-0018.jpg","SBX-02-0019.jpg","SBX-02-0020.jpg",
+  "SBX-02-0021.jpg","SBX-02-0022.jpg","SBX-02-0023.jpg","SBX-02-0024.jpg","SBX-02-0025.jpg","SBX-02-0026.jpg","SBX-02-0027.jpg","SBX-02-0028.jpg","SBX-02-0029.jpg","SBX-02-0030.jpg",
+  "SBX-02-0031.jpg","SBX-02-0032.jpg","SBX-02-0033.jpg","SBX-02-0034.jpg","SBX-02-0035.jpg","SBX-02-0036.jpg","SBX-02-0037.jpg","SBX-02-0038.jpg","SBX-02-0039.jpg","SBX-02-0040.jpg",
+  "SBX-03-0001.jpg","SBX-03-0002.jpg","SBX-03-0003.jpg","SBX-03-0004.jpg","SBX-03-0005.jpg","SBX-03-0006.jpg","SBX-03-0007.jpg","SBX-03-0008.jpg","SBX-03-0009.jpg","SBX-03-0010.jpg",
+  "SBX-03-0011.jpg","SBX-03-0012.jpg","SBX-03-0013.jpg","SBX-03-0014.jpg","SBX-03-0015.jpg","SBX-03-0016.jpg","SBX-03-0017.jpg","SBX-03-0018.jpg","SBX-03-0019.jpg","SBX-03-0020.jpg",
+  "SBX-03-0021.jpg","SBX-03-0022.jpg","SBX-03-0023.jpg","SBX-03-0024.jpg","SBX-03-0025.jpg","SBX-03-0026.jpg","SBX-03-0027.jpg","SBX-03-0028.jpg","SBX-03-0029.jpg","SBX-03-0030.jpg",
+  "SBX-03-0031.jpg","SBX-03-0032.jpg","SBX-03-0033.jpg","SBX-03-0034.jpg","SBX-03-0035.jpg","SBX-03-0036.jpg","SBX-03-0037.jpg","SBX-03-0038.jpg","SBX-03-0039.jpg","SBX-03-0040.jpg",
+  "SBX-04-0001.jpg","SBX-04-0002.jpg","SBX-04-0003.jpg","SBX-04-0004.jpg","SBX-04-0005.jpg","SBX-04-0006.jpg","SBX-04-0007.jpg","SBX-04-0008.jpg","SBX-04-0009.jpg","SBX-04-0010.jpg",
+  "SBX-04-0011.jpg","SBX-04-0012.jpg","SBX-04-0013.jpg","SBX-04-0014.jpg","SBX-04-0015.jpg","SBX-04-0016.jpg","SBX-04-0017.jpg","SBX-04-0018.jpg","SBX-04-0019.jpg","SBX-04-0020.jpg",
+  "SBX-04-0021.jpg","SBX-04-0022.jpg","SBX-04-0023.jpg","SBX-04-0024.jpg","SBX-04-0025.jpg","SBX-04-0026.jpg","SBX-04-0027.jpg","SBX-04-0028.jpg","SBX-04-0029.jpg","SBX-04-0030.jpg",
+  "SBX-04-0031.jpg","SBX-04-0032.jpg","SBX-04-0033.jpg","SBX-04-0034.jpg","SBX-04-0035.jpg","SBX-04-0036.jpg","SBX-04-0037.jpg","SBX-04-0038.jpg","SBX-04-0039.jpg","SBX-04-0040.jpg",
+  "SBX-05-0001.jpg","SBX-05-0002.jpg","SBX-05-0003.jpg","SBX-05-0004.jpg","SBX-05-0005.jpg","SBX-05-0006.jpg","SBX-05-0007.jpg","SBX-05-0008.jpg","SBX-05-0009.jpg","SBX-05-0010.jpg",
+  "SBX-05-0011.jpg","SBX-05-0012.jpg","SBX-05-0013.jpg","SBX-05-0014.jpg","SBX-05-0015.jpg","SBX-05-0016.jpg","SBX-05-0017.jpg","SBX-05-0018.jpg","SBX-05-0019.jpg","SBX-05-0020.jpg",
+  "SBX-05-0021.jpg","SBX-05-0022.jpg","SBX-05-0023.jpg","SBX-05-0024.jpg","SBX-05-0025.jpg","SBX-05-0026.jpg","SBX-05-0027.jpg","SBX-05-0028.jpg","SBX-05-0029.jpg","SBX-05-0030.jpg",
+  "SBX-05-0031.jpg","SBX-05-0032.jpg","SBX-05-0033.jpg","SBX-05-0034.jpg","SBX-05-0035.jpg","SBX-05-0036.jpg","SBX-05-0037.jpg","SBX-05-0038.jpg","SBX-05-0039.jpg","SBX-05-0040.jpg",
 ];
+
+export const CATALOG_JERSEYS: CatalogJersey[] = IMAGES.map((img) => {
+  const id = img.replace(/\.(jpg|jpeg|png|webp)$/i, "");
+  return {
+    id,
+    name: makeName(id),
+    team: "Atelier Sublitex",
+    country: "Personalizable",
+    league: "Confección a medida",
+    season: "Bajo pedido",
+    collection: "Catálogo Oficial",
+    type: "Standard",
+    colors: ["Personalizable"],
+    colorHexes: ["#C5A880"],
+    image: `/api/images/${img}`,
+    description: "Modelo del catálogo oficial. Confección en sublimación a medida con tejidos técnicos. Cotización según cantidad, tallas y acabados.",
+    priceRetail: null,
+    priceTeam: null,
+    priceLeague: null,
+    turnaround: "A consultar",
+    fit: "A medida",
+    sublimationSpecs: {
+      fabric: "Tejido técnico sublimable (a definir)",
+      collar: "A elegir según modelo",
+      sleeve: "A elegir según modelo",
+      printType: "Sublimación digital UltraHD",
+    },
+    sampleQueryId: id,
+  };
+});
