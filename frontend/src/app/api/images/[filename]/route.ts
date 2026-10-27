@@ -33,19 +33,24 @@ export async function GET(
 
     let foundPath: string | null = null;
 
+    const parsed = path.parse(filename);
+    const alternativas = [
+      filename,
+      `${parsed.name}.jpg`,
+      `${parsed.name}.jpeg`,
+      `${parsed.name}.png`,
+      `${parsed.name}.webp`,
+    ];
+
     for (const dir of candidateDirs) {
-      const candidatePath = path.join(dir, filename);
-      if (fs.existsSync(candidatePath)) {
-        foundPath = candidatePath;
-        break;
+      for (const nombre of alternativas) {
+        const candidatePath = path.join(dir, nombre);
+        if (fs.existsSync(candidatePath)) {
+          foundPath = candidatePath;
+          break;
+        }
       }
-      // Check .jpg fallback if name lacks extension
-      const parsed = path.parse(filename);
-      const fallbackPath = path.join(dir, `${parsed.name}.jpg`);
-      if (fs.existsSync(fallbackPath)) {
-        foundPath = fallbackPath;
-        break;
-      }
+      if (foundPath) break;
     }
 
     if (!foundPath) {
