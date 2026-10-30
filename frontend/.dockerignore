@@ -1,0 +1,32 @@
+# ════════════════════════════════════════════════════════════════════════════
+# Contexto de build del frontend (frontend/Dockerfile)
+# ════════════════════════════════════════════════════════════════════════════
+
+# ── Dependencias y artefactos: se regeneran dentro de la imagen ─────────────
+# Sin esto, `COPY . .` pisaba el node_modules instalado en el contenedor con
+# el del host (cientos de MB y posible incompatibilidad de binarios).
+node_modules
+.next
+out
+build
+
+# ── Git ─────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+
+# ── Secretos y entorno ──────────────────────────────────────────────────────
+# NEXT_PUBLIC_API_URL debe venir como build arg, no desde un .env local.
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# ── Tests, logs y temporales ────────────────────────────────────────────────
+coverage
+*.log
+.DS_Store
+
+# ── Documentación ───────────────────────────────────────────────────────────
+*.md

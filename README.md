@@ -1,34 +1,37 @@
-# WebScraping — RAG Visual 
+# WebScraping — RAG Visual
 
-Plataforma de búsqueda visual de camisetas deportivas basada en **embeddings CLIP/OpenCLIP/SigLIP**. El proyecto scrapea catálogos de *Designs Aimari*, consolida y normaliza un dataset, convierte cada imagen en un vector, y expone una API que devuelve el **Top 5 de diseños visualmente más parecidos** a una imagen cargada. Todo se presenta en una interfaz Streamlit.
+Plataforma de búsqueda visual de camisetas deportivas basada en **embeddings CLIP/OpenCLIP/SigLIP**. El proyecto consolida un catálogo de camisetas (banco **SBX**), normaliza las imágenes, convierte cada una en un vector y expone una API que devuelve el **Top 5 de diseños visualmente más parecidos** a una imagen cargada. Todo se presenta en una interfaz de cliente de la API.
 
-> **Hito 2 — Búsqueda visual robusta:** una camiseta puede encontrarse aunque la consulta no sea idéntica al banco (sin marco, recoloreada, recortada, mockup o persona), y el Top 5 pasa por un reranking visual para que tenga coherencia humana (Sala 4 compara modelos y Sala 3 mejora el motor).
+> **Hito 2 — Búsqueda visual robusta:** una camiseta puede encontrarse aunque la consulta no sea idéntica al banco (sin marco, recoloreada, recortada, mockup o persona), y el Top 5 pasa por un reranking visual para que tenga coherencia humana.
+
+> **Frase de validación:** «Una imagen se carga una sola vez, se procesa con un solo modelo, se compara contra un solo índice y los resultados se muestran en una sola interfaz.»
 
 ## Flujo del sistema
 
 ```text
-[Scraper]  →  data/images_normalized/  (imágenes normalizadas)
-                │
-[consolidar.py] → data/products.csv + data/images_normalized/   (Sala 1)
-                │
-[generar_embeddings.py] → data/embeddings.npy + data/ids.npy   (Sala 4, Hito 1)
-[generar_indices_comparativos.py] → embeddings_clip/openclip/siglip.npy sobre images_normalized/   (Sala 4, Hito 2)
-                │
-[preprocesar_consulta.py] → prepara la imagen de consulta (Sala 2, Hito 2)
-                │
-[FastAPI api/main.py] → POST /search/image (modos) + /search/image/v2 (índice normalizado + reranking) + GET /health   (Sala 3)
-                │
-[Streamlit frontend/app.py] → sube imagen, antes/después, Top 5, compara H1 vs H2 y registra evaluación   (Sala 2)
+data/DATA_NEW/  (imágenes nuevas SBX-###-NNNN.png)
+        │
+[crear_csv_data_new.py] → data/products.csv   (Sala 1: id, proveedor, pagina, imagen, nombre_original, url)
+        │
+[normalizar_data_new.py] → data/images_normalized/   (copia a JPG, mismo ID, sin tocar originales)
+        │
+[generar_embeddings.py] → data/embeddings.npy + data/ids.npy   (Sala 4, Hito 1: CLIP, L2, 512 dims)
+[generar_indices_comparativos.py] → embeddings_clip/openclip/siglip.npy   (Sala 4, Hito 2)
+        │
+[FastAPI api/main.py] → POST /search/image (modos) + GET /health   (Sala 3)
+        │
+[frontend/ Next.js] → sube imagen, Top 5, nombre, imagen, URL, score   (cliente puro de la API)
 ```
 
 ## Requisitos previos
 
-- **Python 3.10+** (probado con 3.13).
-- Conexión a internet (para descargar el modelo CLIP de Hugging Face y scrapear el sitio).
+- **Python 3.10+** (probado con 3.13 / 3.14).
+- **Node.js 18+** y **npm** (para el frontend Next.js).
+- Conexión a internet la ak_2mw3cc9sS6wI7xS3K29qE8ZT4J77Wprimera vez (para descargar los modelos CLIP/OpenCLIP/SigLIP de Hugging Face a `~/.cache/huggingface`).
 
-## Instalación
+## Entorno virtual
 
-Desde la raíz del proyecto:
+El proyecto usa un entorno virtual ubicado un nivel arriba del repo:
 
 ### En Arch Linux (familia `pacman`)
 
@@ -39,285 +42,300 @@ sudo pacman -Syu python python-pip python-virtualenv opencv libgl
 > `opencv` y `libgl` evitan que `pip install -r requirements.txt` falle al compilar/importar OpenCV en Arch-based (los wheels de `opencv-python` esperan la librería `libGL.so` del sistema). Instala también `git` (`sudo pacman -S git`) si clonaste el repo.
 
 ```bash
-# 1) (Opcional) Entorno virtual
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# macOS / Linux:
-source venv/bin/activate
+# Desde C:\Users\lucia\Downloads\S5\sala-5 (shell fish / Windows)
+. ..\.venv\Scripts\activate.fish        # fish
+# o:
+..\.venv\Scripts\activate               # PowerShell / cmd
 
-# 2) Instalar dependencias
-pip install -r requirements.txt
+# Verificar:
+python --version
+pip list | grep -iE "fastapi|torch|transformers|uvicorn|opencv|pillow|numpy"
 ```
 
-> La primera vez que se ejecuta, el modelo `openai/clip-vit-base-patch32` se descarga a `~/.cache/huggingface` (~350 MB).
+> No usar pip del sistema (PEP 668). Siempre activar el venv antes de ejecutar scripts o la API.
 
-## Ejecución paso a paso
+## Guía de inicialización del sistema (desde cero)
 
-El flujo completo es: **scrapear → consolidar → generar embeddings → levantar API → levantar interfaz**.
+Si no hay `data/products.csv`, `data/images_normalized/` ni índices, seguir este orden **obligatorio** (Sala 1 → Sala 4 → Sala 3 → frontend):
 
-### 1. Scrapear el catálogo
+### Paso 1 — Generar el catálogo (products.csv)
+
+Lee las imágenes de `data/DATA_NEW/` (patrón `SBX-###-NNNN.png`) y crea `data/products.csv`:
 
 ```bash
-python main.py --paginas 1-20 --imagenes 1000 --modo fresh
+python scripts/crear_csv_data_new.py
 ```
 
-**Parámetros de `main.py`:**
+Salida esperada:
 
-| Parámetro | Valores | Descripción |
-|---|---|---|
-| `--paginas` | `1-20`, `1,2,3`, `all` | Páginas del catálogo a scrapear. Un rango se escribe `inicio-fin`. `all` scrapea todo. |
-| `--imagenes` | número o `all` | Cantidad máxima de imágenes/productos a descargar. |
-| `--modo` | `fresh` o `update` | `fresh` **borra `data/` y re-descarga todo desde cero**. `update` fusiona con los productos existentes (evita re-descargar). |
+- `data/products.csv` con 284 filas: `id,proveedor,pagina,imagen,nombre_original,url`.
+- IDs sin duplicados; columnas exactas del contrato común.
 
-Este paso genera:
-- `data/productos.json` — datos crudos del scraping.
-- `data/images_normalized/` — las 15.272 imágenes normalizadas con nomenclatura `AIM-Pxxx-NNN.jpg`.
-- `data/metadata.json` — metadatos de paginación.
-- `data/productos.xlsx` — exportación Excel de respaldo.
+### Paso 2 — Normalizar las imágenes (images_normalized/)
 
-> En Windows usa `--paginas "1-20"` entre comillas si tu shell interpreta el guion.
-
-### 2. Consolidar el dataset (Sala 1)
+Copia las imágenes de `data/DATA_NEW/` a `data/images_normalized/` convirtiéndolas a JPG con el mismo ID. **No modifica los originales.**
 
 ```bash
-python scripts/consolidar.py
+python scripts/normalizar_data_new.py
 ```
 
-Lee `data/productos.json` + `data/images_normalized/` y genera:
-- `data/products.csv` — dataset canónico (`id, proveedor, pagina, imagen, nombre_original, url`).
-- `data/images_normalized/` — banco canónico: imágenes renombradas con nomenclatura uniforme `AIM-PXXX-NNN.ext`. (La carpeta legacy `images_final/` fue eliminada en la migración Hito 3.)
+Salida esperada: `data/images_normalized/SBX-###-NNNN.jpg` (284 imágenes).
 
-Valida nomenclatura, duplicados, archivos existentes y apertura de imagen.
+### Paso 3 — Generar los embeddings (Hito 1)
 
-### 3. Validar el dataset (opcional pero recomendado)
-
-```bash
-python scripts/validate_dataset.py
-python scripts/validate_dataset.py --benchmark   # mide tiempo en 1000 registros
-```
-
-Reporta: registros totales/válidos, IDs duplicados, nombres vacíos, URLs vacías/repetidas, extensiones inválidas, imágenes faltantes/dañadas y duplicados por hash MD5.
-
-### 4. Generar los embeddings (Sala 4)
+Lee `products.csv` en orden, abre cada imagen de `images_normalized/`, genera su vector con CLIP (`openai/clip-vit-base-patch32`), lo normaliza con L2 y guarda:
 
 ```bash
 python scripts/generar_embeddings.py
 ```
 
-Lee `products.csv` en orden, abre cada imagen de `images_normalized/`, genera su vector con **CLIP** (`openai/clip-vit-base-patch32`), lo normaliza con L2 y guarda:
-- `data/embeddings.npy` — matriz `(N, 512)`.
-- `data/ids.npy` — IDs alineados por posición con los embeddings.
+Salida esperada:
+
+- `data/embeddings.npy` — matriz `(284, 512)` float32, normalizada L2.
+- `data/ids.npy` — 284 IDs alineados posición a posición con los embeddings.
 
 > La correspondencia posición ↔ ID es obligatoria: si se altera el orden, el sistema devolvería nombres asociados a la imagen equivocada.
 
-### 5. Levantar la API (Sala 3)
+### Paso 4 — Generar índices comparativos (Sala 4, Hito 2)
+
+Genera los tres índices sobre `images_normalized/` (necesarios porque la interfaz usa el modelo `fusion` por defecto):
 
 ```bash
-python -m uvicorn api.main:app --port 8000
+python scripts/generar_indices_comparativos.py
+```
+
+O solo algunos modelos:
+
+```bash
+python scripts/generar_indices_comparativos.py --solo clip openclip
+```
+
+Salida esperada:
+
+- `data/embeddings_clip.npy` (284×512)
+- `data/embeddings_openclip.npy` (284×512)
+- `data/embeddings_siglip.npy` (284×768)
+
+### Paso 5 — Validar el dataset
+
+```bash
+python scripts/validate_dataset.py
+```
+
+Reporta: registros totales/válidos, IDs duplicados, nombres vacíos, URLs vacías, imágenes faltantes/dañadas y duplicados por hash MD5.
+
+### Paso 6 — Levantar la API (Sala 3)
+
+```bash
+uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Al iniciar carga el índice y el modelo CLIP una sola vez. Endpoints:
 
-- `GET /health` — estado, cantidad de productos/embeddings y modelo.
-- `POST /search/image` — recibe una imagen (multipart) y el `modo` de búsqueda (formulario). Devuelve el **Top 5** y, en los modos que preparan la consulta, además la imagen preparada, ambos rankings (Hito 1 y Hito 2) y el detalle del preprocesamiento (Sala 2, Hito 2).
-- `POST /search/image/v2` — igual, pero con el **motor del Hito 2** (recuperación amplia + reranking por color/regiones/estructura + umbral dinámico). Cada resultado incluye `score_inicial`, `score_color_global`, `score_color_frente`, `score_color_espalda`, `score_estructura`, `score_reranking`, `posicion_final` y `modelo_utilizado`.
-
-**Modos de `POST /search/image` (Sala 2):** `auto` (prepara la consulta y devuelve respuesta enriquecida), `procesada` (siempre usa la imagen preparada, Hito 2), `original` (siempre usa la consulta tal cual, Hito 1), `completo` (Sala 2 + reranking de Sala 3) y `legacy` (solo la lista del motor).
+- `GET /health` — estado, cantidad de productos/embeddings, modelo y desfase detectado.
+- `POST /search/image` — recibe una imagen (multipart) y el `modo` de búsqueda. Devuelve el Top 5 con ID, nombre, imagen, URL, score y metadatos de reranking.
 
 Prueba rápida desde otra terminal:
 
 ```bash
-curl -X POST -F "file=@data/images_normalized/AIM-P001-001.jpg" http://localhost:8000/search/image
+curl -X POST -F "file=@data/images_normalized/SBX-01-0001.jpg" http://localhost:8000/search/image
 ```
 
-### 6. Levantar la interfaz (Sala 2)
+Verificación de salud:
 
 ```bash
-streamlit run frontend/app.py
+curl http://localhost:8000/health
 ```
 
-Abre `http://localhost:8501` en el navegador:
-1. En el sidebar verifica "API OK · 1000 productos · 1000 embeddings".
-2. Elige el **modo de búsqueda** en el sidebar (auto / procesada / original / completo / legacy).
-3. Sube una imagen (JPG/JPEG/PNG).
-4. Revisa la vista **antes/después** (consulta original vs preparada por Sala 2) y el Top 5 (imagen, ID, nombre, proveedor, URL, score).
-5. En los modos con preparación, compara los rankings **Hito 1 vs Hito 2**.
-6. Clasifica cada resultado (**Correcto / Útil, pero no duplicado / Incorrecto**) y guarda la evaluación → `data/evaluation.csv`.
+Respuesta esperada (ejemplo):
 
-### 7. Normalizar el banco de imágenes (Sala 1 — Hito 2)
+```json
+{
+  "status": "ok",
+  "products": 284,
+  "embeddings": 284,
+  "model": "openai/clip-vit-base-patch32",
+  "desfase_detectado": false,
+  "observacion": "..."
+}
+```
 
-Transforma las tarjetas del catálogo en imágenes limpias y estandarizadas (solo frente + espalda, sin cabecera, pie/URL, marcos ni logos), sin tocar las originales:
+### Paso 7 — Levantar la interfaz (frontend Next.js)
 
 ```bash
-# a) Analizar formatos del banco (Actividad 1, muestra >= 100)
-python scripts/analizar_formatos.py                 # → data/informe_formatos.txt
-# b) Normalizar las 1000 imágenes (Actividad 2-4)
-python scripts/normalizar_imagenes.py               # → data/images_normalized/
-# c) Revisión objetiva de la muestra de 50 (Actividad 5)
-python scripts/revisar_muestra_50.py                # → data/revision_humana_50.csv
+cd frontend
+npm run dev
 ```
 
-Genera:
-- `data/images_normalized/` — banco canónico de imágenes `AIM-PXXX-NNN.jpg` (mismo ID que `products.csv`).
-- `data/informe_normalizacion.txt` + `data/detalle_normalizacion.csv` — procesadas/fallidas, recortes correctos/incorrectos, tiempos y casos a revisar.
-- `data/informe_formatos.txt` + `data/detalle_formatos.csv` — formatos visuales, posición de marcos/cabecera/pie/URL, ubicación de frente y espalda, % recortable.
-- `data/revision_humana_50.csv` + `data/revision_contact_sheet.png` — muestra aleatoria de 50 con clasificación y hoja de contacto para el visto bueno visual.
+Abre `http://localhost:3000` en el navegador. La app es cliente puro de la API (`NEXT_PUBLIC_API_URL=http://localhost:8000`): sube una imagen y obtiene el Top 5 con imagen, ID, nombre, URL y score.
 
-### 8. Motor mejorado y reranking del Top 5 (Sala 3 — Hito 2)
+---
 
-El motor del Hito 1 (`POST /search/image` con `modo=original`) sigue disponible para comparar. El motor del Hito 2 se expone en `POST /search/image/v2`: recuperación amplia (Top 30) + reranking combinando el score CLIP con color HSV global, color por regiones frente/espalda y estructura del patrón, más umbral dinámico (puede devolver 1, 3 o 5 resultados según la calidad):
+## Carga de datos — actualizar datos existentes y cargar nuevo contenido
 
-```bash
-python -m uvicorn api.main:app --port 8000
-# POST /search/image/v2 -> resultados con: score_inicial, score_color_global,
-#   score_color_frente, score_color_espalda, score_estructura, score_reranking,
-#   posicion_final, modelo_utilizado
+Esta sección explica cómo **actualizar el banco ya cargado** o **incorporar nuevas imágenes** sin romper el índice existente.
+
+### Flujo general de carga
+
+```
+Nuevas imágenes en data/DATA_NEW/
+        │
+        ▼
+1) crear_csv_data_new.py   →  data/products.csv        (regenera el catálogo completo)
+        │
+        ▼
+2) normalizar_data_new.py  →  data/images_normalized/  (copia a JPG, mismo ID)
+        │
+        ▼
+3) generar_embeddings.py   →  data/embeddings.npy + ids.npy   (reindexa todo)
+        │
+        ▼
+4) generar_indices_comparativos.py   →  embeddings_clip/openclip/siglip.npy
+        │
+        ▼
+5) validate_dataset.py     →  validación de integridad
+        │
+        ▼
+6) Reiniciar la API        →  uvicorn recarga el índice nuevo
 ```
 
-### 9. Preparación de la consulta (Sala 2 — Hito 2)
+### Caso A: Cargar un banco completamente nuevo
 
-El módulo `api/preprocesar_consulta.py` limpia la imagen del usuario ANTES de generar el embedding (el problema contrario al de Sala 1: Sala 1 limpia el banco, Sala 2 limpia la consulta):
+Si se quiere reemplazar el banco actual (por ejemplo, pasar de SBX a otro proveedor):
 
-```bash
-# a) Generar el conjunto común de 50 consultas (10 diseños × 5 versiones)
-python scripts/generar_consultas_hito2.py        # → data/consultas/ + evaluation/consultas_hito2.csv
-# b) Evaluar Hito 1 vs Hito 2 sobre las 50 consultas
-python scripts/evaluar_hito2.py                  # → data/resultados_hito2.csv + data/resumen_hito2.txt
-# c) Evidencia: montajes antes/después + coherencia del Top 5
-python scripts/evidencia_hito2.py                # → data/montajes/ + data/evidencia_coherencia_hito2.txt
+1. Poner las nuevas imágenes en `data/DATA_NEW/` con nomenclatura `SBX-###-NNNN.png` (o ajustar el patrón en `crear_csv_data_new.py` si cambia el proveedor).
+2. Borrar los derivados antiguos (opcional, los scripts sobrescriben):
+   ```bash
+   del data\products.csv
+   del data\embeddings.npy data\ids.npy
+   del data\embeddings_clip.npy data\embeddings_openclip.npy data\embeddings_siglip.npy
+   rd /s /q data\images_normalized
+   ```
+3. Ejecutar los pasos 1 a 6 de la **Guía de inicialización del sistema**.
+4. Reiniciar la API para que cargue el nuevo índice.
+
+### Caso B: Actualizar / añadir imágenes al banco existente
+
+1. Añadir las nuevas imágenes PNG a `data/DATA_NEW/` respetando la nomenclatura `SBX-###-NNNN.png` y sin repetir IDs ya existentes.
+2. Ejecutar los pasos 1 a 4 (los scripts regeneran todo el catálogo desde `DATA_NEW`, por lo que las imágenes nuevas se incluyen automáticamente).
+3. Ejecutar `scripts/validate_dataset.py` para verificar que no hay duplicados ni imágenes dañadas.
+4. Reiniciar la API.
+
+### Reglas importantes de carga
+
+- **`products.csv` es la ÚNICA fuente de productos.** Columnas exactas: `id,proveedor,pagina,imagen,nombre_original,url`. El campo `imagen` contiene solo el nombre de archivo (ej. `SBX-01-0001.png`).
+- **`ids.npy` debe conservar el MISMO orden que `embeddings.npy`** (posición 0 → id 0, etc.). Siempre validar la alineación al cargar.
+- **Nomenclatura de IDs:** `SBX-###-NNNN` (patrón `SBX-\d{2}-\d{4}`).
+- **`images_normalized/` es el banco canónico.** Las imágenes originales en `DATA_NEW/` no se modifican ni se borran.
+- Los únicos índices permitidos son: `embeddings.npy`, `embeddings_clip.npy`, `embeddings_openclip.npy`, `embeddings_siglip.npy` + `ids.npy`. **Prohibido** crear archivos tipo `index_embeddings.npy`, `embeddings_productos.npy`, `embeddings_final_v2.npy` o rutas duplicadas.
+
+---
+
+## Contrato de respuesta
+
+`POST /search/image` (form-data: `file` + `modo`) devuelve una lista de objetos con al menos:
+
+```json
+[
+  {
+    "id": "SBX-01-0001",
+    "nombre": "SBX-01-0001",
+    "imagen": "SBX-01-0001.jpg",
+    "url": "https://ejemplo.com/SBX-01-0001",
+    "proveedor": "SBX",
+    "score": 0.82,
+    "score_reranking": 0.85,
+    "posicion_final": 1,
+    "modelo_utilizado": "clip+openclip+siglip"
+  }
+]
 ```
 
-La API guarda por cada consulta la versión original y la procesada en `data/queries_original/` y `data/queries_procesadas/`.
+`GET /health` devuelve: `status`, `products`, `embeddings`, `model`, `desfase_detectado`, `observacion`.
 
-**Prueba integrada común (50 consultas) y comparación Hito 1 vs Hito 2:**
+## Modos del endpoint (Sala 2, Hito 2)
 
-```bash
-# Con la API corriendo, comparar ambos motores con las mismas consultas
-python scripts/compare_hito1_hito2.py             # → data/comparacion_hito1_hito2.csv + .json
-```
+- `auto` / `completo`: prepara la consulta (Sala 2) + motor Hito 2 (reranking).
+- `procesada`: imagen preparada + motor Hito 2.
+- `clasico`: Hito 1 + preprocesamiento de Sala 2 (sin reranking).
+- `original`: Hito 1 con la consulta tal cual llega.
+- `legacy`: solo la lista del motor (comportamiento Hito 1).
 
-El comparador mide Top 1, Top 5 y tiempos por motor y por categoría. Resultados reales de Sala 2 (50 consultas, ids corrigidos): Hito 1 Top 1 32/50 (64%) · Hito 2 Top 1 30/50 (60%) · auto 35/50 (70%); con el motor normalizado de Sala 3: H1 30/50 vs H2 32/50 (ver `REPORTES_HITO2.md`).
+El parámetro `modelo` (`clip` | `openclip` | `fusion`) se envía junto con `modo`; `fusion` es el recomendado por defecto (CLIP + OpenCLIP + SigLIP).
 
-### 10. Comparación de modelos y embeddings (Sala 4 — Hito 2)
+## Reglas de la evaluación (Hito 2)
 
-Determina qué modelo representa mejor la similitud visual de camisetas deportivas usando exactamente las mismas imágenes normalizadas de Sala 1:
+- Mínimo 50 consultas: 10 exactas, 10 sin marco, 10 recoloreadas, 10 recortadas, 10 mockups/personas. Cada una con su `id_correcto`.
+- Métricas: Top 1 exactitud, Top 5 recuperación y calidad Top 5 humana (Muy similar / Similar / Poco similar / No relacionado).
+- Comparación obligatoria Hito 1 vs Hito 2 sobre las MISMAS consultas.
+- No llamar al score «porcentaje de coincidencia» ni «confianza»: es un **score de similitud**.
 
-```bash
-# a) Generar los TRES índices sobre data/images_normalized/ (1000 imágenes cada uno)
-python scripts/generar_indices_comparativos.py        # → data/embeddings_clip.npy · embeddings_openclip.npy · embeddings_siglip.npy
-# b) Evaluar los tres modelos contra el conjunto común de 50 consultas
-python scripts/evaluar_50_consultas.py                # → data/evaluation_metrics.csv (Top1/Top5) + data/revision_humana_modelos_top5.csv
-```
+## Manejo de errores obligatorio en la API
 
-Resultado real (50 consultas, índice normalizado): CLIP Top1 70% · OpenCLIP 84% · **SigLIP 92% (ganador, 46/50 Top 1)**; tiempos de generación: CLIP 42 s · OpenCLIP 44 s · SigLIP 162 s (detalle en `data/evaluation_metrics.csv` y `REPORTES_HITO2.md`).
+La API NO debe cerrarse ante:
 
-El motor Hito 2 de Sala 3 (`/search/image/v2`) ya recupera contra `embeddings_clip.npy` (índice normalizado) para mantener la coherencia vector ↔ imagen; el índice CLIP del Hito 1 (`embeddings.npy`, con marco) queda como baseline de comparación.
-
-## Evaluación de las 20 pruebas (Sala 2)
-
-El plan está en `evaluation/test_plan.csv` (grupos A–D) y las imágenes de consulta en `evaluation/test_images/`.
-
-```bash
-# Métricas (Precisión Top 1 y Top 5, falsos positivos/negativos, tiempos)
-python scripts/reporte_metricas.py
-```
-
-Genera `data/reporte_evaluacion.xlsx` y la tabla Consulta | Top 1 correcto | Top 5 útiles | Observación.
+- Sin imagen / archivo no válido → 400 `{"error": "El archivo enviado no es una imagen válida"}`.
+- Imagen demasiado pequeña (mínimo 32 px por lado) → 400 con mensaje claro.
+- Falta `embeddings.npy`, falta `products.csv`, IDs desalineados, modelo no carga → 500 con mensaje, sin matar el servidor.
+- Una imagen de un candidato que no puede abrirse: puntuar 0 en visuales, no romper la búsqueda.
 
 ## Estructura del proyecto
 
 ```text
-WebScraping/
-├── api/                 # FastAPI + motores de búsqueda (Sala 3)
-│   ├── main.py           #   endpoints /search/image (modos, Sala 2), /search/image/v2 (Hito 2) y /health
-│   ├── search_engine.py  #   carga índice y search_similar(top_k=5) (Hito 1)
-│   ├── search_engine_hito2.py # recuperación amplia (índice normalizado Sala 4) + reranking (Hito 2, Sala 3)
-│   └── preprocesar_consulta.py # preparación de la consulta del usuario (Sala 2, Hito 2)
-├── frontend/
-│   └── app.py           # Interfaz Streamlit (Sala 2: antes/después, modos, comparación H1 vs H2)
+sala-5/
+├── api/                 # FastAPI + motores de búsqueda
+│   ├── main.py           #   endpoints /search/image (modos) y /health
+│   ├── search_engine.py  #   motor Hito 1 (embeddings.npy + ids.npy + products.csv)
+│   └── search_engine_hito2.py # motor Hito 2 (recuperación amplia + reranking)
+├── frontend/            # Next.js (React) cliente puro de la API
+│   └── ...               #   sube imagen, Top 5, nombre, imagen, URL, score
 ├── data/
-│   ├── images/          # Imágenes crudas del scraping (fuente, legacy)
-│   ├── images_normalized/ # Banco canónico: imágenes frente+espalda (Sala 1, Hito 2)
-│   ├── consultas/       # 50 consultas de prueba (Sala 2, Hito 2)
-│   ├── queries_original/   # Consultas originales guardadas por la API (Sala 2, Hito 2)
-│   ├── queries_procesadas/ # Consultas preparadas guardadas por la API (Sala 2, Hito 2)
-│   ├── montajes/        # Antes/después (Sala 2, Hito 2)
-│   ├── productos.csv    # Dataset canónico
-│   ├── embeddings.npy   # Vectores CLIP sobre images_normalized (Sala 4, Hito 1)
-│   ├── embeddings_clip.npy      # Vectores CLIP sobre images_normalized (Sala 4, Hito 2)
-│   ├── embeddings_openclip.npy  # Vectores OpenCLIP sobre images_normalized (Sala 4, Hito 2)
-│   ├── embeddings_siglip.npy    # Vectores SigLIP 768d sobre images_normalized (Sala 4, Hito 2)
-│   ├── ids.npy          # IDs alineados con embeddings
-│   ├── consultas_test_50.json   # Conjunto de prueba de Sala 4 (50 consultas con id_correcto verificado)
-│   ├── evaluation_metrics.csv   # Top1/Top5 por modelo (Sala 4, Hito 2)
-│   ├── revision_humana_modelos_top5.csv # Clasificación humana Top5 por modelo (Sala 4, Hito 2)
-│   ├── evaluation.csv   # Resultado de las evaluaciones (Sala 2)
-│   ├── tiempos.csv      # Tiempo por consulta (Sala 4 incluye generacion_*)
-│   ├── resultados_hito2.csv      # Resultados Hito 1 vs Hito 2 por consulta (Sala 2, Hito 2)
-│   ├── resumen_hito2.txt         # Top 1/Top 5 por regla y categoría (Sala 2, Hito 2)
-│   ├── evidencia_coherencia_hito2.txt # Coherencia del Top 5 (Sala 2, Hito 2)
-│   ├── comparacion_hito1_hito2.csv  # Comparación H1 vs H2 por consulta (Sala 3, Hito 2)
-│   ├── comparacion_hito1_hito2.json # Resumen Top 1/Top 5/tiempos (Sala 3, Hito 2)
-│   ├── informe_normalizacion.txt  # Resultados de la normalización (Sala 1)
-│   ├── detalle_normalizacion.csv  # Estado por imagen (Sala 1)
-│   ├── informe_formatos.txt       # Análisis de formatos del banco (Sala 1)
-│   ├── detalle_formatos.csv       # Estructura por imagen (Sala 1)
-│   ├── revision_humana_50.csv     # Clasificación de la muestra de 50 (Sala 1)
-│   ├── informe_revision_humana.txt # Resultados de las 50 revisiones (Sala 1)
-│   └── revision_contact_sheet.png # Hoja de contacto original|normalizada (Sala 1)
-├── scripts/             # consolidar, validar, normalizar, analizar formatos, embeddings, índices comparativos (Sala 4), evaluación, reportes, hito2
-├── scraper/             # Engine de scraping (main.py lo usa)
-├── utils/               # helpers, pagination, limits, update
-├── storage/             # exportación a Excel
-├── config/              # configuración del scraper
-├── evaluation/          # consultas_hito2.csv + INFORME_SALA2_HITO2.md + test_plan.csv + test_images/
-├── requirements.txt     # Dependencias del proyecto
-├── main.py              # Punto de entrada del scraper
-├── TRABAJO.md           # Consigna oficial del proyecto
-├── REPORTES.md          # Auditoría del estado vs TRABAJO.md
-├── REPORTES_HITO2.md    # Reporte del Hito 2 (las 4 salas completas)
-└── README.md            # Este documento
+│   ├── DATA_NEW/         # imágenes nuevas SBX-###-NNNN.png (fuente, NO modificar)
+│   ├── images_normalized/# banco canónico JPG, mismo ID que products.csv
+│   ├── products.csv      # dataset canónico (ÚNICA fuente de productos)
+│   ├── embeddings.npy    # vectores CLIP (Hito 1)
+│   ├── embeddings_clip.npy      # vectores CLIP sobre images_normalized (Sala 4, Hito 2)
+│   ├── embeddings_openclip.npy  # vectores OpenCLIP sobre images_normalized (Sala 4, Hito 2)
+│   ├── embeddings_siglip.npy    # vectores SigLIP 768d sobre images_normalized (Sala 4, Hito 2)
+│   ├── ids.npy           # IDs alineados con embeddings
+│   ├── evaluation.csv    # resultado de evaluaciones
+│   └── tiempos.csv       # tiempo de generación de índices
+├── scripts/              # crear_csv_data_new, normalizar_data_new, generar_embeddings,
+│   │                     # generar_indices_comparativos, validate_dataset, etc.
+├── evaluation/           # plan de pruebas y consultas de evaluación
+├── requirements.txt      # dependencias Python
+├── .env / .env.example   # configuración de entorno
+├── AGENTS.md             # reglas de trabajo para la IA
+├── TRABAJO.md            # consigna oficial del proyecto
+├── README.md             # este documento
+└── main.py               # runner del scraper (legacy, no usado en el flujo actual)
 ```
 
 ## Archivos generados clave
 
-| Archivo | Contenido |
-|---|---|
-| `data/products.csv` | 1000 filas: `id, proveedor, pagina, imagen, nombre_original, url` |
-| `data/embeddings.npy` | Matriz `(1000, 512)` float32, normalizada L2 (CLIP, banco con marco, Hito 1) |
-| `data/embeddings_clip.npy` | Matriz `(1000, 512)` CLIP sobre `images_normalized/` (Sala 4, Hito 2) |
-| `data/embeddings_openclip.npy` | Matriz `(1000, 512)` OpenCLIP sobre `images_normalized/` (Sala 4, Hito 2) |
-| `data/embeddings_siglip.npy` | Matriz `(1000, 768)` SigLIP sobre `images_normalized/` (Sala 4, Hito 2, ganador) |
-| `data/ids.npy` | 1000 IDs en el mismo orden que los embeddings |
-| `data/evaluation_metrics.csv` | Top 1/Top 5 por modelo y categoría (Sala 4, Hito 2) |
-| `data/evaluation.csv` | Evaluación de las 20 consultas (5 filas por consulta) |
-| `data/reporte_evaluacion.xlsx` | Resumen por consulta |
-| `data/images_normalized/` | 1000 imágenes normalizadas `AIM-Pxxx-NNN.jpg` (Sala 1, Hito 2) |
-| `data/informe_normalizacion.txt` | Estadísticas de la normalización (Sala 1, Hito 2) |
-| `data/informe_formatos.txt` | Análisis de formatos del banco (Sala 1, Hito 2) |
-| `data/revision_humana_50.csv` | Clasificación de las 50 revisiones (Sala 1, Hito 2) |
-| `data/revision_humana_modelos_top5.csv` | Top 5 por consulta y modelo para clasificación humana (Sala 4, Hito 2) |
-
-> **Nota (Hito 3):** el flujo legacy de `scripts/build_index.py` (que generaba
-> `data/index_embeddings.npy` y `data/index_metadata.json`) fue **eliminado** en
-> la limpieza de código del Hito 3 (junto con `scripts/search.py`,
-> `scripts/buscar_por_imagen.py`, `scripts/ingest.py`, `scripts/insertar_db.py`
-> y `scripts/reporte_evaluacion.py`, que quedaron obsoletos con la fusión
-> CLIP+OpenCLIP+SigLIP). El flujo integrado usa únicamente los índices
-> `embeddings_clip/openclip/siglip.npy` + `ids.npy` (Sala 4) y, como baseline
-> de comparación, `embeddings.npy` (Hito 1).
+| Archivo                          | Contenido                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `data/products.csv`            | 284 filas: `id, proveedor, pagina, imagen, nombre_original, url`           |
+| `data/embeddings.npy`          | Matriz `(284, 512)` float32, normalizada L2 (CLIP, Hito 1)                 |
+| `data/embeddings_clip.npy`     | Matriz `(284, 512)` CLIP sobre `images_normalized/` (Sala 4, Hito 2)     |
+| `data/embeddings_openclip.npy` | Matriz `(284, 512)` OpenCLIP sobre `images_normalized/` (Sala 4, Hito 2) |
+| `data/embeddings_siglip.npy`   | Matriz `(284, 768)` SigLIP sobre `images_normalized/` (Sala 4, Hito 2)   |
+| `data/ids.npy`                 | 284 IDs en el mismo orden que los embeddings                                 |
+| `data/images_normalized/`      | 284 imágenes normalizadas `SBX-###-NNNN.jpg`                              |
+| `data/tiempos.csv`             | Tiempo de generación por modelo (Sala 4, Hito 2)                            |
+| `data/evaluation.csv`          | Evaluación de consultas (Sala 2)                                            |
 
 ## Solución de problemas
 
-- **`ModuleNotFoundError`**: instala las dependencias (`pip install -r requirements.txt`).
-- **La API no responde en `/health`**: verifica que esté corriendo (`python -m uvicorn api.main:app --port 8000`). La interfaz muestra el error en el sidebar.
-- **El validador reporta imágenes faltantes**: asegúrate de haber corrido `consolidar.py` (el validador apunta a `data/images_normalized/`).
-- **Errores de codificación en consola (Windows)**: usa `set PYTHONIOENCODING=utf-8` antes de ejecutar, o activa la consola UTF-8.
-- **Primera ejecución lenta**: la descarga del modelo CLIP y de las imágenes toma unos minutos.
+- **`ModuleNotFoundError`**: activar el venv (`. ..\.venv\Scripts\activate.fish`) e instalar dependencias (`pip install -r requirements.txt`).
+- **La API no responde en `/health`**: verificar que esté corriendo (`uvicorn api.main:app --host 0.0.0.0 --port 8000`).
+- **El validador reporta imágenes faltantes**: asegurar de haber corrido `normalizar_data_new.py` (el validador apunta a `data/images_normalized/`).
+- **Errores de codificación en consola (Windows)**: usar `set PYTHONIOENCODING=utf-8` antes de ejecutar.
+- **Primera ejecución lenta**: la descarga de los modelos CLIP/OpenCLIP/SigLIP y el procesamiento de las 284 imágenes toma unos minutos.
+- **IDs desalineados**: volver a ejecutar `generar_embeddings.py` y `generar_indices_comparativos.py` en ese orden; `ids.npy` se regenera alineado con `products.csv`.
 
 ## Próximos pasos
 
-- Calibrar la clasificación humana de los grupos C y D para alcanzar el ≥70% de Top 5 útil del supervisor.
-- Migrar el índice a **PostgreSQL + pgvector** (o FAISS) para persistencia, filtros y concurrencia al escalar.
-- Fase siguiente del RAG: usar un LLM con los resultados recuperados para **proponer nombres y etiquetas**.
+- Completar el plan de evaluación de 50 consultas en `evaluation/`.
+- Migrar el índice a PostgreSQL + pgvector (o FAISS/Qdrant) para persistencia, filtros y concurrencia al escalar.
+- Fase siguiente del RAG: usar un LLM con los resultados recuperados para proponer nombres y etiquetas.

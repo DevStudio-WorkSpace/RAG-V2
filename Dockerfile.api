@@ -1,0 +1,28 @@
+# Dockerfile para la API FastAPI (RAG Sublitex)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Dependencias del sistema necesarias para OpenCV y Pillow
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar dependencias de Python
+COPY requirements.txt .
+# Instalar PyTorch con wheels CPU para evitar descarga de ~2,5 GB de CUDA
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.14.1+cpu torchvision==0.29.1+cpu
+# Install rest of requirements (without --index-url, uses PyPI)
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código de backend y scripts
+COPY api/ ./api/
+COPY core/ ./core/
+COPY scripts/ ./scripts/
+COPY .env* ./
+
+EXPOSE 8000
+
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
