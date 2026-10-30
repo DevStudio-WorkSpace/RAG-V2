@@ -42,3 +42,7 @@ frontend/.theme_pref.json
 
 # Qdrant (persistencia local reproducible con scripts/migrar_a_qdrant.py)
 /qdrant_data/
+
+# Consultas subidas a la API (evidencia local; pueden contener datos de usuarios)
+/data/queries_original/
+/data/queries_procesadas/

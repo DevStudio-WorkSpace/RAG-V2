@@ -14,6 +14,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sentence_transformers import SentenceTransformer
 
+# ── Tipos de imagen admitidos por la API ───────────────────────────────────
+# Se usa en los tres endpoints de búsqueda para validar el content-type
+# del archivo subido. Se incluye WebP junto a JPEG/PNG.
+# También se acepta application/octet-stream porque algunos clientes (ej. curl)
+# no siempre adjuntan el MIME correcto; la validación real la hace Pillow al
+# abrir la imagen, la cual detecta el formato desde los bytes.
+MIME_PERMITIDOS = ("image/jpeg", "image/jpg", "image/png", "image/webp", "application/octet-stream")
+
 # Asegurar importación del módulo search_engine independientemente del working directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from api.search_engine import cargar_indice, info_indice, search_similar
@@ -362,7 +370,7 @@ async def search_image(
       Solo aplica a los modos del motor Hito 2 (auto/completo/procesada);
       los modos Hito 1 (clasico/original/legacy) siempre usan "clip".
     """
-    if file.content_type and file.content_type not in ("image/jpeg", "image/jpg", "image/png"):
+    if file.content_type and file.content_type not in MIME_PERMITIDOS:
         return JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"}
@@ -520,7 +528,7 @@ async def search_image_v2(
                                robusto a oclusiones: puntos que tapen diseño).
     """
     # Mismo control de tipo de archivo que el endpoint del Hito 1
-    if file.content_type and file.content_type not in ("image/jpeg", "image/jpg", "image/png"):
+    if file.content_type and file.content_type not in MIME_PERMITIDOS:
         return JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"}
@@ -675,7 +683,7 @@ async def search_image_qdrant(
       - min_score: score mínimo de similitud (default 0.5)
       - modelo: "clip", "openclip" o "fusion"
     """
-    if file.content_type and file.content_type not in ("image/jpeg", "image/jpg", "image/png"):
+    if file.content_type and file.content_type not in MIME_PERMITIDOS:
         return JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"}

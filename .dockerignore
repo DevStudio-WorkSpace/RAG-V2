@@ -1,0 +1,43 @@
+# ════════════════════════════════════════════════════════════════════════════
+# Contexto de build de la API (Dockerfile.api)
+# Todo lo que esté acá NO se envía al daemon de Docker.
+# ════════════════════════════════════════════════════════════════════════════
+
+# ── Git ─────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+
+# ── Entornos virtuales y cachés de Python ───────────────────────────────────
+.venv
+venv
+env
+__pycache__
+**/__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# ── Frontend: tiene su propio contexto (./frontend) ─────────────────────────
+frontend
+
+# ── Datos y Qdrant: se montan como volúmenes en docker-compose ──────────────
+# Ninguno de los dos se copia en la imagen; la API los lee desde /app/data
+# y /app/qdrant_data gracias a los volúmenes del compose.
+data
+qdrant_data
+
+# ── Secretos ────────────────────────────────────────────────────────────────
+# .env.example SÍ debe entrar: Dockerfile.api hace `COPY .env*` y el glob
+# necesita al menos un archivo para no romper el build.
+.env*
+!.env.example
+
+# ── Entorno local ───────────────────────────────────────────────────────────
+.DS_Store
+.vscode
+.idea
+*.log
+*.md

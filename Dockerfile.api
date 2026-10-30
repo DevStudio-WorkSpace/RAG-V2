@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Instalar dependencias de Python
 COPY requirements.txt .
+# Instalar PyTorch con wheels CPU para evitar descarga de ~2,5 GB de CUDA
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.14.1+cpu torchvision==0.29.1+cpu
+# Install rest of requirements (without --index-url, uses PyPI)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar código de backend y scripts
