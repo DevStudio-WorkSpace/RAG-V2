@@ -10,11 +10,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar dependencias de Python
-COPY requirements.txt .
-# Instalar PyTorch con wheels CPU para evitar descarga de ~2,5 GB de CUDA
+# Fijar NumPy 1.x antes de cualquier otra librería para evitar conflicto con OpenCV y PyTorch
+RUN pip install --no-cache-dir "numpy>=1.24.0,<2.0.0"
+
+# Instalar PyTorch CPU específico
 RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.14.1+cpu torchvision==0.29.1+cpu
-# Install rest of requirements (without --index-url, uses PyPI)
+
+# Instalar resto de dependencias
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar código de backend y scripts

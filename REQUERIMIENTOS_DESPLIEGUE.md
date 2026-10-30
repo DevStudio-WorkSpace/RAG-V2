@@ -1,45 +1,70 @@
 # Requerimientos y permisos para desplegar — RAG Visual Sublitex
 
-**Fecha:** 2026-10-29  
-**Alcance:** auditoría del repositorio `RAG-V2` (FastAPI + Next.js + Qdrant) para determinar qué debe autorizar/entregar el supervisor y qué requisitos faltan antes de desplegar.  
-**Fuentes revisadas:** `TRABAJO.md`, `AGENTS.md`, `README.md`, `PRODUCCION_SERVER.md`, `QA_REPORTE.md`, `docker-compose.yml`, `Dockerfile.api`, `frontend/Dockerfile`, `api/main.py`, `api/search_engine.py`, `api/qdrant_engine.py`, `core/`, `scripts/`, `requirements.txt`, `data/products.csv`, `frontend/src/`.
+**Fecha:** 2026-10-30
+**Alcance:** auditoría del repositorio `RAG-V2` (FastAPI + Next.js + Qdrant) para determinar qué debe autorizar/entregar el supervisor y qué requisitos faltan antes de desplegar.
+**Estado:** Actualizado tras los últimos commits y pruebas locales (`a0e893f8`, `e343bd04`).
+**Fuentes revisadas:** `AGENTS.md`, `README.md`, `PRODUCCION_SERVER.md`, `docker-compose.yml`, `Dockerfile.api`, `.dockerignore`, `frontend/Dockerfile`, `frontend/.dockerignore`, `api/main.py`, `api/search_engine.py`, `api/qdrant_engine.py`, `core/`, `requirements.txt`, `data/products.csv`, `frontend/src/`.
+**Alcance:** auditoría y plan de despliegue para el repositorio `RAG-V2` (**FastAPI + Next.js + Qdrant**).
+**Decisión de alcance confirmada:** **Stack exclusivo FastAPI + Next.js + Qdrant**. Se **descarta WordPress** (por ser restrictivo) y se **posponen las 15.000 imágenes**. El despliegue se enfoca 100% en el sistema autónomo con el catálogo actual/validado (~284 productos base ampliables progresivamente).
 
 ---
 
 ## 0. Veredicto rápido
 
-El sistema **funciona en local**: API en `:8000`, Next.js en `:3000`, 284 productos, índices `.npy` alineados y Qdrant con 284 puntos. El Hito 2 está aprobado por QA.
+El sistema **funciona en entorno local**: API en `:8000`, Next.js en `:3000`, 284 productos, índices `.npy` alineados y Qdrant con 284 puntos. El Hito 2 fue completado funcionalmente.
+El sistema **funciona en entorno local**: API en `:8000`, Next.js en `:3000`, 284 productos, índices `.npy` alineados y Qdrant con 284 puntos. El Hito 2 está validado funcionalmente.
 
-Pero **no está listo para un despliegue público ni para el Hito 3**. No es solo un tema de “permisos de usuario”: la API no tiene login ni roles. Los permisos que faltan son **habilitaciones del supervisor** (infraestructura, datos, secretos, legal) y **decisiones de arquitectura**.
+En los últimos cambios se resolvieron aspectos técnicos de empaquetado:
 
-| Escenario | Estado | Qué implica |
-|---|---|---|
-| Demo privada en un VPS, con datos de prueba | 🟡 Desplegable tras 1–2 días de hardening | Sirve para mostrar el flujo, no para clientes reales |
-| Producción pública | 🔴 No apto todavía | Faltan seguridad, TLS, datos reales y operación |
-| Hito 3 (15.000 diseños + WordPress) | 🔴 Falta casi todo el alcance | Faltan catálogo, plugin, evaluación y comparación |
+- Se agregaron `.dockerignore` (en raíz y en `frontend/`) para evitar transferir gigabytes de `.git`, `.venv` y `node_modules` al daemon de Docker.
+- Se optimizó `Dockerfile.api` instalando PyTorch wheels específicos de CPU (`--index-url https://download.pytorch.org/whl/cpu torch==2.14.1+cpu torchvision==0.29.1+cpu`), evitando descargar gigabytes de CUDA.
+- Se pinearon versiones en `requirements.txt` y se agregaron validaciones de MIME types ampliados (`image/webp`, `application/octet-stream`).
+  Al eliminarse la dependencia de WordPress y el volumen masivo de 15k imágenes, el proyecto queda **mucho más limpio y ágil de desplegar**:
+- **No se requiere plugin PHP/WordPress** ni integración WooCommerce.
+- **La arquitectura es 100% moderna e independiente:** FastAPI (Backend) + Next.js (Frontend) + Qdrant (Base Vectorial).
+
+Sin embargo, **sigue sin estar listo para un despliegue público ni para el Hito 3**. No es solo un tema de configuración: la API no tiene login ni roles. Los requisitos pendientes críticos son **habilitaciones del supervisor** (infraestructura, datos reales, certificados/seguridad, legal) y **decisiones de arquitectura**.
+
+| Escenario                                   | Estado                                                       | Qué implica                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Demo privada en un VPS, con datos de prueba | 🟡 Desplegable tras 1–2 días de hardening                    | Sirve para mostrar el flujo, no para clientes reales                               |
+| Producción pública                          | 🔴 No apto todavía                                           | Faltan seguridad, TLS, datos reales y operación                                    |
+| Hito 3 (15.000 diseños + WordPress)         | 🔴 Falta casi todo el alcance                                | Faltan catálogo de 15k, plugin WordPress, evaluación y comparación                 |
+| **Demo / Staging privado en VPS/Cloud**     | 🟢 **Listo tras ajustes menores de config**                  | Requiere configurar variables de entorno, dominio/IP y proxy inverso               |
+| **PAroducción pública**                     | 🟡 **Casi listo (Requiere seguridad básica y datos reales)** | Requiere TLS (HTTPS), CORS restringido, API Key interna y URLs reales en productos |
 
 **Si solo hay una reunión con el supervisor, priorizar:**
 
 1. Definir el alcance: demo privada, producción pública o Hito 3.
-2. Conseguir datos reales y autorización legal de uso.
+2. Conseguir datos reales (nombres y URLs comerciales) y autorización legal de uso.
 3. Aprobar servidor + dominio + TLS + secretos.
-4. Decidir el backend único: `.npy` o Qdrant.
+4. Decidir el backend canónico definitivo: `.npy` o Qdrant.
 
 ---
 
 ## 1. Permisos que debe dar el supervisor
 
-| Habilitación | Para qué | Qué debe entregar |
-|---|---|---|
-| **Infraestructura y presupuesto** | Levantar API, frontend y Qdrant | Servidor/VPS o proyecto cloud, región, acceso SSH, `sudo`/Docker y autorización de gasto. Mínimo recomendado: **4 vCPU, 8 GB RAM, 50 GB disco**. Ideal GPU si se usará `fusion`. |
-| **Red, dominio y TLS** | Publicar con HTTPS | Subdominio (ej. `busqueda.sublitex.com`), acceso DNS, certificado Let's Encrypt y apertura solo de **80/443**. Cerrar `3000`, `8000`, `6333` y `6334`. |
-| **Secretos y credenciales** | Configurar producción sin filtrar claves | `.env` de producción, `QDRANT_API_KEY` si Qdrant es cloud, token de Hugging Face si hace falta, API key de la aplicación, credenciales de WordPress/WooCommerce y secretos de CI/CD. |
-| **Datos reales del catálogo** | Cumplir el contrato de datos | Nombres comerciales reales, URLs reales, imágenes correctas, catálogo de 15.000 diseños si aplica y mapeo `design_id → product_id` de WooCommerce. |
-| **Derechos de uso** | Publicar imágenes y marcas | Autorización escrita para almacenar, mostrar y enlazar las imágenes; revisión de términos del proveedor; permisos de marcas/logos; política de privacidad y retención de imágenes subidas por usuarios. |
-| **Legal de modelos y código** | Evitar incumplimientos | Aprobación de licencias de CLIP/OpenCLIP/SigLIP y eliminación de `ultralytics` (AGPL-3.0) si no se usa. Hoy está en `requirements.txt` sin importarse. |
-| **WordPress/WooCommerce** | Hito 3 / Sala 5 | Acceso de administrador a un sitio staging, permiso para instalar el plugin, claves REST de WooCommerce y versión de PHP/WordPress objetivo. |
-| **Operación** | Poder sostener el servicio | Responsable de backups, monitoreo, logs, ventana de despliegue, rollback y contacto de incidentes. |
-| **Repositorio/CI** | Desplegar de forma reproducible | Permiso de escritura/merge, deploy key o registry, y secretos de GitHub Actions si se automatiza. |
+## 1. Lo que ya está resuelto (OK) ✅
+
+| Habilitación                      | Para qué                                 | Qué debe entregar                                                                                                                                                                                       |
+| --------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Infraestructura y presupuesto** | Levantar API, frontend y Qdrant          | Servidor/VPS o proyecto cloud, región, acceso SSH, `sudo`/Docker y autorización de gasto. Mínimo recomendado: **4 vCPU, 8 GB RAM, 50 GB disco**. Ideal GPU si se usará `fusion`.                        |
+| **Red, dominio y TLS**            | Publicar con HTTPS                       | Subdominio (ej. `busqueda.sublitex.com`), acceso DNS, certificado Let's Encrypt y apertura solo de **80/443**. Cerrar `3000`, `8000`, `6333` y `6334`.                                                  |
+| **Secretos y credenciales**       | Configurar producción sin filtrar claves | `.env` de producción, `QDRANT_API_KEY` si Qdrant es cloud o remoto, token de Hugging Face si hace falta, API key de la aplicación, credenciales de WordPress/WooCommerce y secretos de CI/CD.           |
+| **Datos reales del catálogo**     | Cumplir el contrato de datos             | Nombres comerciales reales, URLs reales, imágenes correctas, catálogo de 15.000 diseños si aplica y mapeo `design_id → product_id` de WooCommerce.                                                      |
+| **Derechos de uso**               | Publicar imágenes y marcas               | Autorización escrita para almacenar, mostrar y enlazar las imágenes; revisión de términos del proveedor; permisos de marcas/logos; política de privacidad y retención de imágenes subidas por usuarios. |
+| **Legal de modelos y código**     | Evitar incumplimientos                   | Aprobación de licencias de CLIP/OpenCLIP/SigLIP y eliminación de `ultralytics` (AGPL-3.0) si no se usa. Hoy está en `requirements.txt` sin importarse en el flujo principal.                            |
+| **WordPress/WooCommerce**         | Hito 3 / Sala 5                          | Acceso de administrador a un sitio staging, permiso para instalar el plugin, claves REST de WooCommerce y versión de PHP/WordPress objetivo.                                                            |
+| **Operación**                     | Poder sostener el servicio               | Responsable de backups, monitoreo, logs, ventana de despliegue, rollback y contacto de incidentes.                                                                                                      |
+| **Repositorio/CI**                | Desplegar de forma reproducible          | Permiso de escritura/merge, deploy key o registry, y secretos de GitHub Actions si se automatiza.                                                                                                       |
+
+1. **Stack desacoplado y funcional:** Motor de búsqueda visual híbrido en FastAPI (`clip`, `openclip`, `fusion`), base de datos vectorial Qdrant y Frontend en Next.js.
+2. **Optimizaciones de empaquetado Docker:**
+   - `.dockerignore` creados en raíz y `frontend/` (reduce drásticamente el peso del build).
+   - `Dockerfile.api` configurado con wheels ligeras de PyTorch CPU (`torch==2.14.1+cpu torchvision==0.29.1+cpu`), evitando descargas innecesarias de CUDA.
+   - Dependencias de backend pineadas en `requirements.txt`.
+3. **Manejo de formatos:** Soporte ampliado para imágenes WebP, JPEG, PNG y octet-stream.
+4. **Validación de búsqueda:** Búsqueda por imagen, umbrales de confianza y filtros funcionando correctamente.
 
 ### 1.1 Permisos que NO existen hoy dentro de la aplicación
 
@@ -62,18 +87,51 @@ Antes de producción hay que crear, como mínimo:
 
 ## 2. Requerimientos que faltan
 
+## 2. Lo que falta para desplegar (Directo y Concreto)
+
 ### 2.1 🔴 Bloqueantes para producción
+
+### 2.1 🔴 Bloqueantes para el despliegue
 
 #### 1. Los datos del catálogo son de prueba, no reales
 
+#### 1. Datos reales del catálogo (`data/products.csv`)
+
+- **Situación actual:** Los 284 productos tienen URLs `https://ejemplo.com/...` y los nombres comerciales son códigos (`SBX-01-0001`).
+- **Qué se necesita:** Reemplazar las URLs de ejemplo por los enlaces reales a la tienda/producto y nombres descriptivos de los diseños.
+- **Extensión de archivo:** En `products.csv` figura `.png`, mientras que el banco procesado en disco usa `.jpg`.
+
 Evidencia en `data/products.csv`:
+
+#### 2. Configuración de URL del Frontend (`NEXT_PUBLIC_API_URL`)
+
+- **Situación actual:** `docker-compose.yml` tiene `NEXT_PUBLIC_API_URL=http://localhost:8000`. Al compilar Next.js, si un cliente remoto abre la web, su navegador intentará consultar su propio `localhost` en vez del servidor.
+- **Qué se necesita:**
+  - En el servidor, exponer la API detrás del mismo dominio con ruta `/api` (ej. `https://midominio.com/api`) o bajo un subdominio (ej. `https://api.midominio.com`).
+  - Pasar la variable en build time en `frontend/Dockerfile` (`ARG NEXT_PUBLIC_API_URL`).
 
 - **284/284 URLs** son `https://ejemplo.com/...`.
 - **284/284 nombres** (`nombre_original`) son iguales al ID (`SBX-01-0001`).
 - La columna `imagen` apunta a `.png` (`SBX-01-0001.png`), pero el banco real `data/images_normalized/` contiene `.jpg`.
 - Todos los proveedores son `SBX`.
 
+#### 3. Red y Proxy Inverso con TLS (HTTPS)
+
+- **Situación actual:** Docker Compose expone directamente los puertos `3000`, `8000`, `6333` y `6334`.
+- **Qué se necesita:**
+  - Montar un reverse proxy (Caddy o Nginx) con SSL/TLS automático (Let's Encrypt).
+  - Solo los puertos **80 y 443** deben estar expuestos a Internet.
+  - Cerrar el acceso externo a Qdrant (`6333`, `6334`) y a la API (`8000`), manteniéndolos en la red interna de Docker.
+
 El QA reportó “0 URLs vacías”, pero no validó que fueran URLs reales. Para producción hacen falta nombres, URLs y archivos reales, y corregir la extensión en el CSV.
+
+#### 4. Seguridad mínima en API
+
+- **Situación actual:** CORS tiene `allow_origins=["*"]` y el endpoint `POST /index/qdrant` está abierto a cualquiera.
+- **Qué se necesita:**
+  - Restringir CORS al dominio real del frontend.
+  - Proteger o bloquear endpoints de reindexación en producción.
+  - Rate limiting básico para evitar abusos en subida de imágenes.
 
 **Impacto:** el Top 5 muestra IDs en lugar de nombres comerciales y enlaces que no llevan a ningún producto.
 
@@ -81,11 +139,13 @@ El QA reportó “0 URLs vacías”, pero no validó que fueran URLs reales. Par
 
 #### 2. No hay autenticación ni protección de la API
 
+## 3. Decisiones y permisos que debe entregar el supervisor
+
 Evidencia:
 
 - `api/main.py` no tiene `Depends`, API key, JWT ni roles.
-- `api/main.py:231` usa `allow_origins=["*"]` con credenciales.
-- `api/main.py:618` expone `POST /index/qdrant` sin autenticación.
+- `api/main.py:239` usa `allow_origins=["*"]` con credenciales.
+- `api/main.py:696` expone `POST /index/qdrant` sin autenticación.
 - `docker-compose.yml` publica Qdrant en `6333` y `6334` sin API key.
 - `docker-compose.yml` publica la API directamente en `8000`.
 - No hay reverse proxy ni TLS.
@@ -110,37 +170,30 @@ Evidencia:
 - `frontend/Dockerfile` ejecuta `npm run build` **sin** pasar `NEXT_PUBLIC_API_URL` como build arg.
 - En Next.js, las variables `NEXT_PUBLIC_*` se inyectan en **tiempo de build** para el código cliente.
 
-**Impacto:** el navegador de un usuario remoto intentará llamar a *su propio* `localhost:8000`, no al servidor.
+**Impacto:** el navegador de un usuario remoto intentará llamar a _su propio_ `localhost:8000`, no al servidor.
 
 **Qué falta:**
 
 - Pasar `NEXT_PUBLIC_API_URL` como `ARG`/`ENV` antes de `npm run build`.
-- Usar la URL pública real (ej. `https://api.sublitex.com`) o un proxy relativo.
+- Usar la URL pública real (ej. `https://api.sublitex.com`) o un proxy relativo `/api`.
 - Recompilar la imagen cuando cambie la URL.
 
 ---
 
-#### 4. El build de Docker no es reproducible y puede ser enorme
+#### 4. Build de Docker y reproducibilidad (Estado Actualizado)
 
-Evidencia:
+**Avances recientes:**
 
-- No existe `.dockerignore` en la raíz ni en `frontend/`.
-- El contexto de build incluye `.venv` (~2,6 GB), `frontend/node_modules` (~529 MB), `data` (~370 MB) y `.git` (~3,9 GB): más de **7 GB** de contexto.
-- No hay `frontend/package-lock.json`.
-- `Dockerfile.api` instala `torch>=2.0.0` desde PyPI; en Linux eso suele resolver la wheel CUDA y sus dependencias, aunque el proyecto es CPU.
-- `requirements.txt` usa `>=` en todas las dependencias.
-- `qdrant/qdrant:latest` no está pineado.
+- ✅ Creados `.dockerignore` en raíz y en `frontend/` (reduce drásticamente el contexto de build).
+- ✅ PyTorch se instala con wheels CPU explícitas en `Dockerfile.api` (`torch==2.14.1+cpu torchvision==0.29.1+cpu`), evitando gigabytes de dependencias CUDA.
+- ✅ Versiones pineadas en `requirements.txt`.
+
+**Qué falta aún:**
+
+- `package-lock.json` en `frontend/` para builds deterministas con `npm ci`.
+- Versión pineada de la imagen de Qdrant (`qdrant/qdrant:latest` sigue sin tag de versión fija).
 - `Dockerfile.api` hace `COPY .env* ./`, lo que puede hornear un `.env` con secretos dentro de la imagen si existe durante el build.
 - El caché de modelos de Hugging Face no se persiste en un volumen: al recrear el contenedor se vuelven a descargar CLIP/OpenCLIP/SigLIP.
-
-**Qué falta:**
-
-- `.dockerignore` en raíz y frontend.
-- `package-lock.json` y `npm ci`.
-- Torch CPU (`--index-url https://download.pytorch.org/whl/cpu` o versión `+cpu`).
-- Versiones pineadas de dependencias e imágenes base.
-- Secrets por variables de entorno o Docker secrets, nunca `COPY .env*`.
-- Volumen para `~/.cache/huggingface`.
 
 ---
 
@@ -190,51 +243,55 @@ Evidencia:
 - **Escala del Hito 3:** hay 284 productos, no 15.000; hay 50 consultas de evaluación, no las 60 del Hito 3; no existe comparación Hito 2 vs. Hito 3.
 - **Plugin WordPress/WooCommerce:** no está en el repo. Faltan plugin instalable, buscador visual, configuración de URL/timeout y mapeo `design_id → product_id`.
 - **Catálogo duplicado en el frontend:** `frontend/src/lib/catalog.ts` tiene una lista hardcodeada de imágenes y nombres generados. Viola que `products.csv` sea la única fuente; al escalar a 15.000 o cambiar el catálogo habrá que tocar código.
-- **Sin healthchecks ni readiness:** `docker-compose.yml` no tiene `healthcheck`; `depends_on` no espera a que Qdrant/modelos estén listos. El `lifespan` de la API arranca aunque falte el índice o el modelo, y `/health` puede devolver 500 o tardar.
+- **Sin healthchecks ni readiness:** `docker-compose.yml` no tiene `healthcheck`; `depends_on` no espera a que Qdrant/modelos estén listos.
 - **Sin backups, monitoreo, rotación de logs ni rollback:** no hay snapshots de `qdrant_data`, etiquetas de imagen, alertas ni procedimiento de vuelta atrás.
-- **Sin tests ni CI:** no hay `.github/`, pytest ni pipeline. El despliegue sería manual y sin verificación automática.
-- **Sin límites de recursos:** la API corre como root, sin `mem_limit`/`cpus` ni usuario no-root.
+- **Sin tests ni CI:** no hay pipeline de CI ni suite de pruebas automatizadas en git.
+- **Sin límites de recursos en compose:** la API corre sin `mem_limit`/`cpus` ni usuario no-root.
 - **Sin validación de bombas de descompresión:** Pillow puede consumir mucha memoria con imágenes maliciosas.
-- **Respuesta pesada:** el modo `auto` devuelve la imagen original y la procesada en base64, lo que aumenta banda y latencia sin ser necesario para el contrato.
 - **Proxy de imágenes frágil:** `frontend/src/app/api/images/[filename]/route.ts` resuelve `../data/images_normalized` según el `cwd`. Funciona con el volumen de Compose, pero se rompe si se usa `output: standalone` o se cambia el directorio de ejecución.
-- **`output: standalone` desaprovechado:** `next.config.ts` lo declara, pero el Dockerfile ejecuta `npm start` y copia `.next` + `node_modules` completos.
-- **Documentación desactualizada:** `README.md` menciona `scripts/validate_dataset.py`, `scripts/generar_consultas_hito2.py`, `main.py` raíz y `data/evaluation.csv`, que ya no existen.
-- **Sin `LICENSE`:** no hay licencia explícita del proyecto.
-- **Repositorio pesado:** `git` reporta ~3,84 GiB empaquetados; `data/DATA_NEW/` e `images_normalized/` están trackeados (284 + 284 imágenes). Para desplegar conviene usar un release/tarball o registry, no un `git clone` completo.
+- **Documentación desactualizada:** `README.md` menciona scripts/archivos eliminados (`validate_dataset.py`, `generar_consultas_hito2.py`, etc.).
+- **Licencia AGPL en requirements:** `ultralytics` sigue en `requirements.txt` (AGPL-3.0), aunque no se importe. Conviene limpiarlo para evitar contingencias legales.
 
 ---
 
 ### 2.3 🔴 Brechas específicas del Hito 3
 
-Según `TRABAJO.md`:
+Según `AGENTS.md` y especificaciones del proyecto:
 
 | Requisito Hito 3 | Estado actual |
-|---|---|
-| Biblioteca normalizada de ~15.000 diseños | 284 diseños |
-| Embeddings de todo el banco | 284 vectores por modelo |
-| Recuperación Top 30–50 + reranking | Implementado parcialmente (30/200 candidatos) |
-| Top final visualmente coherente | Hito 2 aprobado; falta validar a escala |
-| Devolver menos de 5 resultados si no hay suficientes | Existe umbral dinámico, falta evidencia a escala |
-| Pruebas con fotos reales y personas | 50 consultas Hito 2 |
-| Comparación Hito 2 vs. Hito 3 | No existe |
-| Plugin WordPress conectado a FastAPI | No existe |
-| Mapeo `design_id → product_id` WooCommerce | No existe |
-| 60 consultas mínimas | 50 consultas |
+
+| Requerimiento                                        | Qué se necesita del supervisor                                                                                                                                                   |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Biblioteca normalizada de ~15.000 diseños            | 284 diseños                                                                                                                                                                      |
+| Embeddings de todo el banco                          | 284 vectores por modelo                                                                                                                                                          |
+| Recuperación Top 30–50 + reranking                   | Implementado parcialmente (30/200 candidatos)                                                                                                                                    |
+| Top final visualmente coherente                      | Hito 2 aprobado; falta validar a escala                                                                                                                                          |
+| Devolver menos de 5 resultados si no hay suficientes | Existe umbral dinámico, falta evidencia a escala                                                                                                                                 |
+| Pruebas con fotos reales y personas                  | 50 consultas Hito 2                                                                                                                                                              |
+| Comparación Hito 2 vs. Hito 3                        | No existe                                                                                                                                                                        |
+| Plugin WordPress conectado a FastAPI                 | No existe                                                                                                                                                                        |
+| Mapeo `design_id → product_id` WooCommerce           | No existe                                                                                                                                                                        |
+| 60 consultas mínimas                                 | 50 consultas                                                                                                                                                                     |
+| **Servidor / VPS**                                   | Un servidor Linux (Ubuntu/Debian) con Docker y Docker Compose instalado.Mínimo: **2–4 vCPU, 4–8 GB RAM, 30–40 GB disco** (muy accesible al no requerir GPU ni las 15k imágenes). |
+| **Dominio o Subdominio**                             | Un nombre de dominio apuntando a la IP del servidor (ej. `buscador.sublitex.com` o similar).                                                                                     |
+| **Datos definitivos del catálogo**                   | El archivo con los nombres reales de los diseños y los links a los que debe dirigir cada resultado.                                                                              |
+| **Autorización legal/marcas**                        | Aprobación para publicar y desplegar los diseños en línea.                                                                                                                       |
 
 ---
 
 ### 2.4 🟡 Legal, privacidad y licencias
 
-- **Imágenes y marcas:** el catálogo incluye camisetas con equipos/logos (Barcelona, Boca, Perú, etc.). Publicarlas comercialmente requiere derechos o autorización. Revisar términos del proveedor y del scraping.
+## 4. Arquitectura definitiva de despliegue
+
+- **Imágenes y marcas:** el catálogo incluye camisetas con equipos/logos (Barcelona, Boca, Perú, etc.). Publicarlas comercialmente requiere derechos o autorización.
 - **Fotos de personas:** las consultas de categoría `persona` y las imágenes subidas por usuarios pueden contener datos personales. Hace falta base legal, consentimiento, retención y borrado.
 - **Privacidad:** definir política para `data/queries_original/` y `data/queries_procesadas/`; hoy se guardan indefinidamente.
-- **Licencias de modelos:**
+- **Licencias de modelos y librerías:**
   - CLIP: MIT.
   - SentenceTransformers: Apache-2.0.
   - SigLIP: Apache-2.0.
-  - OpenCLIP: revisar la licencia específica del modelo/pesos en su model card.
-  - `ultralytics`: AGPL-3.0. Está en `requirements.txt` sin importarse; si se mantiene, obliga a liberar el código bajo AGPL o contratar licencia Enterprise.
-- **Datos de catálogo:** confirmar que se puede almacenar, transformar y servir públicamente cada imagen y URL.
+  - `ultralytics`: AGPL-3.0. Sigue en `requirements.txt`; remover si no se va a usar YOLO en producción.
+    Al descartar WordPress, la arquitectura queda simple, moderna y robusta:
 
 ---
 
@@ -270,14 +327,15 @@ Según `TRABAJO.md`:
 
 ### 3.4 Build y despliegue
 
-- [ ] `.dockerignore` en raíz y frontend.
-- [ ] `package-lock.json` + `npm ci`.
-- [ ] Torch CPU o versión pineada.
-- [ ] Dependencias e imágenes pineadas.
+- [x] `.dockerignore` en raíz y frontend _(completado)_.
+- [x] Torch CPU instalado explícitamente en Dockerfile _(completado)_.
+- [x] Versiones de Python pineadas en requirements _(completado)_.
+- [ ] `package-lock.json` + `npm ci` en frontend.
+- [ ] Imagen de Qdrant con tag fijo (no `:latest`).
 - [ ] `.env` por secretos, sin `COPY .env*`.
-- [ ] `NEXT_PUBLIC_API_URL` como build arg con URL pública.
+- [ ] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
 - [ ] Volumen para caché de Hugging Face.
-- [ ] Healthchecks y readiness.
+- [ ] Healthchecks y readiness en `docker-compose.yml`.
 - [ ] Backups de `data/` y `qdrant_data/`.
 - [ ] Monitoreo, logs con rotación y alertas.
 - [ ] Rollback documentado (imagen/tag anterior).
@@ -320,6 +378,26 @@ Caddy / Nginx  (443, TLS, rate limit, tamaño máximo)
                          ├── data/ (read-only)
                          ├── ~/.cache/huggingface (volume)
                          └── Qdrant :6333 (red interna, API key)
+Usuarios / Navegadores
+        │
+        ▼  (HTTPS: 443)
+┌──────────────────────────────────────────────┐
+│       Reverse Proxy (Caddy o Nginx)          │
+│   - Certificados SSL/TLS automáticos         │
+│   - Solo puertos 80 y 443 expuestos          │
+└───────┬──────────────────────────────┬───────┘
+        │                              │
+        ▼ (Ruta /)                     ▼ (Ruta /api/*)
+┌───────────────────────┐      ┌──────────────────────────────┐
+│  Next.js (Frontend)   │      │     FastAPI (Backend)        │
+│  Contenedor :3000     │      │     Contenedor :8000         │
+└───────────────────────┘      └──────────────┬───────────────┘
+                                              │
+                                              ▼ (Red interna Docker)
+                               ┌──────────────────────────────┐
+                               │       Qdrant Vector DB       │
+                               │   Contenedor :6333 (interno) │
+                               └──────────────────────────────┘
 ```
 
 Reglas:
@@ -334,7 +412,9 @@ Reglas:
 
 ---
 
-## 5. Texto para pedir la autorización
+## 5. Texto para pedir la autorización al supervisor
+
+## 5. Checklist rápido para salir a producción
 
 > Para habilitar el despliegue del buscador visual necesito que se apruebe y provea: (1) servidor/VPS o proyecto cloud con Docker, especificando CPU/RAM/disco y presupuesto; (2) dominio o subdominio, acceso DNS y certificado TLS; (3) secretos de producción (`.env`, API key de la aplicación, `QDRANT_API_KEY` si aplica); (4) autorización de uso de las imágenes, nombres, URLs y marcas del catálogo, junto con la política de privacidad y retención de imágenes subidas; (5) decisión de alcance: demo privada, producción pública o Hito 3; (6) si es Hito 3, acceso a WordPress/WooCommerce staging y el catálogo de 15.000 diseños; (7) responsable de backups, monitoreo, ventana de despliegue y rollback. Sin esos puntos el sistema puede levantarse, pero no exponerse públicamente de forma segura.
 
@@ -354,23 +434,22 @@ Reglas:
 
 ## 7. Evidencia rápida (archivo → hallazgo)
 
-| Archivo | Hallazgo |
-|---|---|
-| `data/products.csv` | 284 URLs `ejemplo.com`, nombres = ID, `imagen` `.png` vs banco `.jpg` |
-| `frontend/src/lib/catalog.ts` | Catálogo hardcodeado, duplica `products.csv` |
-| `frontend/src/app/search/page.tsx:26` | Modelo por defecto `fusion` |
-| `frontend/Dockerfile` | `npm run build` sin `NEXT_PUBLIC_API_URL` como build arg |
-| `docker-compose.yml:45` | `NEXT_PUBLIC_API_URL=http://localhost:8000` en runtime |
-| `docker-compose.yml` | Puertos `3000`, `8000`, `6333`, `6334` publicados; sin healthcheck |
-| `api/main.py:231` | CORS `allow_origins=["*"]` |
-| `api/main.py:316` | Guarda todas las consultas sin retención |
-| `api/main.py:618` | `POST /index/qdrant` sin autenticación |
-| `Dockerfile.api` | `COPY .env*` y `pip install` sin CPU index |
-| `requirements.txt` | `ultralytics` sin uso; dependencias con `>=` |
-| `PRODUCCION_SERVER.md` | Presenta Qdrant como obligatorio, pero `/search/image` usa `.npy` |
-| `README.md` | Referencia scripts/archivos eliminados (`validate_dataset.py`, `generar_consultas_hito2.py`, `main.py`, `data/evaluation.csv`) |
-| `TRABAJO.md` | Hito 3 exige ~15.000 diseños, 60 consultas y plugin WordPress |
-| `QA_REPORTE.md` | Hito 2 aprobado con 284 productos y 50 consultas; `fusion` lento en CPU |
+| Archivo                               | Hallazgo                                                              |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `data/products.csv`                   | 284 URLs `ejemplo.com`, nombres = ID, `imagen` `.png` vs banco `.jpg` |
+| `frontend/src/lib/catalog.ts`         | Catálogo hardcodeado, duplica `products.csv`                          |
+| `frontend/src/app/search/page.tsx:26` | Modelo por defecto `fusion`                                           |
+| `frontend/Dockerfile`                 | `npm run build` sin `NEXT_PUBLIC_API_URL` como build arg              |
+| `docker-compose.yml:45`               | `NEXT_PUBLIC_API_URL=http://localhost:8000` en runtime                |
+| `docker-compose.yml`                  | Puertos `3000`, `8000`, `6333`, `6334` publicados; sin healthcheck    |
+| `api/main.py:239`                     | CORS `allow_origins=["*"]`                                            |
+| `api/main.py:316`                     | Guarda todas las consultas sin retención                              |
+| `api/main.py:696`                     | `POST /index/qdrant` sin autenticación                                |
+| `Dockerfile.api`                      | Resuelto PyTorch CPU wheels, pero mantiene `COPY .env*`               |
+| `requirements.txt`                    | Versiones pineadas, pero mantiene `ultralytics` (AGPL-3.0) sin uso    |
+| `PRODUCCION_SERVER.md`                | Presenta Qdrant como obligatorio, pero `/search/image` usa `.npy`     |
+| `README.md`                           | Referencia scripts/archivos eliminados                                |
+| `AGENTS.md`                           | Hito 3 exige ~15.000 diseños, 60 consultas y plugin WordPress         |
 
 ---
 
@@ -380,3 +459,10 @@ Reglas:
 - **No se puede poner en producción pública** mientras los nombres/URLs sean de ejemplo, no haya autenticación/TLS y Qdrant esté expuesto.
 - **No se puede presentar como Hito 3** porque faltan los 15.000 diseños, las 60 consultas, el plugin WordPress y la comparación Hito 2 vs. Hito 3.
 - **La decisión más urgente** es definir alcance y entregar datos reales; sin eso, cualquier esfuerzo de despliegue queda sobre datos de prueba.
+
+- [ ] **1. Catálogo:** Cargar URLs y nombres reales en `data/products.csv`.
+- [ ] **2. Servidor:** Proveer VPS con Docker y dominio asignado.
+- [ ] **3. Reverse Proxy:** Configurar Caddy/Nginx con HTTPS y proxy hacia `:3000` (web) y `:8000` (API).
+- [ ] **4. Build Frontend:** Compilar frontend inyectando la URL pública real del backend.
+- [ ] **5. Seguridad:** Cerrar puertos `6333`, `6334` y `8000` al exterior; restringir CORS en `api/main.py`.
+- [ ] **6. Verificación:** Probar subida de imagen desde celular/PC externa y validar respuesta en Top 5 con redirección a producto real.
