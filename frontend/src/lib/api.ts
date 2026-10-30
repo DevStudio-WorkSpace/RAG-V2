@@ -10,11 +10,13 @@ export class ApiError extends Error {
   }
 }
 
-export async function healthCheck(
-  apiUrl: string
-): Promise<{ data: HealthInfo | null; error: string | null }> {
+export async function healthCheck(): Promise<{
+  data: HealthInfo | null;
+  error: string | null;
+}> {
   try {
-    const resp = await fetch(`${apiUrl.replace(/\/+$/, "")}/health`, {
+    const resp = await fetch("/api/health", {
+      cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
     if (!resp.ok) {
@@ -30,12 +32,9 @@ export async function healthCheck(
 }
 
 export async function searchImage(
-  apiUrl: string,
   file: File,
   modelo: string = "fusion"
 ): Promise<{ data: SearchResult | null; error: string | null }> {
-  const url = apiUrl.replace(/\/+$/, "");
-
   // Validación cliente: tipo y tamaño ANTES de enviar (evita viajes inútiles)
   if (!file.type.startsWith("image/")) {
     return {
@@ -60,7 +59,7 @@ export async function searchImage(
 
   let resp: Response;
   try {
-    resp = await fetch(`${url}/search/image`, {
+    resp = await fetch("/api/search", {
       method: "POST",
       body: fd,
       // CLIP en CPU puede tardar: nada de timeouts agresivos de 2.5s.
@@ -71,13 +70,13 @@ export async function searchImage(
       return {
         data: null,
         error:
-          "La API tardó más de 3 minutos en responder. Verificá que esté activa en http://localhost:8000/health",
+          "La API tardó más de 3 minutos en responder. Verificá que el proxy /api/search y la API estén activos.",
       };
     }
     return {
       data: null,
       error:
-        "No se pudo conectar con la API. ¿Está levantada? (uvicorn api.main:app --port 8000)",
+        "No se pudo conectar con el proxy de búsqueda. Verificá que el frontend y la API estén levantados.",
     };
   }
 
@@ -86,6 +85,7 @@ export async function searchImage(
     try {
       const body = await resp.json();
       if (body?.error) detalle = String(body.error);
+      else if (body?.detail) detalle = String(body.detail);
     } catch {
       // respuesta no-JNA: mantener detalle genérico
     }
