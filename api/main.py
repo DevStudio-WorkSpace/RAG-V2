@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import Depends, FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sentence_transformers import SentenceTransformer
@@ -22,6 +22,11 @@ from api.search_engine_hito2 import (
     search_similar_reranked_fusion,
 )
 from api.preprocesar_consulta import preparar_consulta
+from api.security import (
+    advertencias_config_seguridad,
+    require_admin,
+    require_client,
+)
 from api.qdrant_engine import (
     cargar_indice as cargar_indice_qdrant,
     info_indice as info_indice_qdrant,
@@ -186,6 +191,9 @@ def _encodificar(imagen, modelo: str):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Carga el índice de vectores y el modelo CLIP una sola vez al iniciar el servidor."""
+    for aviso in advertencias_config_seguridad():
+        print(f"[API] AVISO DE SEGURIDAD: {aviso}")
+
     try:
         cargar_indice()
         print("[API] Índice de embeddings y dataset cargado correctamente.")
@@ -225,13 +233,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configuración CORS para la interfaz de Sala 2 y clientes frontend
+# CORS restringido a los orígenes explícitos del frontend. No se permite "*"
+# ni cookies de sesión: la autenticación viaja en el header X-API-Key.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
+    max_age=600,
 )
 
 # Parámetros del Hito 2: cuántos candidatos se recuperan en la fase amplia
@@ -282,7 +292,11 @@ def get_model():
 
 @app.get("/health")
 def health():
-    """Endpoint de verificación del estado de la API y datos indexados."""
+    """Endpoint público de liveness/readiness (no expone secretos).
+
+    Se mantiene sin API key para que Docker/Kubernetes y el proxy puedan
+    comprobar el estado del servicio sin credenciales.
+    """
     try:
         info = info_indice()
         indice_openclip = os.path.join(BASE_DIR, "data", "embeddings_openclip.npy")
@@ -332,7 +346,7 @@ def _error_dimensiones(imagen) -> str | None:
     return None
 
 
-@app.post("/search/image")
+@app.post("/search/image", dependencies=[Depends(require_client)])
 async def search_image(
     file: UploadFile = File(...),
     modo: str = Form("auto"),
@@ -499,7 +513,7 @@ async def search_image(
         )
 
 
-@app.post("/search/image/v2")
+@app.post("/search/image/v2", dependencies=[Depends(require_client)])
 async def search_image_v2(
     file: UploadFile = File(...),
     modelo: str = Form("clip"),
@@ -590,7 +604,7 @@ async def search_image_v2(
 # ════════════════════════════════════════════════════════════════════════════
 
 
-@app.get("/health/qdrant")
+@app.get("/health/qdrant", dependencies=[Depends(require_admin)])
 def health_qdrant_endpoint():
     """Estado de salud de Qdrant: colección, puntos, URL, almacenamiento en disco."""
     try:
@@ -602,7 +616,7 @@ def health_qdrant_endpoint():
         )
 
 
-@app.get("/collections/qdrant")
+@app.get("/collections/qdrant", dependencies=[Depends(require_admin)])
 def listar_colecciones_qdrant():
     """Lista todas las colecciones disponibles en Qdrant."""
     try:
@@ -615,7 +629,7 @@ def listar_colecciones_qdrant():
         )
 
 
-@app.post("/index/qdrant")
+@app.post("/index/qdrant", dependencies=[Depends(require_admin)])
 def indexar_qdrant(
     csv_path: str = None,
     embeddings_path: str = None,
@@ -654,7 +668,7 @@ def indexar_qdrant(
         )
 
 
-@app.post("/search/image/qdrant")
+@app.post("/search/image/qdrant", dependencies=[Depends(require_client)])
 async def search_image_qdrant(
     file: UploadFile = File(...),
     top_k: int = Form(5),
