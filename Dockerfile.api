@@ -18,7 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api/ ./api/
 COPY core/ ./core/
 COPY scripts/ ./scripts/
-COPY .env* ./
+
+# La configuración sensible se inyecta en runtime (docker-compose/.env);
+# nunca se copia .env dentro de la imagen.
 
 EXPOSE 8000
 

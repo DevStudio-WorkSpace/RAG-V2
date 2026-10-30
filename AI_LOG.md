@@ -933,3 +933,55 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - Creados `Dockerfile.api` y `docker-compose.yml` para despliegue integral (FastAPI + Qdrant + Next.js).
 - Generado reporte completo de estado y readiness en `REPORTE_LIMPIEZA.md`.
 - Creada guía de despliegue para equipo en `PRODUCCION_SERVER.md` (instrucciones de verificación, empaquetado, configuración de IP pública y orquestación).
+
+## Fecha: 2026-10-27 (fix: imágenes vacías en el catálogo Next.js)
+
+### Prompt - "corrigeme en frontend que algunas imagenes no se pueden ver arregla eso, porque salen vacio analiza y dime cual seria el problema... haz que se visualize todo las imagenes"
+
+**Propósito:** Corregir las tarjetas del catálogo que se mostraban vacías y asegurar que se visualicen todas las imágenes reales del banco.
+
+**Causa raíz:** `frontend/src/lib/catalog.ts` tenía una lista hardcodeada de 200 IDs; 54 no existían en `data/images_normalized/` (SBX-03 completo, SBX-05-0001..0010 y 4 IDs sueltos) y 138 productos reales no aparecían. `data/products.csv` e `images_normalized` tienen 284 productos y los 284 archivos son válidos.
+
+**Resultado:**
+- Regenerado el arreglo `IMAGES` de `catalog.ts` desde `data/products.csv`: 284 IDs reales, 0 faltantes en disco, diff 0 contra products.csv.
+- `frontend/src/app/api/images/[filename]/route.ts`: resolución de extensión ampliada (.jpg/.jpeg/.png/.webp) para tolerar el desfase `.png` del CSV vs `.jpg` en disco.
+- Verificado: `npx tsc --noEmit` sin errores, `npm run lint` sin errores (3 warnings preexistentes), PIL validó 284/284 imágenes sin archivos dañados.
+
+**Nota:** no se hizo commit ni push.
+
+## Fecha: 2026-10-30 (3.3 Seguridad: API keys, rol admin y CORS restringido)
+
+### Prompt - "What did we do so far? / Continuar con los siguientes pasos de 3.3 Seguridad"
+
+**Propósito:** Implementar autenticación por API key con roles cliente/administrador, proteger indexación y restringir CORS al frontend, sin exponer secretos en el navegador.
+
+**Resultado:**
+- `api/security.py`: dependencias `require_client`/`require_admin`, comparación con `secrets.compare_digest`, `401/403/503` fail-closed y advertencias de configuración sin filtrar claves.
+- `core/config.py`: `API_CLIENT_KEY`/`API_ADMIN_KEY` como `SecretStr`, `CORS_ORIGINS` validado (ignora `*`) y lista de orígenes.
+- `api/main.py`: CORS restringido (`allow_credentials=False`, métodos/headers explícitos); búsquedas con rol cliente; indexación y administración con rol admin; `/health` sigue público.
+- Frontend: proxies server-side `frontend/src/app/api/search/route.ts` y `frontend/src/app/api/health/route.ts`; `api.ts` y `search/page.tsx` usan rutas relativas, sin `NEXT_PUBLIC_API_URL`.
+- Configuración: `.env.example`, `frontend/.env.example`, `docker-compose.yml`; `.dockerignore` raíz y de frontend; `Dockerfile.api` ya no copia `.env` a la imagen.
+- `scripts/compare_hito1_hito2.py` envía `X-API-Key` (`API_CLIENT_KEY` o `--api-key`).
+- Documentación actualizada: `README.md`, `PRODUCCION_SERVER.md`, `AGENTS.md`.
+
+**Verificado:** `py_compile` de API/config/seguridad y script de comparación; pruebas con `TestClient` (401/403/503, CORS permitido/denegado, `/health` público, `*` ignorado); `npx tsc --noEmit`, `npm run lint` (3 warnings preexistentes) y `npm run build` correctos.
+
+**Nota:** no se hizo commit ni push. Docker no está disponible en esta máquina, por lo que no se ejecutó `docker compose config`.
+
+## Fecha: 2026-10-30 (3.3 Seguridad al 100%: Qdrant, claves por cliente y CORS)
+
+### Prompt - "ajusta algunas cosas para que este al 100% estos 3 puntos"
+
+**Propósito:** Cerrar los gaps detectados en la auditoría: Qdrant accesible sin autenticación, CORS con valores por defecto de desarrollo y una única clave de cliente compartida.
+
+**Resultado:**
+- `docker-compose.yml`: Qdrant exige `QDRANT_API_KEY`, publica `6333/6334` solo en `127.0.0.1` y queda en la red `backend`; el frontend solo está en `frontend_net` y no puede alcanzar Qdrant directamente. La API recibe la clave de Qdrant y `API_CLIENT_KEYS`.
+- `core/config.py`: `QDRANT_API_KEY` y `API_CLIENT_KEYS` como `SecretStr`; advertencia si un origen CORS no local usa HTTP.
+- `core/base_datos.py`: la clave de Qdrant se extrae de `SecretStr` y se pasa al cliente; vacía se convierte en `None`.
+- `api/security.py`: soporte de `API_CLIENT_KEYS` con formato `nombre:clave,...`, identidad `client:<nombre>`, compatibilidad con `API_CLIENT_KEY` como `default` y menor privilegio si una clave coincide con la de administrador.
+- `.env.example`, `README.md`, `PRODUCCION_SERVER.md` y `AGENTS.md`: documentadas las claves por cliente, la protección de Qdrant y CORS solo HTTPS en producción.
+- `CORS_ORIGINS` ahora es obligatorio en Docker Compose: ya no cae silenciosamente en `localhost`.
+
+**Verificado:** `compileall` de `api/`, `core/` y `scripts/`; pruebas directas de roles, múltiples claves, fail-closed, menor privilegio y secreto de Qdrant (`SEGURIDAD_100_OK`); pruebas sobre `api.main` con `TestClient` para `401/403`, CORS permitido/denegado y parseo de multipart (`API_SEGURIDAD_100_OK`); fail-closed real sin claves (`FAIL_CLOSED_100_OK`); `npx tsc --noEmit` y `npm run lint` (solo 3 warnings preexistentes).
+
+**Nota:** no se hizo commit ni push. Docker sigue sin estar disponible, por lo que no se ejecutó `docker compose config`.

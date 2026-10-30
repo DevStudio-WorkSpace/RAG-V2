@@ -147,3 +147,22 @@ La API NO debe cerrarse ante:
 - Si falta espacio al instalar, apuntar `TMPDIR=/var/tmp` (el disco tiene ~400 GB).
 - El usuario usa fish: los comandos de activación de venv son `.fish`, y
   «source .venv/bin/activate» falla.
+
+## 12. Seguridad obligatoria de la API
+
+- Nunca dejar CORS en `*`. Usar `CORS_ORIGINS` con orígenes explícitos; en
+  producción, solo el dominio real con HTTPS.
+- Los endpoints de búsqueda exigen `X-API-Key` de cliente o administrador.
+  `API_CLIENT_KEY` es el cliente `default`; `API_CLIENT_KEYS` permite claves
+  adicionales con formato `nombre:clave,...`.
+- Indexación y administración (`/index/qdrant`, `/health/qdrant`,
+  `/collections/qdrant`) exigen `API_ADMIN_KEY`.
+- Qdrant exige `QDRANT_API_KEY`; sus puertos solo se publican en `127.0.0.1` y
+  el frontend no comparte red con Qdrant.
+- `GET /health` es público a propósito (liveness/readiness).
+- Si faltan `API_CLIENT_KEY`/`API_CLIENT_KEYS`/`API_ADMIN_KEY`, fallar cerrado
+  con 503; nunca abrir endpoints por defecto.
+- Comparar claves con `secrets.compare_digest` y no registrarlas en logs.
+- El frontend NO recibe claves: usa los proxies server-side `/api/search` y
+  `/api/health`. Prohibido `NEXT_PUBLIC_*` para secretos.
+- No copiar `.env` ni `.env.local` dentro de imágenes Docker.
