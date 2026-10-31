@@ -13,9 +13,10 @@ class QdrantManager:
         self.collection_name = collection_name or settings.QDRANT_COLLECTION_NAME
         
         if settings.QDRANT_URL:
+            qdrant_api_key = settings.QDRANT_API_KEY.get_secret_value().strip() or None
             self.client = QdrantClient(
                 url=settings.QDRANT_URL,
-                api_key=settings.QDRANT_API_KEY,
+                api_key=qdrant_api_key,
                 timeout=settings.QDRANT_TIMEOUT,
             )
         else:

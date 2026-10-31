@@ -24,7 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api/ ./api/
 COPY core/ ./core/
 COPY scripts/ ./scripts/
-COPY .env* ./
+
+# La configuración sensible se inyecta en runtime (docker-compose/.env);
+# nunca se copia .env dentro de la imagen.
 
 # Seguridad: Crear usuario no-root (con home para caché de Hugging Face)
 RUN useradd -m -u 10001 appuser && \

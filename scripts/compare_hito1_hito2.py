@@ -26,12 +26,14 @@ CONSULTAS DE PRUEBA (evaluation/consultas_hito2.csv):
 
 Requisitos:
     1) Tener la API corriendo localmente:  python -m uvicorn api.main:app --port 8000
+    2) Definir API_CLIENT_KEY (o pasar --api-key); la API protege las búsquedas.
 
 Uso:
     python scripts/compare_hito1_hito2.py
     python scripts/compare_hito1_hito2.py --url http://localhost:8000
     python scripts/compare_hito1_hito2.py --solo hito2   # solo mide el motor nuevo
     python scripts/compare_hito1_hito2.py --openclip     # agrega columna OpenCLIP (h2oc)
+    python scripts/compare_hito1_hito2.py --api-key "$API_CLIENT_KEY"
 """
 
 import argparse
@@ -45,6 +47,7 @@ import requests
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DEFAULT_URL = "http://localhost:8000"
+DEFAULT_API_KEY_ENV = "API_CLIENT_KEY"
 CONSULTAS_CSV = os.path.join(BASE_DIR, "evaluation", "consultas_hito2.csv")
 SALIDA_CSV = os.path.join(BASE_DIR, "data", "comparacion_hito1_hito2.csv")
 SALIDA_JSON = os.path.join(BASE_DIR, "data", "comparacion_hito1_hito2.json")
@@ -112,7 +115,7 @@ def _top_1_y_top_5(resultados, id_correcto):
     return top1_ok, top5_ok, id_top1
 
 
-def _consultar(base_url, endpoint, ruta_imagen, modo=None, modelo=None):
+def _consultar(base_url, endpoint, ruta_imagen, api_key, modo=None, modelo=None):
     """
     Hace POST de la imagen al endpoint y devuelve
     (resultados, tiempo_segundos, respuesta_http). Nunca lanza: ante un error
@@ -130,6 +133,7 @@ def _consultar(base_url, endpoint, ruta_imagen, modo=None, modelo=None):
                 base_url + endpoint,
                 files={"file": (os.path.basename(ruta_imagen), f)},
                 data=data or None,
+                headers={"X-API-Key": api_key},
                 timeout=180,
             )
     except requests.exceptions.ConnectionError:
@@ -152,6 +156,11 @@ def _consultar(base_url, endpoint, ruta_imagen, modo=None, modelo=None):
 def main():
     parser = argparse.ArgumentParser(description="Sala 3 - Comparación Hito 1 vs Hito 2")
     parser.add_argument("--url", default=DEFAULT_URL, help="URL base de la API")
+    parser.add_argument(
+        "--api-key",
+        default=os.environ.get(DEFAULT_API_KEY_ENV, ""),
+        help=f"API key de cliente (por defecto: variable {DEFAULT_API_KEY_ENV})",
+    )
     parser.add_argument("--solo", choices=["hito1", "hito2"], default=None,
                         help="Probar un solo motor (por defecto ambos)")
     parser.add_argument("--openclip", action="store_true",
@@ -161,6 +170,14 @@ def main():
                         help="Incluir el motor Hito 2 por fusión CLIP+OpenCLIP+"
                              "SigLIP (modelo=fusion) como columna extra h2fu")
     args = parser.parse_args()
+
+    api_key = (args.api_key or "").strip()
+    if not api_key:
+        print(
+            f"Error: falta la API key. Defina {DEFAULT_API_KEY_ENV} o use "
+            "--api-key. La API ya no acepta búsquedas anónimas."
+        )
+        sys.exit(1)
 
     consultas = cargar_consultas()
     if not consultas:
@@ -221,9 +238,15 @@ def main():
             # Hito 1: modo "original" fuerza el motor sin reranking con la
             # consulta tal cual llega (el default "auto" ahora usa Hito 2).
             resultados, tiempo, resp = _consultar(
-                base, endpoint, ruta,
+                base, endpoint, ruta, api_key,
                 modo=extra.get("modo"), modelo=extra.get("modelo"),
             )
+            if resp is not None and resp.status_code in (401, 403, 503):
+                print(
+                    f"ERROR de autenticación ({resp.status_code}) al llamar "
+                    f"{endpoint}: {resp.text[:300]}"
+                )
+                sys.exit(1)
             if resp is not None and resp.status_code != 200:
                 print(f"{i:3d}  [{c['categoria']:12s}] {c['consulta']:<28s} {motor.upper()} error {resp.status_code}")
                 continue

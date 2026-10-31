@@ -3,16 +3,28 @@ services:
     image: qdrant/qdrant:latest
     container_name: sublitex_qdrant
     restart: unless-stopped
+<<<<<<< HEAD
     # Seguridad: Qdrant sin puertos públicos (solo red interna)
+=======
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+>>>>>>> origin/sala-5
     volumes:
       - ./qdrant_data:/qdrant/storage
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
+<<<<<<< HEAD
     deploy:
       resources:
         limits:
           cpus: '2.0'
           memory: 2G
+=======
+      - "QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:?Defina QDRANT_API_KEY en .env}"
+    networks:
+      - backend
+>>>>>>> origin/sala-5
 
   api:
     build:
@@ -28,17 +40,28 @@ services:
       - ./qdrant_data:/app/qdrant_data
     environment:
       - QDRANT_URL=http://qdrant:6333
+      - "QDRANT_API_KEY=${QDRANT_API_KEY:?Defina QDRANT_API_KEY en .env}"
       - QDRANT_COLLECTION_NAME=sublitex_fashion_v1
       - API_HOST=0.0.0.0
       - API_PORT=8000
       - CATALOG_PATH=/app/data/images_normalized
+      - "API_CLIENT_KEY=${API_CLIENT_KEY:?Defina API_CLIENT_KEY en .env}"
+      - "API_CLIENT_KEYS=${API_CLIENT_KEYS:-}"
+      - "API_ADMIN_KEY=${API_ADMIN_KEY:?Defina API_ADMIN_KEY en .env}"
+      - "CORS_ORIGINS=${CORS_ORIGINS:?Defina CORS_ORIGINS con el dominio del frontend}"
     depends_on:
       - qdrant
+<<<<<<< HEAD
     deploy:
       resources:
         limits:
           cpus: '4.0'
           memory: 4G
+=======
+    networks:
+      - backend
+      - frontend_net
+>>>>>>> origin/sala-5
 
   frontend:
     build:
@@ -54,6 +77,7 @@ services:
       - "3000"
     volumes:
       - ./data/images_normalized:/data/images_normalized:ro
+<<<<<<< HEAD
     depends_on:
       - api
     deploy:
@@ -80,3 +104,16 @@ services:
         limits:
           cpus: '1.0'
           memory: 512M
+=======
+    environment:
+      - API_URL=http://api:8000
+      - "API_CLIENT_KEY=${API_CLIENT_KEY:?Defina API_CLIENT_KEY en .env}"
+    depends_on:
+      - api
+    networks:
+      - frontend_net
+
+networks:
+  backend:
+  frontend_net:
+>>>>>>> origin/sala-5
