@@ -315,15 +315,15 @@ Según `AGENTS.md` y especificaciones del proyecto:
 
 ### 3.3 Seguridad
 
-- [ ] API key/JWT para clientes.
-- [ ] Rol administrador para indexación.
-- [ ] CORS restringido al dominio del frontend.
-- [ ] Rate limiting.
-- [ ] Límite de subida en servidor y proxy.
-- [ ] Retención/borrado de imágenes de consulta.
-- [ ] Qdrant sin puertos públicos.
-- [ ] Reverse proxy con TLS y solo 80/443 expuestos.
-- [ ] Contenedores no-root y con límites de recursos.
+- [x] API key/JWT para clientes.
+- [x] Rol administrador para indexación.
+- [x] CORS restringido al dominio del frontend.
+- [x] Rate limiting.
+- [x] Límite de subida en servidor y proxy.
+- [x] Retención/borrado de imágenes de consulta.
+- [x] Qdrant sin puertos públicos.
+- [x] Reverse proxy con TLS y solo 80/443 expuestos.
+- [x] Contenedores no-root y con límites de recursos.
 
 ### 3.4 Build y despliegue
 
