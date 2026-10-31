@@ -13,8 +13,9 @@ endpoints y se revisa si el id_correcto esperado quedó en Top1 y en Top5:
 Además mide el tiempo de cada consulta por motor (requisito: "Medición de
 tiempos") y guarda la evidencia en:
 
-    data/comparacion_hito1_hito2.csv   detalle por consulta (top1/top5/tiempos)
+    data/comparacion_hito1_hito2.csv   detalle por consulta (top1/top5/tiempos/score del Top 1)
     data/comparacion_hito1_hito2.json  resumen agregado por motor y por categoría
+                                      (incluye puntaje_combinado 50/50 = 0.5*Top1% + 0.5*Top5%)
 
 CONSULTAS DE PRUEBA (evaluation/consultas_hito2.csv):
     Columnas: consulta, categoria, ruta_imagen, id_correcto
@@ -25,12 +26,14 @@ CONSULTAS DE PRUEBA (evaluation/consultas_hito2.csv):
 
 Requisitos:
     1) Tener la API corriendo localmente:  python -m uvicorn api.main:app --port 8000
+    2) Definir API_CLIENT_KEY (o pasar --api-key); la API protege las búsquedas.
 
 Uso:
     python scripts/compare_hito1_hito2.py
     python scripts/compare_hito1_hito2.py --url http://localhost:8000
     python scripts/compare_hito1_hito2.py --solo hito2   # solo mide el motor nuevo
     python scripts/compare_hito1_hito2.py --openclip     # agrega columna OpenCLIP (h2oc)
+    python scripts/compare_hito1_hito2.py --api-key "$API_CLIENT_KEY"
 """
 
 import argparse
@@ -44,6 +47,7 @@ import requests
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DEFAULT_URL = "http://localhost:8000"
+DEFAULT_API_KEY_ENV = "API_CLIENT_KEY"
 CONSULTAS_CSV = os.path.join(BASE_DIR, "evaluation", "consultas_hito2.csv")
 SALIDA_CSV = os.path.join(BASE_DIR, "data", "comparacion_hito1_hito2.csv")
 SALIDA_JSON = os.path.join(BASE_DIR, "data", "comparacion_hito1_hito2.json")
@@ -53,12 +57,22 @@ ENDPOINT_H2 = "/search/image/v2"
 
 CATEGORIAS = ("exacta", "sin_marco", "recoloreada", "recortada", "persona")
 
+
+def puntaje_combinado_50_50(precision_top1, precision_top5):
+    """
+    Métrica combinada 50/50 (Hito 3): cada bloque (Top-1 y Top-5) aporta como
+    máximo 50 puntos; alcanzar 50 en un bloque = 100% de cumplimiento de ese
+    top. Equivale a 0.5 * precision_top1 + 0.5 * precision_top5 (sobre 100).
+    """
+    return round(0.5 * float(precision_top1) + 0.5 * float(precision_top5), 2)
+
 # Conjunto de respaldo si no existe evaluation/consultas_hito2.csv
+# (el banco canónico es data/images_normalized/ desde la migración Hito 3)
 TEST_SET_FALLBACK = [
-    (os.path.join("data", "images_final", "AIM-P001-001.jpg"), "AIM-P001-001"),
-    (os.path.join("data", "images_final", "AIM-P001-002.jpg"), "AIM-P001-002"),
-    (os.path.join("data", "images_final", "AIM-P001-003.jpg"), "AIM-P001-003"),
-    (os.path.join("data", "images_final", "AIM-P001-004.jpg"), "AIM-P001-004"),
+    (os.path.join("data", "images_normalized", "AIM-P001-001.jpg"), "AIM-P001-001"),
+    (os.path.join("data", "images_normalized", "AIM-P001-002.jpg"), "AIM-P001-002"),
+    (os.path.join("data", "images_normalized", "AIM-P001-003.jpg"), "AIM-P001-003"),
+    (os.path.join("data", "images_normalized", "AIM-P001-004.jpg"), "AIM-P001-004"),
 ]
 
 
@@ -101,7 +115,7 @@ def _top_1_y_top_5(resultados, id_correcto):
     return top1_ok, top5_ok, id_top1
 
 
-def _consultar(base_url, endpoint, ruta_imagen, modo=None, modelo=None):
+def _consultar(base_url, endpoint, ruta_imagen, api_key, modo=None, modelo=None):
     """
     Hace POST de la imagen al endpoint y devuelve
     (resultados, tiempo_segundos, respuesta_http). Nunca lanza: ante un error
@@ -119,6 +133,7 @@ def _consultar(base_url, endpoint, ruta_imagen, modo=None, modelo=None):
                 base_url + endpoint,
                 files={"file": (os.path.basename(ruta_imagen), f)},
                 data=data or None,
+                headers={"X-API-Key": api_key},
                 timeout=180,
             )
     except requests.exceptions.ConnectionError:
@@ -141,6 +156,11 @@ def _consultar(base_url, endpoint, ruta_imagen, modo=None, modelo=None):
 def main():
     parser = argparse.ArgumentParser(description="Sala 3 - Comparación Hito 1 vs Hito 2")
     parser.add_argument("--url", default=DEFAULT_URL, help="URL base de la API")
+    parser.add_argument(
+        "--api-key",
+        default=os.environ.get(DEFAULT_API_KEY_ENV, ""),
+        help=f"API key de cliente (por defecto: variable {DEFAULT_API_KEY_ENV})",
+    )
     parser.add_argument("--solo", choices=["hito1", "hito2"], default=None,
                         help="Probar un solo motor (por defecto ambos)")
     parser.add_argument("--openclip", action="store_true",
@@ -150,6 +170,14 @@ def main():
                         help="Incluir el motor Hito 2 por fusión CLIP+OpenCLIP+"
                              "SigLIP (modelo=fusion) como columna extra h2fu")
     args = parser.parse_args()
+
+    api_key = (args.api_key or "").strip()
+    if not api_key:
+        print(
+            f"Error: falta la API key. Defina {DEFAULT_API_KEY_ENV} o use "
+            "--api-key. La API ya no acepta búsquedas anónimas."
+        )
+        sys.exit(1)
 
     consultas = cargar_consultas()
     if not consultas:
@@ -171,10 +199,10 @@ def main():
              "h2fu": {"top1": 0, "top5": 0, "n": 0, "tiempos": []}}
 
     encabezado = ("consulta", "categoria", "id_correcto", "archivo",
-                  "h1_top1", "h1_top5", "h1_tiempo_ms", "h1_mejor_id", "h1_n_resultados",
-                  "h2_top1", "h2_top5", "h2_tiempo_ms", "h2_mejor_id", "h2_n_resultados",
-                  "h2oc_top1", "h2oc_top5", "h2oc_tiempo_ms", "h2oc_mejor_id", "h2oc_n_resultados",
-                  "h2fu_top1", "h2fu_top5", "h2fu_tiempo_ms", "h2fu_mejor_id", "h2fu_n_resultados")
+                  "h1_top1", "h1_top5", "h1_tiempo_ms", "h1_mejor_id", "h1_mejor_score", "h1_n_resultados",
+                  "h2_top1", "h2_top5", "h2_tiempo_ms", "h2_mejor_id", "h2_mejor_score", "h2_n_resultados",
+                  "h2oc_top1", "h2oc_top5", "h2oc_tiempo_ms", "h2oc_mejor_id", "h2oc_mejor_score", "h2oc_n_resultados",
+                  "h2fu_top1", "h2fu_top5", "h2fu_tiempo_ms", "h2fu_mejor_id", "h2fu_mejor_score", "h2fu_n_resultados")
 
     print("=" * 100)
     print("SALA 3 / HITO 2 - COMPARACION HITO 1 vs HITO 2 (mismas consultas)")
@@ -193,10 +221,10 @@ def main():
         fila = {
             "consulta": c["consulta"], "categoria": c["categoria"],
             "id_correcto": c["id_correcto"], "archivo": os.path.basename(ruta),
-            "h1_top1": "-", "h1_top5": "-", "h1_tiempo_ms": "-", "h1_mejor_id": "-", "h1_n_resultados": "-",
-            "h2_top1": "-", "h2_top5": "-", "h2_tiempo_ms": "-", "h2_mejor_id": "-", "h2_n_resultados": "-",
-            "h2oc_top1": "-", "h2oc_top5": "-", "h2oc_tiempo_ms": "-", "h2oc_mejor_id": "-", "h2oc_n_resultados": "-",
-            "h2fu_top1": "-", "h2fu_top5": "-", "h2fu_tiempo_ms": "-", "h2fu_mejor_id": "-", "h2fu_n_resultados": "-",
+            "h1_top1": "-", "h1_top5": "-", "h1_tiempo_ms": "-", "h1_mejor_id": "-", "h1_mejor_score": "-", "h1_n_resultados": "-",
+            "h2_top1": "-", "h2_top5": "-", "h2_tiempo_ms": "-", "h2_mejor_id": "-", "h2_mejor_score": "-", "h2_n_resultados": "-",
+            "h2oc_top1": "-", "h2oc_top5": "-", "h2oc_tiempo_ms": "-", "h2oc_mejor_id": "-", "h2oc_mejor_score": "-", "h2oc_n_resultados": "-",
+            "h2fu_top1": "-", "h2fu_top5": "-", "h2fu_tiempo_ms": "-", "h2fu_mejor_id": "-", "h2fu_mejor_score": "-", "h2fu_n_resultados": "-",
         }
 
         for motor, endpoint, probar, extra in (
@@ -210,9 +238,15 @@ def main():
             # Hito 1: modo "original" fuerza el motor sin reranking con la
             # consulta tal cual llega (el default "auto" ahora usa Hito 2).
             resultados, tiempo, resp = _consultar(
-                base, endpoint, ruta,
+                base, endpoint, ruta, api_key,
                 modo=extra.get("modo"), modelo=extra.get("modelo"),
             )
+            if resp is not None and resp.status_code in (401, 403, 503):
+                print(
+                    f"ERROR de autenticación ({resp.status_code}) al llamar "
+                    f"{endpoint}: {resp.text[:300]}"
+                )
+                sys.exit(1)
             if resp is not None and resp.status_code != 200:
                 print(f"{i:3d}  [{c['categoria']:12s}] {c['consulta']:<28s} {motor.upper()} error {resp.status_code}")
                 continue
@@ -221,6 +255,14 @@ def main():
             fila[f"{motor}_top5"] = "SI" if top5_ok else "no"
             fila[f"{motor}_tiempo_ms"] = round(tiempo * 1000, 1)
             fila[f"{motor}_mejor_id"] = id_top1
+            # Mejor score del Top 1: score_reranking en motores H2, score en
+            # H1. Sirve para calibrar el UMBRAL_MINIMO_SIMILARIDAD con datos
+            # reales (ver REPORTES_OPTIMIZACION_50_50.md).
+            fila[f"{motor}_mejor_score"] = (
+                round(float(resultados[0].get("score_reranking")
+                            or resultados[0].get("score") or 0.0), 4)
+                if resultados else "-"
+            )
             fila[f"{motor}_n_resultados"] = len(resultados)
 
             total[motor]["top1"] += int(top1_ok)
@@ -264,11 +306,17 @@ def main():
         t = total[motor]
         n = max(1, t["n"])
         prom_ms = (sum(t["tiempos"]) / n * 1000) if t["tiempos"] else 0
-        print(f"{etiqueta:<38s} Top1={t['top1']}/{t['n']} ({100*t['top1']/n:.1f}%)"
-              f"  Top5={t['top5']}/{t['n']} ({100*t['top5']/n:.1f}%)"
+        p1 = 100 * t["top1"] / n
+        p5 = 100 * t["top5"] / n
+        pc = puntaje_combinado_50_50(p1, p5)
+        print(f"{etiqueta:<38s} Top1={t['top1']}/{t['n']} ({p1:.1f}%)"
+              f"  Top5={t['top5']}/{t['n']} ({p5:.1f}%)"
+              f"  P50/50={pc:.1f}/100"
               f"  tiempo prom={prom_ms:.0f} ms")
         resumen["por_motor"][motor] = {
             "top1": t["top1"], "top5": t["top5"], "n": t["n"],
+            "precision_top1": round(p1, 2), "precision_top5": round(p5, 2),
+            "puntaje_combinado": pc,
             "tiempo_promedio_ms": round(prom_ms, 1),
         }
 

@@ -1,0 +1,22 @@
+{
+	auto_https off
+}
+
+:80 {
+	request_body {
+		max_size 15MB
+	}
+
+	handle_path /images_normalized/* {
+		root * /srv/images_normalized
+		file_server
+	}
+
+	handle_path /backend/* {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

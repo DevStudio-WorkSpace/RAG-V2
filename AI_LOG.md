@@ -354,7 +354,7 @@ marco ni texto externo), en lugar de data/images_final/.
 ## Fecha: 2026-08-12 (Sala 1, Hito 3 — banco de 15.272)
 
 ### Prompt 6 - Consolidadar 15.272 y normalizar el banco completo
-**Propósito:** Llevar el flujo del README hasta la creación de data/images_normalized/ con el banco completo (~15.000) descargado en data/images/.
+**Propósito:** Llevar el flujo del README hasta la creación de data/images_normalized/ con el banco completo (~15.000) descargado y normalizado.
 **Resultado:**
 - scripts/consolidar.py corregido: (a) las URLs repetidas del sitio (misma preview para productos distintos con imágenes locales distintas) ahora son avisos, no errores bloqueantes; (b) fallback por índice numérico para los 97 nombres con espacios dobles; (c) conversión automática de .webp a .jpg (AIM-P221-001); (d) redimensionado de la imagen gigante (AIM-P130-056, 219M px) para evitar DecompressionBombError y OOM; (e) limpieza de archivos huérfanos en images_final.
 - scripts/normalizar_imagenes.py: fallback conservador 'dudoso' para imágenes sin frente/espalda detectables (casacas claras sobre fondo blanco), completando 15.272/15.272.
@@ -368,3 +368,620 @@ marco ni texto externo), en lugar de data/images_final/.
 - scripts/revisar_muestra_50.py: acepta --n (100 en Hito 3), nombres dinámicos y aviso de uso.
 - Resultado real: revision_humana_100.csv -> 99/100 correctas (99%), 1 dudosa (AIM-P202-007: 4 bandas, frente/espalda fusionados), 0 incorrectas; informe_revision_humana_100.txt; revision_contact_sheet_100.png.
 - REPORTES_HIT3.md actualizado con los resultados reales de la revisión de 100.
+
+## Fecha: 2026-08-13 (Sala 4 + Sala 3, Hito 3 — embeddings a escala 15.272)
+
+### Prompt - Re-indexar el sistema a escala 15.272 sobre images_normalized
+**Propósito:** Generar los índices del Hito 3 con el banco completo (15.272) a
+partir de data/images_normalized/ (única carpeta del catálogo), que eran los
+bloqueos de Sala 4 y Sala 3 (no existía ningún .npy a escala).
+**Resultado:**
+- `scripts/generar_embeddings.py` (Hito 1, CLIP openai) re-ejecutado sobre las
+  15.272 normalizadas → `data/embeddings.npy` (15272×512) + `data/ids.npy`
+  (15272, alineado posición a posición con products.csv).
+- `scripts/generar_indices_comparativos.py` (Sala 4) re-ejecutado a escala →
+  `data/embeddings_clip.npy` (15272×512, listo) y `embeddings_openclip.npy` +
+  `embeddings_siglip.npy` en generación (CPU, sin GPU; run secuencial).
+- Verificado motor Hito 1 a escala: carga 0,62 s, búsqueda 61 ms, Top 1 exacto.
+- Verificado motor Hito 2 (`search_similar_reranked`) contra el índice clip de
+  15.272: recuperación Top 30 en 0,15 s, Top 1 correcto, respuesta con
+  score_recuperacion/score_reranking/posicion_inicial/posicion_final/modelo.
+
+### Prompt - Contrato de respuesta del Hito 3 y descriptores a escala
+**Propósito:** Alinear la respuesta de la API con HITO3.md (Sala 3, punto 7) y
+escalar los descriptores del reranking.
+**Resultado:**
+- `api/search_engine_hito2.py`: cada resultado ahora incluye `score_recuperacion`
+  (alias de score_inicial), `posicion_inicial` (posición en la recuperación
+  amplia) y `modelo` (además de `modelo_utilizado`), cumpliendo el contrato
+  `id, score_recuperacion, score_reranking, posicion_inicial, posicion_final,
+  modelo, nombre, imagen, url`.
+- `frontend/app.py`: muestra recuperación vs reranking y `posicion_inicial →
+  posicion_final`.
+- `scripts/precomputar_descriptores.py` re-ejecutado a 15.272 →
+  `data/descriptores.json` (fuente images_normalized) para que el reranking no
+  compute descriptores on-the-fly con el catálogo grande.
+- NOTA: no se hizo commit ni push.
+
+## Fecha: 2026-08-13 (rediseño de interfaz frontend)
+
+### Prompt - Mejora de la UI de frontend/app.py sin romper el funcionamiento
+**Propósito:** Rediseñar la interfaz de Sala 2 (cliente puro de la API) con un
+look moderno y más información, manteniendo intacto el contrato con la API.
+**Resultado:** rontend/app.py rediseñado:
+- Tema oscuro deportivo vía CSS (gradientes, tarjetas redondeadas, chips de
+  estado, barra de score por resultado).
+- Sidebar nueva: URL de la API configurable, verificación de /health,
+  selector de modelo (fusion/openclip/clip) e instrucciones.
+- Header con estado de la API (productos/embeddings) y chips.
+- Panel de consulta: imagen original + imagen preparada por Sala 2
+  (imagen_procesada_b64) + detalles del preprocesamiento en expander.
+- Resultados en tarjetas: badge de ranking (#1 destacado), nombre, ID,
+  proveedor, score de similitud con barra, recuperación vs reranking,
+  posición inicial → final, modelo utilizado y enlace a la imagen original.
+- Registro de evaluación humana (Muy similar / Similar / Poco similar /
+  No relacionado + observación) guardado en data/evaluation.csv con las
+  columnas del contrato (consulta, resultado_id, posicion, score,
+  clasificacion_humana, observacion).
+- Selector de imágenes de prueba desde data/consultas/ para demos.
+- Sin embeddings ni búsqueda local: solo consume POST /search/image.
+**Verificado:** py_compile OK, arranque headless de Streamlit OK (HTTP 200)
+y prueba real contra la API con consulta de data/consultas/ (modo completo,
+modelo fusion, 5 resultados con todos los campos del contrato).
+
+## Fecha: 2026-08-13 (tema claro/oscuro en español, caché de preferencia)
+
+### Prompt - Tema en español, tema claro mejorado y preferencia en caché
+**Propósito:** Que la interfaz esté íntegramente en español, arreglar el tema
+claro (se veía mal) y recordar la elección de tema entre sesiones.
+**Resultado:**
+- .streamlit/config.toml nuevo: [theme] base = "dark" para que los widgets
+  nativos (selectbox, botones, expander) combinen con el diseño oscuro.
+- rontend/app.py: toggle "🌓 Tema claro" en el sidebar (español) que aplica
+  un tema claro rediseñado (gradientes suaves, tarjetas blancas, textos y
+  chips legibles, botones/inputs/expander re-skin via CSS) y guarda la
+  preferencia en rontend/.theme_pref.json (caché entre sesiones) +
+  st.session_state (caché entre reruns).
+- Menú nativo: se ocultan los items en inglés "Get help"/"Report a bug" y
+  "About" muestra texto en español (el menú Settings de Streamlit en sí no es
+  traducible; el control de tema propio queda en español).
+- rontend/.theme_pref.json agregado a .gitignore.
+**Verificado:** py_compile OK, arranque headless con tema claro OK (HTTP 200),
+ciclo guardar/leer de la preferencia OK.
+
+### Prompt - Fix KeyError tema_claro
+**Propósito:** Corregir KeyError: st.session_state has no key "tema_claro" en
+arranque: la inyección CSS condicional (linea 178) se ejecutaba antes de la
+inicializacion de la clave en session_state.
+**Resultado:** cargar_tema()/guardar_tema() y la inicializacion
+if "tema_claro" not in st.session_state movidas al inicio del script (antes
+de la inyeccion CSS). Verificado con streamlit.testing.v1.AppTest:
+arranque sin pref, con pref claro, y toggle off (persiste en
+rontend/.theme_pref.json).
+
+## Fecha: 2026-08-13 (acciones imprimir/descargar, sin emojis, tema claro)
+
+### Prompt - Imprimir/descargar en resultados, soporte tema claro, sin emojis
+**Propósito:** (1) Botones Imprimir y Descargar imagen en cada resultado; (2)
+que esos controles soporten el tema claro; (3) eliminar TODOS los emojis de la
+interfaz usando iconos SVG en línea (sin descargar librerías, solo código
+inline); (4) sin opción de grabar video.
+**Resultado:**
+- html_acciones(): iframe via streamlit.components.v1.html con botones
+  "Descargar" (data-URI + download) e "Imprimir" (ventana nueva + print) por
+  resultado, coloreados según tema claro/oscuro.
+- Iconos SVG estilo Feather inline (_svg() + dict ICONOS): gear, zap, cpu,
+  info, sun, target, search, trophy, wrench, link, edit, shirt. Sin emojis en
+  toda la app y sin CDN (nada se descarga, todo inline).
+- page_icon emoji eliminado; clase .result-img con borde adaptado a cada
+  tema; labels de widgets en texto plano.
+- No se agregó ninguna opción de grabación de video.
+**Verificado:** py_compile OK; AppTest en tema oscuro y claro sin excepciones;
+flujo completo con imagen real (c01_cuerpo.jpeg) contra la API: 5 tarjetas +
+5 iframes de acciones + 5 expanders de evaluación renderizados sin errores.
+
+## Fecha: 2026-08-13 (fix iconos SVG invisibles + descarga corrupta)
+
+### Prompt - Fix: iconos no visibles y descarga de imagen corrupta
+**Propósito:** (1) Los SVG inline no se renderizaban porque el sanitizador de
+Streamlit no permite etiquetas svg (labels de expander usan allowHTML=false
+y st.markdown pasa por rehype-raw/DOMPurify); (2) la descarga por data-URI
+JS descargaba archivo corrupto (data URI gigante en el srcdoc del iframe).
+**Resultado:**
+- Iconos migrados a **Bootstrap Icons por CDN** (solo URL, sin descargar):
+  <link> en st.markdown + <i class="bi bi-xxx ic"></i>. Los labels de
+  expander (que escapan HTML) quedan sin icono, en texto plano.
+- Descarga reemplazada por st.download_button nativo: envía los BYTES reales
+  del archivo local por websocket (archivo JPEG siempre válido). El iframe
+  queda solo con el botón Imprimir.
+- Tema claro: botón secundario (Descargar) también re-estilizado en claro.
+**Verificado:** py_compile OK; AppTest con imagen real contra la API en tema
+oscuro y claro: 5 resultados, 5 download_buttons (label/filename/mime/bytes)
+sin excepciones; sin emojis restantes.
+
+## Fecha: 2026-08-13 (fix: descarga re-dispara búsqueda + iconos emoji)
+
+### Prompt - Fix: al descargar se repite la búsqueda; los SVG no se ven
+**Propósito:** (1) El botón Descargar (widget) provoca un rerun de Streamlit
+que re-ejecutaba la búsqueda contra la API (lento y duplicaba consultas);
+(2) los iconos por CDN (Bootstrap Icons) tampoco se veían en el navegador;
+el usuario autorizó emojis si SVG no funciona.
+**Resultado:**
+- **Caché de búsqueda:** hash md5(bytes imagen + modelo + api_url) guardado en
+  st.session_state["busqueda_clave"]; la API solo se consulta si cambia la
+  clave. Los reruns de widgets (descargar, evaluar) ya no re-buscan.
+- **Iconos en emojis** (texto plano, se ven en todos los contextos): sidebar,
+  encabezados, chips, labels de expander y botón Imprimir del iframe
+  (🖨️/⬇️/⚙️/🧠/ℹ️/🎯/🔍/🏆/🛠️/🔗/✏️/👕). Eliminado el CDN y la clase .ic.
+**Verificado:** py_compile OK; AppTest con contador de requests.post: 1 solo
+POST tras subir la imagen y 0 nuevos en reruns posteriores; 5 download_buttons;
+sin excepciones en tema oscuro y claro; emojis presentes en labels y expanders.
+
+## Fecha: 2026-08-13 (fix: Imprimir no mostraba la imagen)
+
+### Prompt - Fix: la opción Imprimir no muestra la imagen a imprimir
+**Causa raíz:** (1) html_imprimir usaba el base64 crudo como src de la
+imagen sin el prefijo data:image/jpeg;base64, (lo inyectaba tal cual
+devuelve imagen_a_b64) -> imagen rota en el popup; (2) el flujo dependía de
+window.open + document.write con el base64 gigante (popups bloqueables y
+límite de 1 MB de Chrome en document.write).
+**Solución:** sin popup ni document.write. La imagen vive oculta
+(display:none) dentro del propio iframe y solo se muestra con
+@media print; window.print() imprime el documento del iframe (el sandbox
+de components.html incluye llow-modals, verificado en el bundle:
+IFrameUtil.PlC_b34Z.js). img.onload garantiza que la imagen ya cargó antes
+de imprimir. Agregado el prefijo data:image/jpeg;base64, en el src.
+**Verificado:** py_compile OK; AST-test de html_imprimir: print-area +
+data URI con prefijo + @media print + window.print, sin window.open ni
+document.write, en ambos temas; AppTest flujo completo sin excepciones
+(5 iframes, 5 download_buttons).
+
+## Fecha: 2026-08-13 (rediseño visual completo - estética Google Stitch)
+
+### Prompt - Rediseño UI/UX: interfaz moderna de producto de IA (dark ambient)
+**Objetivo:** Solo UI/UX; sin tocar arquitectura, API, lógica ni contratos.
+Referencia conceptual Google Stitch: dark ambient, minimalismo, gradientes
+luminosos sutiles, glassmorphism ligero, espacio negativo, jerarquía fuerte.
+**Cambios en frontend/app.py (lógica intacta):**
+- Fondo oscuro #05070d con 3 gradientes radiales ambientales (cyan→azul→violeta).
+- Hero rejerarquizado: eyebrow "Búsqueda visual" con punto pulsante → título
+  grande gradiente "Encuentra camisetas visualmente similares" → subtítulo →
+  meta discreta "15,272 productos · 15,272 embeddings · API activa" (sin cards).
+- Dropzone protagonista: 250px, borde discontinuo, vidrio (backdrop-filter),
+  hover con glow; los textos internos en inglés del widget ("Upload",
+  "200MB per file...", "Drag and drop...") se ocultan por CSS (testids
+  verificados en bundle FileUploader.Bg9tjvVJ.js) y se superpone overlay en
+  español (SVG data-URI + "Arrastra tu imagen aquí / o haz clic para elegir
+  archivo") solo en estado vacío vía :has(). Con archivo cargado el overlay
+  desaparece y la lista de archivos sigue visible y funcional.
+- Pasos en una línea minimalista: "01 Sube tu imagen → 02 La analizamos →
+  03 Encuentra similares" (reemplaza las 3 cards).
+- Resultados: aparición escalonada (fadeUp con delay 70ms por rank), tarjetas
+  glass con hover sutil, score bar delgada, sección "Resultados" con meta
+  inline (Top 5 · Modo · Modelo · tiempo).
+- Sidebar translúcido con blur; widgets select/input oscuros; botón primario
+  gradiente cyan con glow; #MainMenu/footer ocultos; header transparente.
+- Responsive: clamp() en título, min-height 195px en dropzone móvil,
+  result-layout con flex-wrap en <=640px.
+- Tema claro: misma estructura con ambient suave, tarjetas blancas y overlay
+  de dropzone en azul.
+**Verificado:** py_compile OK; AppTest en oscuro y claro: estado inicial y con
+imagen real (c01_cuerpo.jpeg) sin excepciones; 1 file_uploader, 5
+download_buttons, 7 expanders, hero/flow/meta/query-status/Resultados
+presentes.
+
+## Fecha: 2026-08-13 (luz ambiental interactiva que sigue al cursor)
+
+### Prompt - Efecto ambiental interactivo (estilo Google Stitch), SOLO visual
+**Objetivo:** halo de luz difuminado (cyan→azul→violeta, muy sutil) que sigue
+el cursor con interpolación suave; decorativo, sin tocar lógica/API/upload.
+**Implementación (frontend/app.py):**
+- html_luz_ambiental(): iframe invisible (components.html, height=1) cuyo
+  script, aprovechando allow-same-origin (sandbox verificado en bundle
+  IFrameUtil), manipula el DOM del padre: crea 3 divs .luz de 1900px
+  (radial-gradient closest-side, opacidades .16/.12/.09, offsets
+  -140/-80 y +120/+50 para un halo asimétrico) colgados de .stApp.
+- CSS: .stApp { isolation: isolate; } + .luz { position: fixed;
+  z-index: -1; pointer-events: none; will-change: transform; opacity 0 →
+  .luz-on 1 (transición .8s) } → la luz queda BAJO la UI y se percibe a
+  través de las superficies translúcidas. iframe oculto con
+  iframe.stIFrame[height="1px"].
+- JS: lerp 0.10 por frame con requestAnimationFrame, solo transform
+  translate3d (compositor, sin repaints); encendido en el primer mousemove
+  (sin parpadeo inicial), apagado suave al salir de la ventana
+  (mouseleave/mouseenter en documentElement); guard anti-duplicados
+  (querySelector('.luz')) porque el iframe se re-ejecuta en cada rerun.
+- Accesibilidad/perf: desactivada con prefers-reduced-motion y
+  pointer: coarse (táctiles); listener mousemove pasivo en el documento.
+- Tema claro: mismas capas con alphas reducidas (.11/.08/.06).
+- Fix: definición de la función movida antes de su llamada (NameError);
+  label del file_uploader no vacío con label_visibility collapsed
+  (warning de accesibilidad de Streamlit 1.60).
+**Verificado:** py_compile OK; AppTest oscuro/claro: sin excepciones
+(inicial y con imagen real); 6 iframes (1 luz + 5 imprimir), 5
+download_buttons; JS verificado por AST (rAF, translate3d, reduced-motion,
+coarse, guard, 3 capas).
+
+## Fecha: 2026-08-13 (fix: luz ambiental de página completa, no solo en el dropzone)
+
+### Prompt - Fix: el difuminado solo se ve dentro del box de subir imagen
+**Causa:** las capas .luz con position:fixed colgadas de .stApp quedaban
+ancladas al contenedor (o eran casi invisibles sobre el fondo oscuro plano
+fuera de las superficies translúcidas), por lo que el efecto solo se
+percibía dentro del dropzone.
+**Solución:**
+- Capas en position: absolute con .stApp { position: relative }
+  (anclaje determinista al documento, inmune a transforms del contenedor) y
+  compensación de scroll en el transform: translate3d(scrollX + x + dx,
+  scrollY + y + dy) → la luz sigue al cursor en viewport aunque se scrollee.
+- Tamaño subido a 2200px y alphas aumentadas (.20/.14/.10 oscuro,
+  .14/.10/.07 claro): perceptible sobre toda la página, no solo tras el
+  vidrio. Sigue siendo un ambiente sutil (z-index -1, pointer-events none).
+**Verificado:** py_compile OK; JS por AST (scrollX/scrollY en transform);
+AppTest oscuro/claro sin excepciones (6 iframes, 5 download_buttons).
+
+## Fecha: 2026-08-13 (fix: UI en blanco al cargar + luz ambiental robusta)
+
+### Prompt - Fix: rompiste la UI, no se ve nada al cargar la web
+**Causa probable:** las capas .luz ancladas dentro de .stApp con
+z-index: -1 + isolation: isolate + position: relative en .stApp
+podían romper el apilado/render del contenedor raíz de Streamlit en el
+navegador (contenedores de positioning no estándar en .stApp).
+**Solución (patrón a prueba de balas):**
+- Los gradientes ambientales del fondo pasaron de .stApp a ody
+  (el lienzo raíz); .stApp y [data-testid="stAppViewContainer"]
+  quedan ackground: transparent.
+- Las 3 capas de luz se cuelgan de document.body con
+  position: fixed; z-index: -1 (body nunca tiene transform → el
+  containing block es siempre el viewport) y transform solo
+  clientX/clientY (sin compensación de scroll).
+- Eliminados isolation: isolate, position: relative de .stApp y el
+  listener de scroll sobrante: .stApp vuelve a su estado original.
+- Pintado: sobre el fondo de body y bajo todo el contenido (la luz se ve
+  a través de superficies translúcidas) en toda la página.
+**Verificado:** py_compile OK; llaves CSS balanceadas (82/82); AppTest
+oscuro/claro sin excepciones (6 iframes, 5 download_buttons). Sugerido al
+usuario: recarga con Ctrl+F5 (posible caché del bundle anterior).
+
+## Fecha: 2026-08-13 (revert: eliminado efecto de luz ambiental)
+
+### Prompt - vuelve a cambios atrás porque está roto, la cagaste, arregla
+**Decisión:** revertir por completo el efecto de luz ambiental (fue la
+única adición desde el rediseño aprobado por el usuario) y devolver la
+app al estado que el usuario confirmó como bueno.
+**Cambios aplicados (frontend/app.py):**
+- Eliminado html_luz_ambiental() y su llamada
+  components.html(..., height=1, scrolling=False) (línea 454).
+- Eliminado CSS .luz, .luz-on, .luz-1/2/3 y
+  iframe.stIFrame[height="1px"] del tema oscuro y claro.
+- Fondo ambiental restaurado en .stApp (gradientes originales), sin
+  ody + transparentes + stAppViewContainer.
+**Verificado:** py_compile OK; AppTest oscuro/claro sin excepciones y
+con 5 download_buttons tras subir data/consultas/c01_cuerpo.jpeg.
+El usuario debe recargar con Ctrl+F5 (caché de bundle anterior).
+
+## Fecha: 2026-08-15 (limpieza legacy + métrica 50/50 Top-1/Top-5 + filtrado estricto Top 5)
+
+### Prompt - Limpiar el código eliminando embeddings y funciones antiguas que ya no se necesitan con la fusión implementada; optimizar los algoritmos de búsqueda equilibrando la ponderación/score a un split 50/50 entre Top-1 y Top-5 al evaluar; refinar umbrales y filtros de ranking para que el Top 5 no fuerce resultados irrelevantes; y generar un reporte .md completo de todos los cambios.
+**Decisiones tomadas:**
+- El "split 50/50" (aclarado por el usuario) = cada bloque Top-1 y Top-5 aporta
+  máx. 50 puntos; 50 = 100% de cumplimiento de ese top. Métrica combinada
+  P50/50 = 0.5·Top1% + 0.5·Top5%.
+- Eliminados 6 scripts legacy: `build_index.py`, `search.py`,
+  `buscar_por_imagen.py`, `ingest.py`, `insertar_db.py`, `reporte_evaluacion.py`
+  (confirmado por el usuario). Se conservaron `generar_embeddings.py` (baseline
+  Hito 1), `get_product.py` y la ruta de respaldo `index_embeddings.npy`.
+**Cambios aplicados:**
+- `api/search_engine_hito2.py`: nuevo `UMBRAL_MINIMO_SIMILARIDAD = 0.40`
+  (corte absoluto) + corte relativo `MARGEN_CORTE` en `_rerank_candidatos`;
+  el Top 5 ahora puede devolver 0..5 resultados sin relleno. Docstring del
+  módulo documenta la calibración contra la métrica 50/50.
+- `scripts/evaluar_50_consultas.py`: columna `puntaje_combinado` en
+  `evaluation_metrics.csv` y en el resumen.
+- `scripts/compare_hito1_hito2.py`: `puntaje_combinado` en el JSON/consola +
+  columnas `*_mejor_score` por consulta (para recalibrar el umbral con datos).
+- `scripts/reporte_comparativo.py`: columna P50/50; el ganador se decide por la
+  métrica combinada.
+- `scripts/reporte_metricas.py` y `scripts/evaluar_hito2.py`: línea/columna
+  P50/50.
+- `README.md` y `scripts/GUIA_SALA4.txt`: referencias a los scripts eliminados
+  actualizadas.
+- Nuevo `REPORTES_HITO3_OPTIMIZACION.md` con el detalle completo y la línea
+  base real (fusión P50/50 = 90/100).
+**Verificado:** py_compile OK (6 archivos); venv liviano
+(numpy/pandas/pillow/opencv-headless) sin torch: `reporte_metricas.py` real
+imprime Puntaje 50/50; `reporte_comparativo.py` con datos sintéticos elige al
+ganador por P50/50; `_rerank_candidatos` probado con imágenes reales del banco
+(casos A idéntica/B persona): filtrado sin relleno y sin resultados bajo el
+umbral; cabecera CSV de `compare_hito1_hito2.py` consistente (28/28 columnas).
+**Pendiente:** recalibrar `UMBRAL_MINIMO_SIMILARIDAD` con la API corriendo
+(`compare_hito1_hito2.py --fusion`); no existe `.venv` en el repo y el Python
+del sistema (3.14) está bloqueado por PEP 668, por lo que la recalibración
+requiere crear el venv del proyecto.
+
+## Fecha: 2026-08-15 (migración images_final -> images_normalized)
+
+### Prompt - Necesito realizar una migración completa en el proyecto actual. El objetivo es reemplazar todas las referencias, llamadas, importaciones y dependencias de images_final por images_normalized, ya que esta última es la versión actualizada y correcta. Pasos: (1) análisis de impacto; (2) refactorización de código (imports, variables, rutas, lógica); (3) validación de integridad de rutas; (4) limpieza: eliminar el directorio images_final. Restricciones: sin git, cambios directos en el filesystem, detenerse y explicar conflictos si la migración no es directa.
+
+**Contexto:** images_final (15.272 archivos, 2,1 GB) era la salida de Sala 1
+(consolidar.py) y la fuente de normalizar_imagenes.py. images_normalized es el
+banco canónico (mismo conteo 15.272) y el que ya usaban los índices Hito 2, el
+precomputo de descriptores y los motores. products.csv tiene 15.273 filas.
+
+**Decisiones del usuario (consultadas ante conflictos):**
+- consolidar.py se ADAPTA para producir images_normalized; normalizar_imagenes.py
+  y analizar_formatos.py se marcan legacy (no operativos).
+- Registros históricos (revision_humana_50/100.csv, AI_LOG, REPORTES_*,
+  informes de evaluación) se dejan INTACTOS; solo se migran docs operativas
+  (README, AGENTS, GUIA_SALA4).
+- Generadores de consultas (generar_consultas_hito2.py, generar_consultas_prueba.py)
+  se marcan legacy (la variante "exacta" requería la imagen cruda con marco);
+  evaluar_50_consultas.py se migra con fallback a images_final si existiera.
+
+**Cambios:**
+- `scripts/compare_hito1_hito2.py`: TEST_SET_FALLBACK -> data/images_normalized/.
+- `scripts/evidencia_hito2.py`: IMGS -> data/images_normalized/.
+- `scripts/generar_indices_comparativos.py` y `scripts/precomputar_descriptores.py`:
+  solo comentarios actualizados (el código ya usaba images_normalized).
+- `scripts/consolidar.py`: RUTA_IMAGENES_DESTINO -> data/images_normalized/
+  (nota documentada: regenerar desde scraping entrega tarjetas tal cual;
+  normalización ya no se reaplica). Docstring y limpieza de huérfanos actualizados.
+- `scripts/normalizar_imagenes.py`, `scripts/analizar_formatos.py`,
+  `scripts/generar_consultas_hito2.py`, `scripts/generar_consultas_prueba.py`:
+  marcados [LEGACY] con banner explicando que su fuente ya no existe.
+- `scripts/evaluar_50_consultas.py`: IMAGES_BANCO_DIR = images_normalized
+  (primario) + IMAGES_FINAL_DIR como fallback histórico; `_banco_dir()` resuelve
+  y `derivar_ids_correctos()` valida que exista un banco.
+- Docs operativas: `README.md` (flujo, consola, árbol, nota del validador),
+  `AGENTS.md` (estructura canónica, arquitectura Hito 1 -> images_normalized,
+  nombre corregido a scripts/generar_embeddings.py) y `scripts/GUIA_SALA4.txt`
+  (árbol + curl) actualizadas.
+- ELIMINADO data/images_final/ (15.272 archivos, 2,1 GB) del filesystem.
+
+**Verificado:** py_compile OK (10 scripts); banco resuelto por evaluar_50_consultas
+= images_normalized; imágenes clave (AIM-P001-001/002/003/004/013/016.jpg)
+existen en images_normalized; grep residual: solo quedan referencias intencionales
+(notas "fue eliminada", banners legacy, fallback) y registros históricos intactos;
+runtime activo (api/, motores, índices, descriptores, validador) sin referencias
+a images_final; images_normalized intacto (15.272 archivos) tras la eliminación.
+**Pendiente:** la regeneración del banco vía consolidar.py entregará ahora tarjetas
+tal cual (sin normalización); normalizar_imagenes.py quedó como referencia.
+
+## Fecha: 2026-09-21 (limpieza banco viejo para carga nueva)
+
+### Prompt - elimina todo lo que se tiene que eliminar, aun no hagas nada de regenerar
+**Propósito:** Vaciar derivados del banco viejo para cargar banco nuevo, sin regenerar todavía.
+**Resultado:** Eliminados `data/embeddings.npy`, `embeddings_clip/openclip/siglip.npy`, `ids.npy`, `descriptores.json`, `products.csv`, `productos.json`, `metadata.json`, `evaluation.csv`, `comparacion_hito1_hito2.*`, `consultas_test_50.json`, `detalle_*`, `informe_*`, `revision_humana_*`, `revision_contact_sheet*.png`, `tiempos.csv` y contenidos de `data/queries_original/` + `data/queries_procesadas/` (332+332). Conservados código (`api/`, `scripts/`, `frontend/`), `evaluation/`, `CONSULTAS/`, `scraper/`. `data/` queda con carpetas vacías `queries_original/`/`queries_procesadas/`. Sin regeneración (pendiente: consolidar → validate → generar_embeddings → generar_indices_comparativos → precomputar_descriptores → /health).
+
+## Fecha: 2026-09-21 (borrado banco viejo + conexión scraper Aimari)
+
+### Prompt - elimina todo lo que tenga que ver con las antiguas images y consultas, tambien elimina la conexion de la pagina
+**Propósito:** Dejar el repo sin rastros del banco Aimari ni de sus consultas, y sin el scraper de designsaimari.com, para cargar un banco nuevo.
+**Resultado:**
+- Consultas viejas eliminadas: `evaluation/test_images/` (20), `evaluation/consultas_hito2.csv`, `evaluation/consultas_hito2/`, `evaluation/test_plan.csv`. `CONSULTAS/consultas/` (80) y `CONSULTAS/montajes/` (5) ya estaban vacías en disco (borrado externo 08:57); quedan los dirs vacíos. `data/queries_*` ya vacías del paso anterior.
+- Conexión Aimari eliminada: `scraper/` (scraper.py, parser.py, downloader.py), `config/settings.py` (URL_BASE designsaimari.com), `utils/` (helpers, pagination, limits, update), `storage/exporter.py`, `main.py` (runner del scraper). Verificado: nada en `api/`, `scripts/`, `frontend/` importa esos módulos (solo comentarios en `consolidar.py`).
+- Conservado: `scripts/consolidar.py` (constructor del banco nuevo; sus constantes PROVEEDOR_NOMBRE/PREFIJO="Designs Aimari"/"AIM" hay que ajustarlas a la fuente nueva), reportes `.md` históricos, `evaluation/INFORME_SALA2_HITO2.md`+`README.md` como evidencia.
+- Verificado: `py_compile` OK en api, frontend y scripts canónicos.
+
+## Fecha: 2026-10-19 (levantar backend + frontend con el banco SBX)
+
+### Prompt - "LISTO ENTONCES EJECUTAR EL BACKEND Y EL FRONTEND"
+**Propósito:** Poner en marcha el sistema completo de búsqueda visual con el nuevo
+banco SBX (284 imágenes de data/DATA_NEW) para probar subiendo fotos.
+**Resultado:**
+- Se detectó que el venv del proyecto NO está en `sala-5\.venv` sino en
+  `C:\Users\lucia\Downloads\S5\.venv` (contiene fastapi, torch CPU, transformers,
+  cv2, uvicorn, streamlit). Con él se completó el pipeline:
+  1. `normalizar_data_new.py` → 284 imágenes a `data/images_normalized/*.jpg`.
+  2. `generar_embeddings.py` → `embeddings.npy` + `ids.npy` (284, 512 dims, 0 errores, 24,8 s).
+  3. `generar_indices_comparativos.py` → `embeddings_clip.npy` (512), `embeddings_openclip.npy` (512) y `embeddings_siglip.npy` (768); 284/284, 0 errores. Necesarios porque la interfaz usa el modelo `fusion` por defecto.
+- Backend FastAPI levantado: `uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload`.
+  `/health` → status ok, 284 productos, 284 embeddings, 512 dims, `desfase_detectado=false`.
+  `POST /search/image` (modo=auto, modelo=fusion) probado con `SBX-01-0001.jpg` →
+  Top 1 correcto con `score=0.9556`, `score_reranking=0.8579`, `modelo=clip+openclip+siglip`.
+- **IMPORTANTE:** `frontend/` ya NO es Streamlit; es una app **Next.js** (React 19,
+  Next 16.3.5) cliente de la API en `NEXT_PUBLIC_API_URL=http://localhost:8000`.
+  Se levantó con `npm run dev` → http://localhost:3000 (HTTP 200).
+  Su proxy `/api/images/[filename]` sirve las imágenes de `data/images_normalized/`
+  (probado: `SBX-01-0001.jpg` → HTTP 200 image/jpeg 482 KB).
+- El AGENTS.md describe un frontend Streamlit (`streamlit run frontend/app.py`) que
+  ya no existe; la estructura canónica real es Next.js.
+- NOTA: no se hizo commit ni push.
+
+## Fecha: 2026-10-19 (carga de banco SBX DATA_NEW)
+
+### Prompt - "Puedes decirme como cargar o actualizar la data ya que ahora tengo nuevas imagenes en data/DATA_NEW..."
+**Propósito:** El usuario tiene ~280 imágenes PNG nuevas en `data/DATA_NEW` con nomenclatura `SBX-###-NNNN.png` y necesita integrarlas al sistema de búsqueda visual. No existe `products.csv`, `embeddings.npy`, `ids.npy` ni `images_normalized/` (fueron eliminados en la limpieza del banco Aimari).
+**Resultado:**
+- `scripts/crear_csv_data_new.py`: genera `data/products.csv` a partir de `DATA_NEW`. Lee los archivos que cumplen el patrón `SBX-\d{2}-\d{4}.png`, crea el ID como el nombre sin extensión, asigna proveedor "SBX", página "1", y URL placeholder.
+- `scripts/normalizar_data_new.py`: copia las imágenes de `DATA_NEW` a `data/images_normalized/` convirtiéndolas a JPG con el mismo ID. No modifica los originales.
+
+## Fecha: 2026-09-21 (limpieza .md viejos)
+
+### Prompt - elimina todos los .md que no sirven y que se quede lo importante
+**Propósito:** Quedarse solo con la documentación base para el banco nuevo.
+**Resultado:** Eliminados `REPORTES_HITO1.md`, `REPORTES_HITO2.md`, `REPORTES_HIT3.md`, `REPORTES_HITO3_OPTIMIZACION.md`, `HITO3.md`, `evaluation/README.md`, `evaluation/INFORME_SALA2_HITO2.md` (todos atados al banco Aimari). Conservados `AGENTS.md`, `README.md`, `TRABAJO.md`, `AI_LOG.md`. `evaluation/` queda vacío para la evaluación del banco nuevo.
+
+## Fecha: 2026-10-17 (documentación del último commit)
+
+### Prompt - hasme un md segun lo que se hizo en el ultimo commit registrado el cual es nueva interfaz grafica y boton directo a whtassap, entre otros, facil de comprender por humano y por ia
+**Propósito:** Documentar en un solo `.md` todo lo que trajo el último commit
+registrado (`643dcebd`, merge del PR #2 desde `feature/subida-sala5`), que en
+contenido real corresponde al commit `1b863a2f` de la rama `sala-5`.
+**Resultado:** Creado `RESUMEN_ULTIMO_COMMIT.md` con: identificación del commit,
+tabla archivo-por-archivo con conteo de líneas, y el detalle de las funciones
+nuevas — rediseño visual "Atelier Sublitex" con tema claro/oscuro, buscador
+`/search` (drag & drop, `Ctrl+V`, presets, skeletons, 3 modales), catálogo
+comercial `/catalog` (buscador, filtros, modal de ficha técnica), cotizador
+deslizante en `components/Sidebar.tsx`, **6 botones directos a WhatsApp**
+(`wa.me/?text=` con mensaje prellenado), `lib/api.ts` con timeout de 2.5 s y
+fallback simulado, `lib/catalog.ts` con 8 productos, route handler de imágenes
+con 4 directorios candidatos, `next.config.ts` con `output: "standalone"`,
+dependencias `lucide-react` + `motion`, y ajustes de ESLint/`metadata.json`.
+Incluye sección de riesgos: `.next/` commiteado, `frontend/src` ausente en `main`,
+`/eval` degradado (se perdió el evaluador del Hito 2 con métricas y CSV), fallback
+que oculta caídas de la API, WhatsApp sin número fijo, `motion` sin uso.
+
+## Fecha: 2026-10-19 (reescritura del md de mejora de UI)
+
+### Prompt - 'mejora del UI.md' modificalo, no es md del ultimo commit hecho es sobre el cambio a la UI de la pagina puedes hacer un md de eso
+**Propósito:** Convertir el documento en una descripción del **cambio de UI de
+la página**, no en un informe de commit.
+**Resultado:** Reescrito `mejora del UI.md` centrado en la interfaz: tabla
+Antes→Después, sistema de diseño "Atelier Sublitex" (tema claro/oscuro, tokens),
+estructura de la página (barra superior, footer, `/` → `/search`), detalle de
+pantallas (`/search` con drag&drop y Ctrl+V, `/catalog` con buscador y filtros,
+cotizador deslizante, `/eval` degradado a muestrario), tabla de los 6 botones de
+WhatsApp, tabla de componentes/datos nuevos, nota del "modo demo" de `lib/api.ts`,
+cómo ejecutar la interfaz y sección final de dónde está el código (`sala-5`,
+`frontend/src` ausente en `main`, `.next/` commiteado). Se eliminó la
+identificación de commits como eje del documento (quedó solo la referencia
+mínima para ubicar el código).
+
+### Prompt - modifica en una parte lo que se puede entender facil por persona y otro lado lo que va a leer la ia, ademas solo pon los cambios no cosas como la instalacion
+**Propósito:** Separar `mejora del UI.md` en dos lecturas y dejarlo solo con cambios.
+**Resultado:** Reestructurado en **Parte 1 (personas)** — lenguaje simple, qué se
+nota al usar la página, tabla Antes→Después — y **Parte 2 (IA)** — ubicación del
+código en git, rutas, tabla de pantallas/componentes con deltas, WhatsApp (6
+`wa.me`), fallback de `lib/api.ts`, config/dependencias y pendientes. Eliminada
+la sección de instalación/ejecución (`npm install`, `npm run dev`).
+
+## Fecha: 2026-10-23 (actualización README.md)
+
+### Prompt - Guía de inicialización del sistema y carga de datos para actualizar datos ya obtenidos y cargar nuevo contenido
+**Propósito:** Actualizar `README.md` para reflejar el estado real del proyecto tras la migración del banco Aimari al banco SBX (284 imágenes). Incluir una guía de inicialización del sistema (pasos 1-7: crear CSV, normalizar imágenes, generar embeddings, generar índices comparativos, validar, levantar API, levantar frontend) y una sección de carga de datos para actualizar datos existentes y cargar nuevo contenido (caso A: banco completamente nuevo; caso B: actualizar/añadir imágenes).
+**Resultado:** `README.md` reescrito: descripción del proyecto con banco SBX (284 productos), diagrama de flujo actualizado (DATA_NEW → products.csv → images_normalized → embeddings.npy/ids.npy → embeddings_clip/openclip/siglip.npy → API FastAPI → frontend Next.js), requisitos previos (Python + Node.js), ubicación del venv (nivel arriba del repo), guía paso a paso de inicialización, flujo de carga de datos con casos A y B, reglas importantes de carga (products.csv única fuente, ids.npy alineado, imágenes_normalized banco canónico, índices prohibidos), contrato de respuesta, modos del endpoint, reglas de evaluación Hito 2, manejo de errores, estructura del proyecto, tabla de archivos generados clave, solución de problemas y próximos pasos. Frontend documentado como Next.js (cliente puro de la API) en lugar de Streamlit. Conteo actualizado: 284 productos, 284 embeddings (284×512 CLIP, 284×768 SigLIP).
+
+## Fecha: 2026-10-23 (actualización QA_REPORTE.md)
+
+### Prompt - Análisis exhaustivo de prueba y error del QA_REPORTE
+**Propósito:** Reescribir `QA_REPORTE.md` porque el anterior (fecha 2026-10-19) estaba desactualizado: refería al banco Sublitex antiguo, Qdrant/Docker como backend principal, y documentación de Streamlit. El sistema real ahora usa banco SBX (284 productos), índices `.npy` locales, API FastAPI y frontend Next.js.
+**Resultado:** `QA_REPORTE.md` reescrito con: estado actual del sistema (artefactos en data/, servicios activos en puertos 8000 y 3000), secuencia de carga de datos ejecutada paso a paso (5 scripts, 284 productos, 0 errores), matriz de pruebas individuales (GET /health PASS, POST /search/image clip PASS, POST /search_image fusion ⚠️ timeout en CPU, frontend Next.js PASS, alineación ids↔csv↔embeddings PASS), tabla de errores conocidos y resolución (E1-E6), matriz de cobertura Hito 2 (50 consultas pendientes), lista de pruebas pendientes críticas (sección 4) y veredicto QA final por componente.
+
+## Fecha: 2026-10-23 (actualización QA_REPORTE.md — incidentes operativos)
+
+### Prompt - Agregar sección de incidentes operativos al QA_REPORTE
+**Propósito:** Documentar en el QA_REPORTE los incidentes ocurridos durante la sesión de carga y levantamiento del sistema (uvicorn colgado, Invoke-WebRequest sin soporte multipart, timeout de fusion, log bloqueado).
+**Resultado:** Agregada sección 6 "Incidentes operativos de esta sesión" con tabla I1-I4 documentando cada incidente, síntoma, causa y resolución. Nota importante sobre que uvicorn debe mantenerse en proceso desvinculado (background) en Windows.
+
+## Fecha: 2026-10-23 (ejecución completa de pruebas y actualización QA_REPORTE)
+
+### Prompt - Ejecutar todas las pruebas pendientes y cumplir requisitos del Hito 2
+**Propósito:** Cumplir con todos los requisitos del proyecto: crear el conjunto de 50 consultas Hito 2, ejecutar pruebas de error obligatorias, ejecutar prueba de imagen externa, ejecutar comparación Hito 1 vs Hito 2, y actualizar QA_REPORTE con resultados reales.
+**Resultado:**
+- `scripts/generar_consultas_hito2.py` (nuevo): genera 50 consultas (10 diseños × 5 categorías: exacta, sin_marco, recoloreada, recortada, persona) con imágenes variantes en `data/consultas/` y CSV en `evaluation/consultas_hito2.csv` con `id_correcto` verificado. 50/50 generadas, 0 omitidas.
+- `test_errores.py` (temporal, ya eliminado): 3 pruebas ejecutadas — archivo inválido → HTTP 400 ✅; imagen 16×16 → HTTP 400 con mensaje claro ✅; imagen externa → HTTP 200 con 5 resultados ✅.
+- `scripts/compare_hito1_hito2.py` ejecutado en dos pases (--solo hito1 y --solo hito2) debido a que `fusion` es muy lento en CPU:
+  - Hito 1 (CLIP): Top1 43/50 (86%), Top5 47/50 (94%), P50/50 90/100, 2248 ms prom.
+  - Hito 2 (CLIP+reranking): Top1 44/50 (88%), Top5 48/50 (96%), P50/50 92/100, 4594 ms prom.
+  - Por categoría: recortada mejora de 6/10 a 7/10 en Top1; exacta y sin_marco 10/10 en ambos.
+- `QA_REPORTE.md` reescrito completamente con todos los resultados reales, matriz de cobertura 50/50 completada, comparación H1 vs H2 con números reales, veredicto final por componente, y sección de incidentes operativos I1-I4.
+- `AI_LOG.md` actualizado con esta entrada.
+
+Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en background), Frontend Next.js en http://localhost:3000.
+
+## Fecha: 2026-10-23 (mapa de secciones visuales del frontend)
+
+### Prompt - "Hazme un .md sobre el apartado web que carpeta o archivo altera cada apartado visual del frontend"
+
+**Propósito:** Crear un documento .md que responda qué carpeta o archivo del frontend (app Next.js en `frontend/`) altera cada sección visual de la interfaz.
+
+**Resultado:**
+- Creado `frontend/UI_SECCIONES.md`: mapa de cada sección visual → archivo(s) que la implementa o altera.
+- Secciones mapeadas: tema/tokens globales (`src/app/globals.css`, `src/components/ThemeProvider.tsx`, `src/app/layout.tsx`); layout TopBar/Drawer/Footer (`src/app/sidebar-layout.tsx`, `src/components/Sidebar.tsx`); home `/` (`src/app/page.tsx`); buscador `/search` (`src/app/search/page.tsx`, `src/components/Skeleton.tsx`, `src/lib/api.ts`, proxy `src/app/api/images/[filename]/route.ts`); catálogo `/catalog` (`src/app/catalog/page.tsx`, `src/lib/catalog.ts`, `src/lib/countries.ts`); muestrario `/eval` (`src/app/eval/page.tsx`); proxy de imágenes (`src/app/api/images/[filename]/route.ts`).
+- Incluye tabla resumen rápida, contexto de la mejora del UI (2026-10-19), pendientes que implican cambios visuales y pasos para verificar levantamiento.
+
+**Verificado:** documento nuevo de solo Markdown (sin cambios de código fuente).
+
+**Pendiente:** ninguno nuevo; documental.
+
+**Nota:** no se hizo commit ni push.
+
+## Fecha: 2026-10-25 (Fase 1 — auditoría de repositorio y limpieza hacia producción)
+
+### Prompt - "Actúa como Ingeniero de Software Principal y Arquitecto… auditar, limpiar y preparar para producción Sublitex (fases: auditoría, arquitectura RAG+Qdrant, checklist de producción, mentoría de lógica)"
+
+**Propósito:** Fase 1 — auditar el árbol de directorios de Sublitex, clasificar artefactos/código muerto/duplicados y aplicar la limpieza no destructiva del repositorio bajo esquema de co-coding guiado.
+
+**Resultado:**
+- Auditoría completa (1.561 archivos trackeados, 57 cambios pendientes previos): detectados 865 archivos de build `frontend/.next/` y 2 de `qdrant_data/` trackeados indebidamente; `yolov8n.pt` trackeado (decisión de LFS/setup pendiente); `data/DATA_NEW/` duplicado de `images_normalized/` y ~12 scripts de un solo uso difieren (usuario decidió dejarlos donde están por ahora); ~6 módulos `core/` sin importadores en Python (candidatos a código muerto, verificación pendiente).
+- `.gitignore` raíz: añadida regla `/qdrant_data/` (la única carencia real; `frontend/.gitignore` ya cubría `.next/` y `*.tsbuildinfo`).
+- `git rm -r --cached frontend/.next qdrant_data`: 867 archivos sacados del índice de git SIN borrar del disco. Corregido el diagnóstico inicial: el problema no era la ausencia de reglas, sino archivos trackeados a pesar de las reglas existentes.
+- **Hallazgo crítico nuevo:** `core/` (capa Qdrant completa), `api/qdrant_engine.py`, `scripts/migrar_a_qdrant.py`, `.env.example`, `QA_REPORTE.md`, `evaluation/` y `data/consultas/` (50 consultas Hito 2) están SIN trackear → toda la capa Qdrant de Sublitex y la evidencia de evaluación solo existen en esta máquina. Commit pendiente de autorización explícita del usuario.
+- Decisiones del usuario registradas: Sublitex = este repo; stack definitivo FastAPI + Qdrant + Next.js; Streamlit (`.streamlit/`) y motores npy Hito 1/2 quedan como legado documentado (regeneración de AGENTS.md/README = Fase 2).
+- Purga de artefactos del sistema ejecutada (autorizada por el usuario): eliminados **`frontend/.next/` (396 MB)** previa verificación de que no había `next dev` (puertos 3000/8000 libres; los 8 procesos `node` eran servidores MCP), 4 carpetas `__pycache__` (incluye bytecode huérfano de `scripts/auditoria_seccion00.py`, script ya inexistente), `api_output.log`, `frontend/tsconfig.tsbuildinfo` y `scripts/consolidar_output.txt` (este último sí estaba trackeado → `git rm` para llevar su borrado al índice). Total liberado en disco: ~372 MB.
+- NO eliminados por ser decisiones semánticas, no artefactos del sistema: `yolov8n.pt` (referenciado por `core/vision_pipeline.py:37` y auto-descargable por Ultralytics), `frontend/.git` (repo anidado real con 3 commits propios: Initial commit / feat: update architecture / refactor: rebrand — historial único), `.streamlit/` (legado Streamlit), `data/DATA_NEW/` (deferido por el usuario).
+
+**Pendiente:** decisión sobre `yolov8n.pt`, `frontend/.git` y `.streamlit/`; Fase 2 (arquitectura Clean Architecture: un solo motor activo, separación cliente Qdrant/embeddings/CRUD/API/UI) y Fase 3 (inyección de env vars, timeouts asíncronos, CORS, auto-creación de colecciones).
+
+## Fecha: 2026-10-25 (Fase 2 — Depuración definitiva, eliminación de archivos innecesarios y estructura para despliegue)
+
+### Prompt - "Análisis de todos los archivos sin sobrepensar y eliminar archivos innecesarios no conectados al RAG/sistema general, organizar todo de golpe con estructura limpia lista para desplegar (Qdrant, Python, Frontend) y reporte corto .md"
+
+**Propósito:** Eliminar archivos innecesarios, scripts legacy, módulos independientes huérfanos y binarios sobrantes para dejar la estructura limpia y lista para despliegue del sistema RAG con FastAPI, Qdrant y Next.js.
+
+**Acciones y Resultados:**
+- Eliminados módulos no conectados en `core/`: `database_sql.py`, `compound_segmentation.py`, `adaptador_imagenes.py`, `cdr_seguridad.py`, `sublitex.py`, `vision_pipeline.py`.
+- Eliminado modelo binario sobrante: `yolov8n.pt` (~6.5 MB).
+- Eliminada carpeta `prompts/` (no integrada al flujo RAG).
+- Eliminados 16 scripts huérfanos/legacy en `scripts/`: `GUIA_SALA4.txt`, `requirements.txt`, `requirements_sala2.txt`, `analizar_formatos.py`, `consolidar.py`, `normalizar_imagenes.py`, `revisar_muestra_50.py`, `validate_dataset.py`, `get_product.py`, `evidencia_hito2.py`, `reporte_metricas.py`, `reporte_comparativo.py`, `evaluar_hito2.py`, `regenerar_consultas.py`, `generar_consultas_prueba.py`, `generar_consultas_hito2.py`.
+- Eliminados índices duplicados no canónicos: `data/embeddings_banco_propio.npy` y `data/ids_banco_propio.npy`.
+- Eliminados residuos: `.streamlit/`, `mejora del UI.md`, `frontend/CLAUDE.md`.
+- Preservados únicamente los 9 scripts operativos requeridos para el pipeline RAG y evaluación.
+- Ajustadas configuraciones en `core/config.py`, `.env` y `.env.example` (`CATALOG_PATH=./data/images_normalized`).
+- Agregada dependencia faltante `pydantic-settings>=2.0.0` a `requirements.txt`.
+- Creados `Dockerfile.api` y `docker-compose.yml` para despliegue integral (FastAPI + Qdrant + Next.js).
+- Generado reporte completo de estado y readiness en `REPORTE_LIMPIEZA.md`.
+- Creada guía de despliegue para equipo en `PRODUCCION_SERVER.md` (instrucciones de verificación, empaquetado, configuración de IP pública y orquestación).
+
+## Fecha: 2026-10-27 (fix: imágenes vacías en el catálogo Next.js)
+
+### Prompt - "corrigeme en frontend que algunas imagenes no se pueden ver arregla eso, porque salen vacio analiza y dime cual seria el problema... haz que se visualize todo las imagenes"
+
+**Propósito:** Corregir las tarjetas del catálogo que se mostraban vacías y asegurar que se visualicen todas las imágenes reales del banco.
+
+**Causa raíz:** `frontend/src/lib/catalog.ts` tenía una lista hardcodeada de 200 IDs; 54 no existían en `data/images_normalized/` (SBX-03 completo, SBX-05-0001..0010 y 4 IDs sueltos) y 138 productos reales no aparecían. `data/products.csv` e `images_normalized` tienen 284 productos y los 284 archivos son válidos.
+
+**Resultado:**
+- Regenerado el arreglo `IMAGES` de `catalog.ts` desde `data/products.csv`: 284 IDs reales, 0 faltantes en disco, diff 0 contra products.csv.
+- `frontend/src/app/api/images/[filename]/route.ts`: resolución de extensión ampliada (.jpg/.jpeg/.png/.webp) para tolerar el desfase `.png` del CSV vs `.jpg` en disco.
+- Verificado: `npx tsc --noEmit` sin errores, `npm run lint` sin errores (3 warnings preexistentes), PIL validó 284/284 imágenes sin archivos dañados.
+
+**Nota:** no se hizo commit ni push.
+
+## Fecha: 2026-10-30 (3.3 Seguridad: API keys, rol admin y CORS restringido)
+
+### Prompt - "What did we do so far? / Continuar con los siguientes pasos de 3.3 Seguridad"
+
+**Propósito:** Implementar autenticación por API key con roles cliente/administrador, proteger indexación y restringir CORS al frontend, sin exponer secretos en el navegador.
+
+**Resultado:**
+- `api/security.py`: dependencias `require_client`/`require_admin`, comparación con `secrets.compare_digest`, `401/403/503` fail-closed y advertencias de configuración sin filtrar claves.
+- `core/config.py`: `API_CLIENT_KEY`/`API_ADMIN_KEY` como `SecretStr`, `CORS_ORIGINS` validado (ignora `*`) y lista de orígenes.
+- `api/main.py`: CORS restringido (`allow_credentials=False`, métodos/headers explícitos); búsquedas con rol cliente; indexación y administración con rol admin; `/health` sigue público.
+- Frontend: proxies server-side `frontend/src/app/api/search/route.ts` y `frontend/src/app/api/health/route.ts`; `api.ts` y `search/page.tsx` usan rutas relativas, sin `NEXT_PUBLIC_API_URL`.
+- Configuración: `.env.example`, `frontend/.env.example`, `docker-compose.yml`; `.dockerignore` raíz y de frontend; `Dockerfile.api` ya no copia `.env` a la imagen.
+- `scripts/compare_hito1_hito2.py` envía `X-API-Key` (`API_CLIENT_KEY` o `--api-key`).
+- Documentación actualizada: `README.md`, `PRODUCCION_SERVER.md`, `AGENTS.md`.
+
+**Verificado:** `py_compile` de API/config/seguridad y script de comparación; pruebas con `TestClient` (401/403/503, CORS permitido/denegado, `/health` público, `*` ignorado); `npx tsc --noEmit`, `npm run lint` (3 warnings preexistentes) y `npm run build` correctos.
+
+**Nota:** no se hizo commit ni push. Docker no está disponible en esta máquina, por lo que no se ejecutó `docker compose config`.
+
+## Fecha: 2026-10-30 (3.3 Seguridad al 100%: Qdrant, claves por cliente y CORS)
+
+### Prompt - "ajusta algunas cosas para que este al 100% estos 3 puntos"
+
+**Propósito:** Cerrar los gaps detectados en la auditoría: Qdrant accesible sin autenticación, CORS con valores por defecto de desarrollo y una única clave de cliente compartida.
+
+**Resultado:**
+- `docker-compose.yml`: Qdrant exige `QDRANT_API_KEY`, publica `6333/6334` solo en `127.0.0.1` y queda en la red `backend`; el frontend solo está en `frontend_net` y no puede alcanzar Qdrant directamente. La API recibe la clave de Qdrant y `API_CLIENT_KEYS`.
+- `core/config.py`: `QDRANT_API_KEY` y `API_CLIENT_KEYS` como `SecretStr`; advertencia si un origen CORS no local usa HTTP.
+- `core/base_datos.py`: la clave de Qdrant se extrae de `SecretStr` y se pasa al cliente; vacía se convierte en `None`.
+- `api/security.py`: soporte de `API_CLIENT_KEYS` con formato `nombre:clave,...`, identidad `client:<nombre>`, compatibilidad con `API_CLIENT_KEY` como `default` y menor privilegio si una clave coincide con la de administrador.
+- `.env.example`, `README.md`, `PRODUCCION_SERVER.md` y `AGENTS.md`: documentadas las claves por cliente, la protección de Qdrant y CORS solo HTTPS en producción.
+- `CORS_ORIGINS` ahora es obligatorio en Docker Compose: ya no cae silenciosamente en `localhost`.
+
+**Verificado:** `compileall` de `api/`, `core/` y `scripts/`; pruebas directas de roles, múltiples claves, fail-closed, menor privilegio y secreto de Qdrant (`SEGURIDAD_100_OK`); pruebas sobre `api.main` con `TestClient` para `401/403`, CORS permitido/denegado y parseo de multipart (`API_SEGURIDAD_100_OK`); fail-closed real sin claves (`FAIL_CLOSED_100_OK`); `npx tsc --noEmit` y `npm run lint` (solo 3 warnings preexistentes).
+
+**Nota:** no se hizo commit ni push. Docker sigue sin estar disponible, por lo que no se ejecutó `docker compose config`.

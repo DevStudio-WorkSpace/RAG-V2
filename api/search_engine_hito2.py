@@ -46,9 +46,15 @@ base y le agrega una capa de reranking visual. El pipeline es:
    (scripts/generar_consultas_prueba.py + scripts/compare_hito1_hito2.py).
 
 4) UMBRAL DINÁMICO: en vez de forzar siempre 5 resultados, descartamos los
-   candidatos que quedan demasiado por debajo del mejor. Si no hay suficiente
-   calidad, se devuelven menos resultados (prefiero pocos y buenos a 5 con
-   "relleno").
+   candidatos que quedan demasiado por debajo del mejor (MARGEN_CORTE) y los
+   que no superan un mínimo absoluto de similitud (UMBRAL_MINIMO_SIMILARIDAD).
+   Si no hay suficiente calidad, se devuelven 0..top_k resultados (prefiero
+   pocos y buenos a 5 con "relleno").
+
+Los pesos (PESOS) se calibran para equilibrar la métrica combinada 50/50
+(0.5 * Top1% + 0.5 * Top5%): el embedding aporta 0.50 y el bloque visual 0.50,
+de modo que ganar precisión en Top 1 no se logra a costa de la recuperación
+del Top 5 ni viceversa.
 
 Nota sobre las imágenes del catálogo: se leen con PIL (no con cv2.imread)
 porque cv2.imread falla con rutas que contienen caracteres no-ASCII (p.ej.
@@ -103,6 +109,16 @@ PESOS = {k: v / _total_pesos for k, v in _PESOS.items()}
 # Margen de corte dinámico: se descartan candidatos cuyo score_final quede
 # más de este valor por debajo del mejor resultado (escala [0,1] normalizada)
 MARGEN_CORTE = 0.25
+
+# UMBRAL mínimo ABSOLUTO de similitud: ningún candidato por debajo de este
+# score_final se devuelve, aunque sea el mejor de la consulta. Complementa a
+# MARGEN_CORTE para que el Top 5 nunca se "rellene" con resultados sin
+# relación visual real (protege la precisión del Top 1 sin forzar 5 casillas).
+# El score_final es una media ponderada [0,1] donde el embedding vale 0.50 y
+# los descriptores visuales 0.50; 0.40 exige una señal combinada mínima.
+# Valor conservador de arranque: calibrar con las 50 consultas corriendo
+# scripts/compare_hito1_hito2.py --fusion y revisando los scores por consulta.
+UMBRAL_MINIMO_SIMILARIDAD = 0.40
 
 # Carpeta de imágenes del catálogo usada SIEMPRE para el reranking visual.
 # Es la fuente única de búsqueda: data/images_normalized/ (banco limpio de
@@ -553,9 +569,31 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
     q_estructura = _estructura_gris(bgr_consulta)
     q_avanzados = descriptores_de_bgr(bgr_consulta)
 
+    # ── P1: DETECCIÓN DE VARIANTE DE COLOR ─────────────────────────────────
+    # Calcular la distancia HSV promedio entre la consulta y los candidatos
+    # para detectar si es una variante de color (recoloreada). Si la distancia
+    # es alta, reducir el peso de los atributos de color y aumentar el de
+    # estructura/patrón/embedding.
+    _es_recolor = False
+    if q_hist_global is not None and len(candidatos) > 5:
+        distancias_color = []
+        for cand in candidatos[:10]:  # Muestrear primeros 10 candidatos
+            desc_cand = _descriptores_de_archivo(cand["imagen"], id_catalogo=cand.get("id"))
+            if desc_cand is not None and desc_cand.get("hist_global") is not None:
+                # Distancia chi-cuadrado (menor = más similar)
+                dist = cv2.compareHist(q_hist_global, desc_cand["hist_global"], cv2.HISTCMP_CHISQR)
+                distancias_color.append(dist)
+        
+        if distancias_color:
+            dist_promedio = np.mean(distancias_color)
+            # Si la distancia promedio es alta (> 5.0), la consulta tiene
+            # una paleta de color muy diferente a los candidatos = recoloreada
+            if dist_promedio > 5.0:
+                _es_recolor = True
+
     # ── Paso 2: RERANKING VISUAL ─────────────────────────────────────────
     reranked = []
-    for cand in candidatos:
+    for pos_inicial, cand in enumerate(candidatos, start=1):
         # Score de embeddings crudo y normalizado a [0,1]
         score_embedding = float(cand["score"])
         score_embedding_norm = _emb_norm(score_embedding)
@@ -595,17 +633,45 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
             score_marco = 0.0
             score_franjas = 0.0
 
+        # ── P1: PESOS ADAPTATIVOS PARA RECOLOREADAS ──────────────────────
+        # Si se detectó que la consulta es una variante de color, reducir
+        # el peso de los atributos de color y aumentar estructura/patrón.
+        # Esto mejora Top-1 en recoloreadas sin sacrificar Top-5.
+        if _es_recolor:
+            # Pesos adaptativos: reducir color 50%, aumentar estructura/patrón
+            _peso_emb = PESOS["embedding"] * 1.2  # +20% al embedding
+            _peso_color_g = PESOS["color_global"] * 0.5  # -50% color
+            _peso_color_f = PESOS["color_frente"] * 0.5
+            _peso_color_e = PESOS["color_espalda"] * 0.5
+            _peso_estr = PESOS["estructura"] * 1.5  # +50% estructura
+            _peso_color_d = PESOS["color_dominante"] * 0.5
+            _peso_gama = PESOS["gama"] * 0.5
+            _peso_patron = PESOS["patron"] * 1.5  # +50% patrón
+            _peso_marco = PESOS["marco"] * 1.3  # +30% marco
+            _peso_franjas = PESOS["franjas"] * 1.3  # +30% franjas
+        else:
+            _peso_emb = PESOS["embedding"]
+            _peso_color_g = PESOS["color_global"]
+            _peso_color_f = PESOS["color_frente"]
+            _peso_color_e = PESOS["color_espalda"]
+            _peso_estr = PESOS["estructura"]
+            _peso_color_d = PESOS["color_dominante"]
+            _peso_gama = PESOS["gama"]
+            _peso_patron = PESOS["patron"]
+            _peso_marco = PESOS["marco"]
+            _peso_franjas = PESOS["franjas"]
+
         score_final = (
-            PESOS["embedding"] * score_embedding_norm
-            + PESOS["color_global"] * score_color_global
-            + PESOS["color_frente"] * score_frente
-            + PESOS["color_espalda"] * score_espalda
-            + PESOS["estructura"] * score_estructura
-            + PESOS["color_dominante"] * score_color_dominante
-            + PESOS["gama"] * score_gama
-            + PESOS["patron"] * score_patron
-            + PESOS["marco"] * score_marco
-            + PESOS["franjas"] * score_franjas
+            _peso_emb * score_embedding_norm
+            + _peso_color_g * score_color_global
+            + _peso_color_f * score_frente
+            + _peso_color_e * score_espalda
+            + _peso_estr * score_estructura
+            + _peso_color_d * score_color_dominante
+            + _peso_gama * score_gama
+            + _peso_patron * score_patron
+            + _peso_marco * score_marco
+            + _peso_franjas * score_franjas
         )
 
         # Componente de color agregado (para reportes y compatibilidad)
@@ -620,6 +686,8 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
         reranked.append({
             **cand,
             "score_inicial": round(score_embedding, 4),
+            "score_recuperacion": round(score_embedding, 4),
+            "posicion_inicial": pos_inicial,
             "score_embedding": round(score_embedding_norm, 4),
             "score_color_global": round(score_color_global, 4),
             "score_color_frente": round(score_frente, 4),
@@ -637,10 +705,21 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
     # Ordenar por score_final descendente
     reranked.sort(key=lambda r: r["score_reranking"], reverse=True)
 
-    # ── Paso 3: UMBRAL DINÁMICO ──────────────────────────────────────────
-    # Solo conservamos candidatos cuya calidad esté razonablemente cerca del
-    # mejor resultado. Si el 2do candidato está muy por debajo, no lo
-    # forzamos: devolvemos menos de top_k en lugar de relleno irrelevante.
+    # ── Paso 3: UMBRAL DINÁMICO (filtrado estricto en dos capas) ─────────
+    # El Top 5 se construye con criterio de calidad, NO con relleno:
+    #   1) Corte ABSOLUTO (UMBRAL_MINIMO_SIMILARIDAD): todo candidato con
+    #      score_final por debajo del umbral queda fuera, incluso el mejor.
+    #      Así una consulta sin parecido real devuelve 0 resultados en vez de
+    #      5 arbitrarios.
+    #   2) Corte RELATIVO (MARGEN_CORTE): además se descartan los candidatos
+    #      que queden demasiado por debajo del mejor resultado retenido.
+    # Resultado posible: 0..top_k resultados. El frente (frontend/app.py)
+    # muestra "No se encontraron resultados" cuando la lista viene vacía.
+    if reranked:
+        reranked = [
+            r for r in reranked
+            if r["score_reranking"] >= UMBRAL_MINIMO_SIMILARIDAD
+        ]
     if reranked:
         mejor_score = reranked[0]["score_reranking"]
         limite_corte = mejor_score - MARGEN_CORTE
@@ -652,6 +731,7 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
     final = []
     for posicion, r in enumerate(reranked[:top_k], start=1):
         r["posicion_final"] = posicion
+        r["modelo"] = etiqueta_modelo
         r["modelo_utilizado"] = f"{etiqueta_modelo}+color+estructura+patron+marco+franjas"
         final.append(r)
 

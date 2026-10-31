@@ -9,10 +9,24 @@ from datetime import datetime, timezone
 
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Form
+<<<<<<< HEAD
+from fastapi import FastAPI, UploadFile, File, Form, Request
+=======
+from fastapi import Depends, FastAPI, UploadFile, File, Form
+>>>>>>> origin/sala-5
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 from sentence_transformers import SentenceTransformer
+
+
+# ── Tipos de imagen admitidos por la API ───────────────────────────────────
+# Se usa en los tres endpoints de búsqueda para validar el content-type
+# del archivo subido. Se incluye WebP junto a JPEG/PNG.
+# También se acepta application/octet-stream porque algunos clientes (ej. curl)
+# no siempre adjuntan el MIME correcto; la validación real la hace Pillow al
+# abrir la imagen, la cual detecta el formato desde los bytes.
+MIME_PERMITIDOS = ("image/jpeg", "image/jpg", "image/png", "image/webp", "application/octet-stream")
 
 # Asegurar importación del módulo search_engine independientemente del working directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -22,6 +36,19 @@ from api.search_engine_hito2 import (
     search_similar_reranked_fusion,
 )
 from api.preprocesar_consulta import preparar_consulta
+from api.security import (
+    advertencias_config_seguridad,
+    require_admin,
+    require_client,
+)
+from api.qdrant_engine import (
+    cargar_indice as cargar_indice_qdrant,
+    info_indice as info_indice_qdrant,
+    search_similar as search_similar_qdrant,
+    health as health_qdrant,
+    indexar_productos_desde_csv,
+)
+from core.config import settings
 
 MODEL_NAME = "clip-ViT-B-32"  # equivalente a openai/clip-vit-base-patch32
 _model = None
@@ -118,20 +145,40 @@ def _embedding_siglip(imagen) -> np.ndarray:
 
 
 def _recortes_consulta(imagen):
-    """Recortes de la consulta para robustez a oclusiones: imagen completa
-    más los 4 cuadrantes. Si un punto tapa el diseño en una zona, el recorte
-    opuesto sigue reconociendo el producto."""
+    """Recortes inteligentes de la consulta para maximizar la detección del diseño.
+    
+    Estrategia mejorada (P0): en vez de solo cuadrantes, usamos:
+    1. Imagen completa
+    2. Recorte central (60% del área) - donde típicamente está el diseño
+    3. Mitad superior (diseño suele estar arriba)
+    4. Recorte con margen del 15% por lado (elimina bordes)
+    5. Cuadrante superior-izquierdo (zona más probable del diseño)
+    
+    Esto aumenta la robustez a oclusiones y mejora la detección en fotos de personas."""
     w, h = imagen.size
+    recortes = [imagen]  # Siempre incluir la imagen completa
+    
+    # Recorte central (60% del área)
+    cx, cy = w // 2, h // 2
+    rw, rh = int(w * 0.3), int(h * 0.3)  # 30% de cada lado = 60% central
+    if rw > 10 and rh > 10:
+        recortes.append(imagen.crop((cx - rw, cy - rh, cx + rw, cy + rh)))
+    
+    # Mitad superior (donde típicamente está el diseño en camisetas)
+    if h > 20:
+        recortes.append(imagen.crop((0, 0, w, h // 2)))
+    
+    # Recorte con margen del 15% (elimina bordes potencialmente ruidosos)
+    mx, my = int(w * 0.15), int(h * 0.15)
+    if mx > 5 and my > 5:
+        recortes.append(imagen.crop((mx, my, w - mx, h - my)))
+    
+    # Cuadrante superior-izquierdo (zona más probable del diseño)
     mw, mh = w // 2, h // 2
-    if mw == 0 or mh == 0:
-        return [imagen]
-    return [
-        imagen,
-        imagen.crop((0, 0, mw, mh)),
-        imagen.crop((mw, 0, w, mh)),
-        imagen.crop((0, mh, mw, h)),
-        imagen.crop((mw, mh, w, h)),
-    ]
+    if mw > 10 and mh > 10:
+        recortes.append(imagen.crop((0, 0, mw, mh)))
+    
+    return recortes
 
 
 def _encodificar_fusion(imagen) -> dict:
@@ -158,11 +205,21 @@ def _encodificar(imagen, modelo: str):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Carga el índice de vectores y el modelo CLIP una sola vez al iniciar el servidor."""
+    for aviso in advertencias_config_seguridad():
+        print(f"[API] AVISO DE SEGURIDAD: {aviso}")
+
     try:
         cargar_indice()
         print("[API] Índice de embeddings y dataset cargado correctamente.")
     except Exception as e:
         print(f"[API] AVISO al cargar índice: {e}")
+
+    # Inicializar Qdrant (backend escalable para RAG)
+    try:
+        cargar_indice_qdrant()
+        print("[API] Índice Qdrant inicializado correctamente.")
+    except Exception as e:
+        print(f"[API] AVISO al inicializar Qdrant: {e}")
 
     try:
         get_model()
@@ -190,13 +247,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configuración CORS para la interfaz de Sala 2 y clientes frontend
+# CORS restringido a los orígenes explícitos del frontend. No se permite "*"
+# ni cookies de sesión: la autenticación viaja en el header X-API-Key.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
+    max_age=600,
 )
 
 # Parámetros del Hito 2: cuántos candidatos se recuperan en la fase amplia
@@ -205,7 +264,7 @@ CANDIDATOS_INICIALES = 30
 
 # La fusión recupera más candidatos (varios modelos = más robusto) para darle
 # al reranking más chances de "resucitar" el producto correcto ocluido.
-CANDIDATOS_INICIALES_FUSION = 100
+CANDIDATOS_INICIALES_FUSION = 200
 
 
 def _motor_reranked(embedding, query_image, modelo: str):
@@ -232,9 +291,47 @@ def _motor_reranked(embedding, query_image, modelo: str):
 MIN_DIM = 32
 
 # Guardado de las dos versiones de cada consulta (Sala 2, Hito 2)
+# Directorios de consultas y política de retención (Seguridad)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 QUERIES_ORIGINAL_DIR = os.path.join(BASE_DIR, "data", "queries_original")
 QUERIES_PROCESADA_DIR = os.path.join(BASE_DIR, "data", "queries_procesadas")
+MAX_UPLOAD_SIZE = 15 * 1024 * 1024  # 15 MB límite de tamaño de subida
+
+# Control básico de Rate Limiting en memoria por IP
+_request_counts = {}
+RATE_LIMIT_WINDOW = 60  # segundos
+RATE_LIMIT_MAX_REQUESTS = 60  # máx peticiones por minuto por IP
+
+
+def _check_rate_limit(client_ip: str) -> bool:
+    """Verifica si la IP excede el límite de peticiones (Rate Limiting)."""
+    now = time.time()
+    if client_ip not in _request_counts:
+        _request_counts[client_ip] = []
+    
+    # Filtrar peticiones fuera de la ventana de tiempo
+    _request_counts[client_ip] = [t for t in _request_counts[client_ip] if now - t < RATE_LIMIT_WINDOW]
+    
+    if len(_request_counts[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+    
+    _request_counts[client_ip].append(now)
+    return True
+
+
+def _limpiar_consultas_antiguas():
+    """Borra consultas almacenadas con más de 24 horas para cumplir política de retención."""
+    try:
+        now = time.time()
+        max_age = 24 * 3600  # 24 horas
+        for folder in (QUERIES_ORIGINAL_DIR, QUERIES_PROCESADA_DIR):
+            if os.path.exists(folder):
+                for f in os.listdir(folder):
+                    fp = os.path.join(folder, f)
+                    if os.path.isfile(fp) and (now - os.path.getmtime(fp) > max_age):
+                        os.remove(fp)
+    except Exception:
+        pass
 
 
 def get_model():
@@ -247,7 +344,11 @@ def get_model():
 
 @app.get("/health")
 def health():
-    """Endpoint de verificación del estado de la API y datos indexados."""
+    """Endpoint público de liveness/readiness (no expone secretos).
+
+    Se mantiene sin API key para que Docker/Kubernetes y el proxy puedan
+    comprobar el estado del servicio sin credenciales.
+    """
     try:
         info = info_indice()
         indice_openclip = os.path.join(BASE_DIR, "data", "embeddings_openclip.npy")
@@ -297,44 +398,43 @@ def _error_dimensiones(imagen) -> str | None:
     return None
 
 
-@app.post("/search/image")
+@app.post("/search/image", dependencies=[Depends(require_client)])
 async def search_image(
+    request: Request,
     file: UploadFile = File(...),
     modo: str = Form("auto"),
     modelo: str = Form("clip"),
 ):
     """
     Recibe una imagen (JPG/PNG) y devuelve los 5 productos más parecidos.
-
-    Parametro de formulario `modo` (Sala 2, Hito 2):
-      - "auto"      : pipeline completo (Sala 1 + Sala 2 + Sala 3): prepara la
-                      consulta y aplica el reranking visual del motor Hito 2.
-                      Respuesta enriquecida (original + procesada + ambos
-                      rankings + preprocesamiento + modelo).
-      - "completo"  : igual que "auto" (alias del pipeline completo).
-      - "procesada" : usa la imagen preparada (Sala 2) con el motor Hito 2.
-      - "clasico"   : Hito 1 (Sala 1 + preprocesamiento Sala 2), sin reranking.
-      - "original"  : fuerza el uso de la consulta tal como llega (motor Hito 1).
-      - "legacy"    : devuelve solo la lista del motor (comportamiento Hito 1).
-
-    Parametro de formulario `modelo`:
-      - "clip"     (default): openai/clip-vit-base-patch32 (estándar).
-      - "openclip"           : laion/CLIP-ViT-B-32-laion2B-s34B-b79K (mejora;
-                               más robusto a franjas/dibujos centrales).
-      - "fusion"             : combina CLIP + OpenCLIP + SigLIP en la
-                               recuperación (lo más robusto a oclusiones:
-                               un punto que tape parte del diseño).
-      Solo aplica a los modos del motor Hito 2 (auto/completo/procesada);
-      los modos Hito 1 (clasico/original/legacy) siempre usan "clip".
     """
-    if file.content_type and file.content_type not in ("image/jpeg", "image/jpg", "image/png"):
+    # 1. Rate Limiting por IP (Seguridad)
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Demasiadas peticiones. Por favor intente más tarde (Rate limit excedido)."}
+        )
+
+    # 2. Límite de tamaño de subida en servidor (Seguridad)
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_SIZE:
+        return JSONResponse(
+            status_code=413,
+            content={"error": f"El archivo excede el tamaño máximo permitido de {MAX_UPLOAD_SIZE // (1024*1024)}MB."}
+        )
+
+    # 3. Limpieza periódica de consultas antiguas (Retención/borrado)
+    _limpiar_consultas_antiguas()
+
+    if file.content_type and file.content_type not in MIME_PERMITIDOS:
         return JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"}
         )
 
     try:
-        contenido = await file.read()
+        contenido = contents
         imagen = Image.open(io.BytesIO(contenido)).convert("RGB")
     except Exception:
         return JSONResponse(
@@ -464,7 +564,7 @@ async def search_image(
         )
 
 
-@app.post("/search/image/v2")
+@app.post("/search/image/v2", dependencies=[Depends(require_client)])
 async def search_image_v2(
     file: UploadFile = File(...),
     modelo: str = Form("clip"),
@@ -485,7 +585,7 @@ async def search_image_v2(
                                robusto a oclusiones: puntos que tapen diseño).
     """
     # Mismo control de tipo de archivo que el endpoint del Hito 1
-    if file.content_type and file.content_type not in ("image/jpeg", "image/jpg", "image/png"):
+    if file.content_type and file.content_type not in MIME_PERMITIDOS:
         return JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"}
@@ -548,3 +648,152 @@ async def search_image_v2(
             status_code=500,
             content={"error": f"Error interno: {str(e)}"}
         )
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ENDPOINTS QDRANT (RAG escalable)
+# ════════════════════════════════════════════════════════════════════════════
+
+
+@app.get("/health/qdrant", dependencies=[Depends(require_admin)])
+def health_qdrant_endpoint():
+    """Estado de salud de Qdrant: colección, puntos, URL, almacenamiento en disco."""
+    try:
+        return health_qdrant()
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "detail": str(e)}
+        )
+
+
+@app.get("/collections/qdrant", dependencies=[Depends(require_admin)])
+def listar_colecciones_qdrant():
+    """Lista todas las colecciones disponibles en Qdrant."""
+    try:
+        qdrant = _get_qdrant_service()
+        return {"colecciones": qdrant.list_collections()}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "detail": str(e)}
+        )
+
+
+@app.post("/index/qdrant", dependencies=[Depends(require_admin)])
+def indexar_qdrant(
+    csv_path: str = None,
+    embeddings_path: str = None,
+):
+    """
+    Indexa productos desde data/products.csv y sus embeddings en Qdrant.
+
+    Parámetros opcionales (query string):
+      - csv_path: ruta al CSV de productos (default: data/products.csv)
+      - embeddings_path: ruta al archivo .npy de embeddings (default: data/embeddings.npy)
+    """
+    try:
+        total = indexar_productos_desde_csv(
+            csv_path=csv_path,
+            embeddings_path=embeddings_path,
+        )
+        return {
+            "status": "ok",
+            "productos_indexados": total,
+            "coleccion": settings.QDRANT_COLLECTION_NAME,
+        }
+    except FileNotFoundError as e:
+        return JSONResponse(
+            status_code=404,
+            content={"error": str(e)}
+        )
+    except ValueError as e:
+        return JSONResponse(
+            status_code=400,
+            content={"error": str(e)}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Error indexando en Qdrant: {str(e)}"}
+        )
+
+
+@app.post("/search/image/qdrant", dependencies=[Depends(require_client)])
+async def search_image_qdrant(
+    file: UploadFile = File(...),
+    top_k: int = Form(5),
+    color_filtro: str = Form(None),
+    min_score: float = Form(0.5),
+    modelo: str = Form("clip"),
+):
+    """
+    Búsqueda de imágenes usando Qdrant como backend vectorial.
+
+    Recibe una imagen, genera su embedding con el modelo indicado y busca
+    vectores similares en Qdrant con filtro opcional por color.
+
+    Parametros:
+      - file: imagen JPG/PNG
+      - top_k: número de resultados (default 5)
+      - color_filtro: filtrar por este color (búsqueda híbrida)
+      - min_score: score mínimo de similitud (default 0.5)
+      - modelo: "clip", "openclip" o "fusion"
+    """
+    if file.content_type and file.content_type not in MIME_PERMITIDOS:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "El archivo enviado no es una imagen válida"}
+        )
+
+    if modelo not in MODELOS_VALIDOS:
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"Modelo desconocido '{modelo}'; modelos válidos: {', '.join(MODELOS_VALIDOS)}"}
+        )
+
+    try:
+        contenido = await file.read()
+        imagen = Image.open(io.BytesIO(contenido)).convert("RGB")
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "El archivo enviado no es una imagen válida"}
+        )
+
+    error_dim = _error_dimensiones(imagen)
+    if error_dim:
+        return JSONResponse(status_code=400, content={"error": error_dim})
+
+    try:
+        t0 = time.perf_counter()
+        embedding = _encodificar(imagen, modelo)
+        resultados = search_similar_qdrant(
+            query_embedding=embedding,
+            top_k=top_k,
+            color_filtro=color_filtro,
+            min_score=min_score,
+        )
+        tiempo_segundos = round(time.perf_counter() - t0, 4)
+
+        return {
+            "query_id": f"q_q_{int(time.perf_counter() * 1000)}",
+            "modo": "qdrant",
+            "modelo": MODELOS_ETIQUETA.get(modelo, modelo),
+            "top_k": top_k,
+            "color_filtro": color_filtro,
+            "min_score": min_score,
+            "tiempo_segundos": tiempo_segundos,
+            "resultados": resultados,
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Error en búsqueda Qdrant: {str(e)}"}
+        )
+
+
+def _get_qdrant_service():
+    """Obtiene la instancia singleton de QdrantService desde qdrant_engine."""
+    from api.qdrant_engine import _get_qdrant
+    return _get_qdrant()
