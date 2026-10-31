@@ -985,3 +985,37 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 **Verificado:** `compileall` de `api/`, `core/` y `scripts/`; pruebas directas de roles, múltiples claves, fail-closed, menor privilegio y secreto de Qdrant (`SEGURIDAD_100_OK`); pruebas sobre `api.main` con `TestClient` para `401/403`, CORS permitido/denegado y parseo de multipart (`API_SEGURIDAD_100_OK`); fail-closed real sin claves (`FAIL_CLOSED_100_OK`); `npx tsc --noEmit` y `npm run lint` (solo 3 warnings preexistentes).
 
 **Nota:** no se hizo commit ni push. Docker sigue sin estar disponible, por lo que no se ejecutó `docker compose config`.
+
+## Fecha: 2026-10-30 (fix: resolución de conflictos de merge en docker-compose.yml)
+
+### Prompt - "docker compose up -d --build → go-yaml load error in scanner (while scanning a simple key) at L6.C1-L8.C1"
+
+**Propósito:** Restaurar el parseo del `docker-compose.yml` tras un merge mal resuelto que dejó marcadores de conflicto de Git (`<<<<<<< HEAD`, `=======`, `>>>>>>> origin/sala-5`) commiteados en el historial.
+
+**Resultado:**
+- Diagnóstico: el error de Docker Compose (`go-yaml load error in scanner ... at L6.C1-L8.C1`) provenía de los bloques de conflicto en `docker-compose.yml` (líneas 6-12, 17-27, 54-64 y 80-115).
+- Resolución aplicada en el archivo trabajado:
+  - `qdrant`: sin puertos públicos (binds solo `127.0.0.1:6333/6334`), con `QDRANT__SERVICE__API_KEY`, en red `backend`, límites de recursos.
+  - `api`: `expose 8000` (detrás del reverse proxy), todas las claves de entorno (`QDRANT_API_KEY`, `API_CLIENT_KEY`, `API_CLIENT_KEYS`, `API_ADMIN_KEY`), en redes `backend` + `frontend_net`.
+  - `frontend`: `expose 3000`, env `API_URL=http://api:8000` + `API_CLIENT_KEY`, `depends_on api`, en red `frontend_net`.
+  - `proxy`: servicio Caddy (puertos 80/443) con `depends_on api, frontend`.
+  - `networks`: `backend` y `frontend_net`.
+
+**Verificado:** `docker compose config -q` y `docker compose config` sin errores ni warnings de YAML (salió limpio y completo).
+
+**Nota:** no se hizo commit ni push. No se ejecutó `docker compose up -d --build` (build completo pendiente de validar con contenedores reales).
+
+## Fecha: 2026-10-31 (fix: error "No se pudo conectar con la API desde el proxy del frontend" + healthcheck de arranque)
+
+### Prompt - "docker compose up -d --build → go-yaml load error ... / Error al buscar: No se pudo conectar con la API desde el proxy del frontend"
+
+**Propósito:** Restaurar el stack Docker completo y asegurar que el flujo frontend→API (`/api/search`) funcione.
+
+**Resultado:**
+- `docker-compose.yml`: resueltos los 4 bloques de conflicto de merge (qdrant, api, frontend, proxy); se añadió `healthcheck` al servicio `api` (`python3 -c urllib ... /health`, start_period 600s) y `depends_on` con `condition: service_healthy` para `frontend` y `proxy`.
+- `api/main.py`: resuelto conflicto de imports FastAPI (`Depends, FastAPI, UploadFile, File, Form, Request`).
+- Verificado: `docker compose config -q` OK; `docker compose up -d` → api pasa a **Healthy**.
+- Verificado end-to-end: `curl http://localhost/api/health` → 200 (vía Caddy → frontend Next → API); `curl -X POST http://localhost/api/search -F file` → 200 con resultados (modelo fusion, ~127s).
+
+**Nota:** no se hizo commit ni push.
+

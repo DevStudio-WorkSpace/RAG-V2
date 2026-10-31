@@ -9,11 +9,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 from PIL import Image
-<<<<<<< HEAD
-from fastapi import FastAPI, UploadFile, File, Form, Request
-=======
-from fastapi import Depends, FastAPI, UploadFile, File, Form
->>>>>>> origin/sala-5
+from fastapi import Depends, FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 

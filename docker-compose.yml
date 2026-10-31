@@ -3,28 +3,22 @@ services:
     image: qdrant/qdrant:latest
     container_name: sublitex_qdrant
     restart: unless-stopped
-<<<<<<< HEAD
-    # Seguridad: Qdrant sin puertos públicos (solo red interna)
-=======
+    # Seguridad: Qdrant sin puertos públicos (solo red interna / localhost)
     ports:
       - "127.0.0.1:6333:6333"
       - "127.0.0.1:6334:6334"
->>>>>>> origin/sala-5
     volumes:
       - ./qdrant_data:/qdrant/storage
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
-<<<<<<< HEAD
+      - "QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:?Defina QDRANT_API_KEY en .env}"
+    networks:
+      - backend
     deploy:
       resources:
         limits:
           cpus: '2.0'
           memory: 2G
-=======
-      - "QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:?Defina QDRANT_API_KEY en .env}"
-    networks:
-      - backend
->>>>>>> origin/sala-5
 
   api:
     build:
@@ -51,17 +45,20 @@ services:
       - "CORS_ORIGINS=${CORS_ORIGINS:?Defina CORS_ORIGINS con el dominio del frontend}"
     depends_on:
       - qdrant
-<<<<<<< HEAD
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=10).status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 600s
+    networks:
+      - backend
+      - frontend_net
     deploy:
       resources:
         limits:
           cpus: '4.0'
           memory: 4G
-=======
-    networks:
-      - backend
-      - frontend_net
->>>>>>> origin/sala-5
 
   frontend:
     build:
@@ -77,9 +74,14 @@ services:
       - "3000"
     volumes:
       - ./data/images_normalized:/data/images_normalized:ro
-<<<<<<< HEAD
+    environment:
+      - API_URL=http://api:8000
+      - "API_CLIENT_KEY=${API_CLIENT_KEY:?Defina API_CLIENT_KEY en .env}"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    networks:
+      - frontend_net
     deploy:
       resources:
         limits:
@@ -97,23 +99,18 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./data/images_normalized:/srv/images_normalized:ro
     depends_on:
-      - api
-      - frontend
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - frontend_net
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 512M
-=======
-    environment:
-      - API_URL=http://api:8000
-      - "API_CLIENT_KEY=${API_CLIENT_KEY:?Defina API_CLIENT_KEY en .env}"
-    depends_on:
-      - api
-    networks:
-      - frontend_net
 
 networks:
   backend:
   frontend_net:
->>>>>>> origin/sala-5
