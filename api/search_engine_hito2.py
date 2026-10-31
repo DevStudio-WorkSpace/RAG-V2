@@ -362,11 +362,12 @@ def cargar_descriptores_precomputados():
 def _resolver_imagen(nombre_archivo, id_catalogo=None):
     """
     Devuelve la ruta completa de la imagen en CARPETA_IMAGENES, probando el
-    nombre exacto del CSV y el equivalente normalizado <id>.jpg (Sala 1
-    convierte todo a .jpg). None si no existe.
+    nombre exacto del CSV y el equivalente normalizado <id>.png (Sala 1
+    conserva el PNG nativo de DATA_NEW). None si no existe.
     """
     candidatas = [str(nombre_archivo)]
     if id_catalogo:
+        candidatas.append(str(id_catalogo) + ".png")
         candidatas.append(str(id_catalogo) + ".jpg")
     for nombre in candidatas:
         ruta = os.path.join(CARPETA_IMAGENES, nombre)

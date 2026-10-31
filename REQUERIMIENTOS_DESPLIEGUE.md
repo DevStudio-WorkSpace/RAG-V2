@@ -300,10 +300,9 @@ Según `AGENTS.md` y especificaciones del proyecto:
 ### 3.1 Producto y datos
 
 - [ ] Congelar alcance: demo privada, producción pública o Hito 3.
-- [ ] Entregar nombres comerciales, URLs reales y archivos correctos.
-- [ ] Corregir `imagen` en `products.csv` (`.png` vs `.jpg`).
-- [ ] Regenerar índices y validar alineación `ids.npy` ↔ `products.csv` ↔ `embeddings.npy`.
-- [ ] Si es Hito 3: cargar ~15.000 diseños y regenerar todos los índices.
+- [x] Entregar nombres comerciales, URLs reales y archivos correctos.
+- [x] Corregir `imagen` en `products.csv` (`.png` vs `.jpg`).
+- [x] Regenerar índices y validar alineación `ids.npy` ↔ `products.csv` ↔ `embeddings.npy`.
 
 ### 3.2 Arquitectura
 

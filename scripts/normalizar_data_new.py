@@ -3,7 +3,7 @@
 normalizar_data_new.py
 ----------------------
 Copia las imágenes de data/DATA_NEW a data/images_normalized/
-convirtiéndolas a JPG con el mismo ID.
+conservando el formato PNG nativo de las descargas (sin recomponer).
 
 Las imágenes originales en DATA_NEW NO se modifican.
 
@@ -44,11 +44,11 @@ def main():
 
         id_base = m.group(1)
         ruta_origen = os.path.join(DATA_NEW, archivo)
-        ruta_destino = os.path.join(IMAGES_NORM, id_base + ".jpg")
+        ruta_destino = os.path.join(IMAGES_NORM, id_base + ".png")
 
         try:
             img = Image.open(ruta_origen).convert("RGB")
-            img.save(ruta_destino, "JPEG", quality=92)
+            img.save(ruta_destino, "PNG")
             copiadas += 1
         except Exception as e:
             errores.append((archivo, str(e)))

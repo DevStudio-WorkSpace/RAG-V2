@@ -43,7 +43,12 @@ def main():
             "id": producto_id,
             "proveedor": "SBX",
             "pagina": "1",
-            "imagen": archivo,
+            # El contrato canónico (search_engine, frontend y
+            # generar_embeddings) resuelve las imágenes en
+            # data/images_normalized/, donde normalizar_data_new.py guarda
+            # cada producto como <id>.png. El CSV debe referenciar ese
+            # nombre .png (formato nativo de las descargas de DATA_NEW).
+            "imagen": f"{producto_id}.png",
             "nombre_original": producto_id,
             "url": f"https://ejemplo.com/{producto_id}",
         })

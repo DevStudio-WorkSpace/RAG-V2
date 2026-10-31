@@ -73,17 +73,18 @@ def leer_productos_csv():
 def resolver_ruta_imagen(fila):
     """
     Devuelve la ruta de la imagen en data/images_normalized/.
-    La normalización de Sala 1 convierte TODO a .jpg con el mismo ID, así que
-    si el nombre exacto del CSV no existe (p. ej. AIM-P001-005.png) se busca
-    el equivalente <id>.jpg (como en generar_indices_comparativos.py).
-    Devuelve None si no hay ningún archivo.
+    La normalización de Sala 1 conserva el PNG nativo de DATA_NEW con el
+    mismo ID, así que si el nombre exacto del CSV no existe se busca el
+    equivalente <id>.png (y .jpg como fallback por si el banco se generó
+    con la conversión anterior). Devuelve None si no hay ningún archivo.
     """
     ruta = os.path.join(IMAGES_DIR, fila["imagen"])
     if os.path.exists(ruta):
         return ruta
     for candidata in (
-        os.path.join(IMAGES_DIR, fila["id"] + ".jpg"),
         os.path.join(IMAGES_DIR, fila["id"] + ".png"),
+        os.path.join(IMAGES_DIR, fila["id"] + ".jpg"),
+        os.path.join(IMAGES_DIR, os.path.splitext(fila["imagen"])[0] + ".png"),
         os.path.join(IMAGES_DIR, os.path.splitext(fila["imagen"])[0] + ".jpg"),
     ):
         if os.path.exists(candidata):
