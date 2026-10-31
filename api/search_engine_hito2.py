@@ -90,6 +90,8 @@ PESO_GAMA            = 0.04   # gama cromática (histograma HSV grueso)
 PESO_PATRON          = 0.06   # diseño/patrón (textura en grilla)
 PESO_MARCO           = 0.06   # estructura con/sin marco
 PESO_FRANJAS         = 0.04   # líneas/franjas/rayados (elementos gráficos)
+PESO_PATRON_COMBINACION = 0.05   # patrón × color (combinación de diseño)
+PESO_EQUIPO = 0.03               # identidad de equipo/país (diseño)
 
 _PESOS = {
     "embedding": PESO_EMBEDDING,
@@ -102,6 +104,8 @@ _PESOS = {
     "patron": PESO_PATRON,
     "marco": PESO_MARCO,
     "franjas": PESO_FRANJAS,
+    "patron_combinacion": PESO_PATRON_COMBINACION,
+    "equipo": PESO_EQUIPO,
 }
 _total_pesos = sum(_PESOS.values())
 PESOS = {k: v / _total_pesos for k, v in _PESOS.items()}
@@ -634,6 +638,16 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
             score_marco = 0.0
             score_franjas = 0.0
 
+        # ── Patrón de combinación: patrón + color del mismo diseño ─────────
+        # Combina el descriptor de patrón (textura/estructura) con el color
+        # global para medir la combinación diseño+color de la camiseta.
+        score_patron_combinacion = float(min(1.0, 0.5 * score_patron + 0.5 * score_color_global))
+
+        # ── Similitud de equipo/país (identidad de diseño) ────────────────
+        # Aproximación robusta a la identidad de equipo/país: se combina la
+        # señal semántica del embedding con la combinación patrón+color.
+        score_equipo = float(min(1.0, 0.6 * score_embedding_norm + 0.4 * score_patron_combinacion))
+
         # ── P1: PESOS ADAPTATIVOS PARA RECOLOREADAS ──────────────────────
         # Si se detectó que la consulta es una variante de color, reducir
         # el peso de los atributos de color y aumentar estructura/patrón.
@@ -650,6 +664,8 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
             _peso_patron = PESOS["patron"] * 1.5  # +50% patrón
             _peso_marco = PESOS["marco"] * 1.3  # +30% marco
             _peso_franjas = PESOS["franjas"] * 1.3  # +30% franjas
+            _peso_patron_combinacion = PESOS["patron_combinacion"] * 1.2
+            _peso_equipo = PESOS["equipo"] * 1.2
         else:
             _peso_emb = PESOS["embedding"]
             _peso_color_g = PESOS["color_global"]
@@ -661,6 +677,8 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
             _peso_patron = PESOS["patron"]
             _peso_marco = PESOS["marco"]
             _peso_franjas = PESOS["franjas"]
+            _peso_patron_combinacion = PESOS["patron_combinacion"]
+            _peso_equipo = PESOS["equipo"]
 
         score_final = (
             _peso_emb * score_embedding_norm
@@ -673,6 +691,8 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
             + _peso_patron * score_patron
             + _peso_marco * score_marco
             + _peso_franjas * score_franjas
+            + _peso_patron_combinacion * score_patron_combinacion
+            + _peso_equipo * score_equipo
         )
 
         # Componente de color agregado (para reportes y compatibilidad)
@@ -699,6 +719,8 @@ def _rerank_candidatos(candidatos, query_image, etiqueta_modelo, top_k: int = 5)
             "score_patron": round(score_patron, 4),
             "score_marco": round(score_marco, 4),
             "score_franjas": round(score_franjas, 4),
+            "score_patron_combinacion": round(float(score_patron_combinacion), 4),
+            "score_equipo": round(float(score_equipo), 4),
             "score_color": round(score_color, 4),
             "score_reranking": round(float(score_final), 4),
         })

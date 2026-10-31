@@ -51,10 +51,10 @@ docker compose ps
 Ejecuta en terminal o navegador:
 
 ```bash
-curl http://localhost:6333/dashboard
+curl http://localhost/search
 ```
 
-O visita en tu navegador: [http://localhost:6333/dashboard](http://localhost:6333/dashboard).
+O visita en tu navegador: [http://localhost/search](http://localhost/search).
 
 ---
 

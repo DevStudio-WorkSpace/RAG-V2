@@ -1019,3 +1019,19 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 
 **Nota:** no se hizo commit ni push.
 
+## Fecha: 2026-10-31 (fix: mejoras de reranking — patrón de color/combinación y equipo/país)
+
+### Prompt - "ya falta mejorar las busquedas y de el tono bien, da imagenes buenas pero no exactas necesito que de imagenes lo mas similares posibles..."
+
+**Propósito:** Refuerzo del motor Hito 2 (Sala 4) para que el reranking detecte por color de camiseta, patrones de color, patrones de combinación y equipos/países, buscando imágenes más similares.
+
+**Resultado:**
+- `api/search_engine_hito2.py`: nuevos componentes en `_rerank_candidatos`:
+  - `score_patron_combinacion` (patrón × color, [0,1]) con `PESO_PATRON_COMBINACION = 0.05`.
+  - `score_equipo` (identidad equipo/país, [0,1]) con `PESO_EQUIPO = 0.03`.
+  - Integrados en `score_final`; pesos adaptativos (recolor) actualizados en ambas ramas.
+  - Nuevos keys de salida: `score_patron_combinacion`, `score_equipo`.
+- Verificado: `python -m py_compile api/search_engine_hito2.py` OK.
+
+**Nota:** no se hizo commit ni push. Pendiente: reconstruir imagen del API (`docker compose up -d --build api`) para aplicar en contenedor y re-ejecutar búsqueda/evaluación.
+
