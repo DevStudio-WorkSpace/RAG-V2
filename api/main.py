@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -277,9 +277,47 @@ def _motor_reranked(embedding, query_image, modelo: str):
 MIN_DIM = 32
 
 # Guardado de las dos versiones de cada consulta (Sala 2, Hito 2)
+# Directorios de consultas y política de retención (Seguridad)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 QUERIES_ORIGINAL_DIR = os.path.join(BASE_DIR, "data", "queries_original")
 QUERIES_PROCESADA_DIR = os.path.join(BASE_DIR, "data", "queries_procesadas")
+MAX_UPLOAD_SIZE = 15 * 1024 * 1024  # 15 MB límite de tamaño de subida
+
+# Control básico de Rate Limiting en memoria por IP
+_request_counts = {}
+RATE_LIMIT_WINDOW = 60  # segundos
+RATE_LIMIT_MAX_REQUESTS = 60  # máx peticiones por minuto por IP
+
+
+def _check_rate_limit(client_ip: str) -> bool:
+    """Verifica si la IP excede el límite de peticiones (Rate Limiting)."""
+    now = time.time()
+    if client_ip not in _request_counts:
+        _request_counts[client_ip] = []
+    
+    # Filtrar peticiones fuera de la ventana de tiempo
+    _request_counts[client_ip] = [t for t in _request_counts[client_ip] if now - t < RATE_LIMIT_WINDOW]
+    
+    if len(_request_counts[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+    
+    _request_counts[client_ip].append(now)
+    return True
+
+
+def _limpiar_consultas_antiguas():
+    """Borra consultas almacenadas con más de 24 horas para cumplir política de retención."""
+    try:
+        now = time.time()
+        max_age = 24 * 3600  # 24 horas
+        for folder in (QUERIES_ORIGINAL_DIR, QUERIES_PROCESADA_DIR):
+            if os.path.exists(folder):
+                for f in os.listdir(folder):
+                    fp = os.path.join(folder, f)
+                    if os.path.isfile(fp) and (now - os.path.getmtime(fp) > max_age):
+                        os.remove(fp)
+    except Exception:
+        pass
 
 
 def get_model():
@@ -344,34 +382,33 @@ def _error_dimensiones(imagen) -> str | None:
 
 @app.post("/search/image")
 async def search_image(
+    request: Request,
     file: UploadFile = File(...),
     modo: str = Form("auto"),
     modelo: str = Form("clip"),
 ):
     """
     Recibe una imagen (JPG/PNG) y devuelve los 5 productos más parecidos.
-
-    Parametro de formulario `modo` (Sala 2, Hito 2):
-      - "auto"      : pipeline completo (Sala 1 + Sala 2 + Sala 3): prepara la
-                      consulta y aplica el reranking visual del motor Hito 2.
-                      Respuesta enriquecida (original + procesada + ambos
-                      rankings + preprocesamiento + modelo).
-      - "completo"  : igual que "auto" (alias del pipeline completo).
-      - "procesada" : usa la imagen preparada (Sala 2) con el motor Hito 2.
-      - "clasico"   : Hito 1 (Sala 1 + preprocesamiento Sala 2), sin reranking.
-      - "original"  : fuerza el uso de la consulta tal como llega (motor Hito 1).
-      - "legacy"    : devuelve solo la lista del motor (comportamiento Hito 1).
-
-    Parametro de formulario `modelo`:
-      - "clip"     (default): openai/clip-vit-base-patch32 (estándar).
-      - "openclip"           : laion/CLIP-ViT-B-32-laion2B-s34B-b79K (mejora;
-                               más robusto a franjas/dibujos centrales).
-      - "fusion"             : combina CLIP + OpenCLIP + SigLIP en la
-                               recuperación (lo más robusto a oclusiones:
-                               un punto que tape parte del diseño).
-      Solo aplica a los modos del motor Hito 2 (auto/completo/procesada);
-      los modos Hito 1 (clasico/original/legacy) siempre usan "clip".
     """
+    # 1. Rate Limiting por IP (Seguridad)
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Demasiadas peticiones. Por favor intente más tarde (Rate limit excedido)."}
+        )
+
+    # 2. Límite de tamaño de subida en servidor (Seguridad)
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_SIZE:
+        return JSONResponse(
+            status_code=413,
+            content={"error": f"El archivo excede el tamaño máximo permitido de {MAX_UPLOAD_SIZE // (1024*1024)}MB."}
+        )
+
+    # 3. Limpieza periódica de consultas antiguas (Retención/borrado)
+    _limpiar_consultas_antiguas()
+
     if file.content_type and file.content_type not in MIME_PERMITIDOS:
         return JSONResponse(
             status_code=400,
@@ -379,7 +416,7 @@ async def search_image(
         )
 
     try:
-        contenido = await file.read()
+        contenido = contents
         imagen = Image.open(io.BytesIO(contenido)).convert("RGB")
     except Exception:
         return JSONResponse(

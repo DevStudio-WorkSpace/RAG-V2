@@ -26,6 +26,14 @@ COPY core/ ./core/
 COPY scripts/ ./scripts/
 COPY .env* ./
 
+# Seguridad: Crear usuario no-root (con home para caché de Hugging Face)
+RUN useradd -m -u 10001 appuser && \
+    chown -R appuser:appuser /app /home/appuser
+USER appuser
+
+# Caché de modelos dentro del home del usuario (voluble con volumen)
+ENV HF_HOME=/home/appuser/.cache/huggingface
+
 EXPOSE 8000
 
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
