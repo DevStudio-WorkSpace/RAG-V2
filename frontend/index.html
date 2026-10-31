@@ -1,0 +1,309 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Evaluador Visual | Sublitex</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ENCABEZADO -->
+    <header class="header">
+
+        <div class="brand">
+
+            <div class="brand-logo">
+                S
+            </div>
+
+            <div>
+                <h1>SUBLITEX</h1>
+                <span>Evaluador de búsqueda visual</span>
+            </div>
+
+        </div>
+
+        <div class="save-status">
+
+            <span class="status-dot"></span>
+
+            <span id="save-status-text">
+                Guardado
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="container">
+
+        <!-- INFORMACIÓN DEL CASO -->
+        <section class="top-section">
+
+            <div>
+
+                <p class="section-label">
+                    EVALUACIÓN DE BÚSQUEDA
+                </p>
+
+                <h2>
+                    Caso
+                    <span id="case-number">01</span>
+
+                    <span class="case-total">
+                        /
+                        <span id="case-total">10</span>
+                    </span>
+                </h2>
+
+            </div>
+
+        </section>
+
+
+        <!-- ÁREA DE EVALUACIÓN -->
+        <section class="evaluation">
+
+
+            <!-- IMAGEN DE CONSULTA -->
+            <div class="query-panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <span class="panel-label">
+                            IMAGEN DE CONSULTA
+                        </span>
+
+                        <h3 id="query-name">
+                            C_01_Barcelona.jpg
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <div class="query-image">
+
+                    <!-- SELECCIONAR IMAGEN DESDE LA COMPUTADORA -->
+                    <input
+                        type="file"
+                        id="input-imagen"
+                        accept="image/*"
+                    >
+
+                    <img
+                        id="query-image"
+                        alt="Imagen de consulta"
+                    >
+
+                </div>
+
+
+                <div class="query-info">
+
+                    <span>
+                        CASO DE PRUEBA
+                    </span>
+
+                    <strong id="query-file">
+                        C_01_Barcelona.jpg
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESULTADOS -->
+            <div class="results-panel">
+
+                <div class="results-header">
+
+                    <div>
+
+                        <span class="panel-label">
+                            RESULTADOS DEL BUSCADOR
+                        </span>
+
+                        <h3>
+                            Evalúa cada resultado
+                        </h3>
+
+                    </div>
+
+                    <span class="results-count">
+                        5 resultados
+                    </span>
+
+                </div>
+
+
+                <!--
+                    AQUÍ JAVASCRIPT CREARÁ
+                    LOS 5 RESULTADOS
+                -->
+                <div
+                    class="resultados-box"
+                    id="resultados"
+                >
+                </div>
+
+            </div>
+
+
+            <!-- RESULTADOS DE EVALUACIÓN -->
+            <div class="top-imagen">
+
+
+                <div class="resultados-evaluacion">
+
+                    <h3>
+                        Resultados de Evaluación
+                    </h3>
+
+
+                    <div class="metricas">
+
+                        <div class="metrica">
+
+                            <span>
+                                TOP 1
+                            </span>
+
+                            <strong id="top1">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="metrica">
+
+                            <span>
+                                TOP 5
+                            </span>
+
+                            <strong id="top5">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div class="metrica">
+
+                            <span>
+                                UTILIDAD
+                            </span>
+
+                            <strong id="utilidad">
+                                -
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="tipo-foto">
+
+                    <h3>
+                        Por tipo de foto
+                    </h3>
+
+
+                    <div class="tipo-metricas">
+
+                        <div>
+
+                            <span>
+                                Clubes
+                            </span>
+
+                            <strong id="clubes-metricas">
+                                -
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Selecciones
+                            </span>
+
+                            <strong id="selecciones-metricas">
+                                -
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- NAVEGACIÓN -->
+        <section class="navigation">
+
+            <button
+                class="nav-button secondary"
+                id="btn-anterior"
+                type="button"
+            >
+                ← Anterior
+            </button>
+
+
+            <span
+                class="navigation-info"
+                id="navigation-info"
+            >
+                Caso 1 de 10
+            </span>
+
+
+            <button
+                class="nav-button primary"
+                id="btn-siguiente"
+                type="button"
+            >
+                Siguiente caso →
+            </button>
+
+        </section>
+
+    </main>
+
+
+    <!-- PIE -->
+    <footer>
+
+        Sublitex · Evaluador de búsqueda visual · Ficha 03-B
+
+    </footer>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="app.js"></script>
+
+</body>
+</html>
+```

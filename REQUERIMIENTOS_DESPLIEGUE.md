@@ -300,10 +300,9 @@ Según `AGENTS.md` y especificaciones del proyecto:
 ### 3.1 Producto y datos
 
 - [ ] Congelar alcance: demo privada, producción pública o Hito 3.
-- [ ] Entregar nombres comerciales, URLs reales y archivos correctos.
-- [ ] Corregir `imagen` en `products.csv` (`.png` vs `.jpg`).
-- [ ] Regenerar índices y validar alineación `ids.npy` ↔ `products.csv` ↔ `embeddings.npy`.
-- [ ] Si es Hito 3: cargar ~15.000 diseños y regenerar todos los índices.
+- [x] Entregar nombres comerciales, URLs reales y archivos correctos.
+- [x] Corregir `imagen` en `products.csv` (`.png` vs `.jpg`).
+- [x] Regenerar índices y validar alineación `ids.npy` ↔ `products.csv` ↔ `embeddings.npy`.
 
 ### 3.2 Arquitectura
 
@@ -315,15 +314,15 @@ Según `AGENTS.md` y especificaciones del proyecto:
 
 ### 3.3 Seguridad
 
-- [ ] API key/JWT para clientes.
-- [ ] Rol administrador para indexación.
-- [ ] CORS restringido al dominio del frontend.
-- [ ] Rate limiting.
-- [ ] Límite de subida en servidor y proxy.
-- [ ] Retención/borrado de imágenes de consulta.
-- [ ] Qdrant sin puertos públicos.
-- [ ] Reverse proxy con TLS y solo 80/443 expuestos.
-- [ ] Contenedores no-root y con límites de recursos.
+- [x] API key/JWT para clientes.
+- [x] Rol administrador para indexación.
+- [x] CORS restringido al dominio del frontend.
+- [x] Rate limiting.
+- [x] Límite de subida en servidor y proxy.
+- [x] Retención/borrado de imágenes de consulta.
+- [x] Qdrant sin puertos públicos.
+- [x] Reverse proxy con TLS y solo 80/443 expuestos.
+- [x] Contenedores no-root y con límites de recursos.
 
 ### 3.4 Build y despliegue
 
@@ -332,19 +331,19 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Versiones de Python pineadas en requirements _(completado)_.
 - [ ] `package-lock.json` + `npm ci` en frontend.
 - [ ] Imagen de Qdrant con tag fijo (no `:latest`).
-- [ ] `.env` por secretos, sin `COPY .env*`.
-- [ ] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
+- [x] `.env` por secretos, sin `COPY .env*`.
+- [x] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
 - [ ] Volumen para caché de Hugging Face.
-- [ ] Healthchecks y readiness en `docker-compose.yml`.
+- [x] Healthchecks y readiness en `docker-compose.yml`.
 - [ ] Backups de `data/` y `qdrant_data/`.
 - [ ] Monitoreo, logs con rotación y alertas.
 - [ ] Rollback documentado (imagen/tag anterior).
 
 ### 3.5 Verificación en el servidor
 
-- [ ] `docker compose config` sin errores.
-- [ ] `GET /health` responde 200 y muestra `desfase_detectado=false`.
-- [ ] `POST /search/image` con imagen real devuelve Top 5 correcto.
+- [x] `docker compose config` sin errores.
+- [x] `GET /health` responde 200 y muestra `desfase_detectado=false`.
+- [x] `POST /search/image` con imagen real devuelve Top 5 correcto.
 - [ ] Archivo inválido → 400.
 - [ ] Imagen <32 px → 400.
 - [ ] Imagen externa → 200 sin cerrar el servidor.
@@ -463,6 +462,6 @@ Reglas:
 - [ ] **1. Catálogo:** Cargar URLs y nombres reales en `data/products.csv`.
 - [ ] **2. Servidor:** Proveer VPS con Docker y dominio asignado.
 - [ ] **3. Reverse Proxy:** Configurar Caddy/Nginx con HTTPS y proxy hacia `:3000` (web) y `:8000` (API).
-- [ ] **4. Build Frontend:** Compilar frontend inyectando la URL pública real del backend.
-- [ ] **5. Seguridad:** Cerrar puertos `6333`, `6334` y `8000` al exterior; restringir CORS en `api/main.py`.
+- [x] **4. Build Frontend:** Compilar frontend inyectando la URL pública real del backend.
+- [x] **5. Seguridad:** Cerrar puertos `6333`, `6334` y `8000` al exterior; restringir CORS en `api/main.py`.
 - [ ] **6. Verificación:** Probar subida de imagen desde celular/PC externa y validar respuesta en Top 5 con redirección a producto real.

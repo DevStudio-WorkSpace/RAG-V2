@@ -3,6 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# URL pública de la API inyectada en tiempo de BUILD (code cliente Next.js)
+ARG NEXT_PUBLIC_API_URL=/backend
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 COPY package.json package-lock.json* ./
 RUN npm install
 

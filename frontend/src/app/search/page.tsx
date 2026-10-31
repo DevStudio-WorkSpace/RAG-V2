@@ -64,8 +64,7 @@ export default function SearchPage() {
       setFile(sampleFile);
       setPreview(sample.image);
 
-      const apiEndpoint = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const { data, error: err } = await searchImage(apiEndpoint, sampleFile, searchModel);
+      const { data, error: err } = await searchImage(sampleFile, searchModel);
       setLoading(false);
       if (err) {
         setError(err);
@@ -83,8 +82,7 @@ export default function SearchPage() {
     if (!file || loading) return;
     setLoading(true);
     setError(null);
-    const apiEndpoint = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const { data, error: err } = await searchImage(apiEndpoint, file, searchModel);
+    const { data, error: err } = await searchImage(file, searchModel);
     setLoading(false);
     if (err) {
       setError(err);
@@ -369,7 +367,7 @@ export default function SearchPage() {
             <div className="text-rose-200/90">{error}</div>
             {error.toLowerCase().includes("api") || error.toLowerCase().includes("conectar") ? (
               <div className="text-xs text-rose-200/70">
-                Asegúrate de tener la API levantada en <span className="font-mono">http://localhost:8000</span>
+                Asegúrate de que la API y el proxy <span className="font-mono">/api/search</span> estén activos.
               </div>
             ) : null}
           </div>

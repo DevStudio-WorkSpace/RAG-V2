@@ -11,7 +11,7 @@ Antes de realizar la migración al servidor, confirma que los contenedores local
 1. **Abrir en navegador:**
    - **Frontend (UI):** [http://localhost:3000](http://localhost:3000)
    - **Swagger API:** [http://localhost:8000/docs](http://localhost:8000/docs)
-   - **Panel Qdrant:** [http://localhost:6333/dashboard](http://localhost:6333/dashboard)
+   - **Panel Qdrant:** [http://localhost:6333/dashboard](http://localhost:6333/dashboard) (solo desde el servidor o por túnel SSH; requiere `QDRANT_API_KEY`)
 2. **Sincronizar vectores localmente (si la base arrancó vacía):**
    ```bash
    docker exec -it sublitex_api python scripts/migrar_a_qdrant.py
@@ -49,6 +49,8 @@ Antes de realizar la migración al servidor, confirma que los contenedores local
 - ❌ carpetas `__pycache__/`
 - ❌ entornos virtuales `.venv/`
 - ❌ `.git/` (si transfieres por archivo comprimido)
+- ❌ `.env` y `frontend/.env.local` (crear en el servidor, nunca empaquetar)
+- ❌ claves API reales en `.env.example`, README, capturas o código
 
 > **Comando rápido para empaquetar desde Linux/WSL/Git Bash:**
 > ```bash
@@ -56,36 +58,84 @@ Antes de realizar la migración al servidor, confirma que los contenedores local
 >     --exclude='frontend/.next' \
 >     --exclude='__pycache__' \
 >     --exclude='.venv' \
+>     --exclude='.env' \
+>     --exclude='frontend/.env.local' \
 >     -czvf sublitex_deploy.tar.gz .
 > ```
 
 ---
 
-## 3. Configuración en el Servidor (IP Pública o Dominio)
+## 3. Configuración de seguridad en el Servidor
 
-En producción, los navegadores de los clientes se comunican directamente con la API. Por lo tanto, la variable `NEXT_PUBLIC_API_URL` debe apuntar a la dirección accesible por internet del servidor.
+El navegador ya **no** llama directamente a FastAPI ni recibe claves. El frontend
+usa rutas server-side (`/api/search` y `/api/health`) que actúan como proxy y
+añaden el header `X-API-Key` en el servidor de Next.js. Por eso **no se usa
+`NEXT_PUBLIC_API_URL`** ni ninguna variable `NEXT_PUBLIC_*` para secretos.
 
-Edita `docker-compose.yml` en el servidor:
+Crea el archivo `.env` en la raíz del proyecto (nunca lo subas a Git):
 
-```yaml
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: sublitex_frontend
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data/images_normalized:/data/images_normalized:ro
-    environment:
-      # Reemplaza con la IP pública o dominio de tu servidor:
-      - NEXT_PUBLIC_API_URL=http://TU_IP_O_DOMINIO:8000
-    depends_on:
-      - api
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-Asegúrate también de que los puertos **3000** (Frontend), **8000** (API) y opcionalmente **6333** (Qdrant) estén permitidos en el Firewall / Security Group del proveedor cloud.
+```dotenv
+API_CLIENT_KEY=clave-larga-y-aleatoria-para-clientes
+# Opcional: claves por cliente, formato "web:clave,mobile:clave"
+API_CLIENT_KEYS=
+API_ADMIN_KEY=clave-larga-y-aleatoria-para-indexacion
+QDRANT_API_KEY=clave-larga-y-aleatoria-para-qdrant
+CORS_ORIGINS=https://TU_DOMINIO_REAL
+```
+
+Reglas:
+
+- `API_CLIENT_KEY` (y cada clave de `API_CLIENT_KEYS`) y `API_ADMIN_KEY` deben
+  ser **distintas** y secretas.
+- `API_ADMIN_KEY` solo se usa para indexación/administración; no la configures
+  en el frontend.
+- `QDRANT_API_KEY` protege Qdrant y se pasa tanto al contenedor de Qdrant como
+  a la API. En modo local sin Docker puede quedar vacía.
+- `CORS_ORIGINS` debe listar los orígenes exactos del frontend, separados por
+  comas. Nunca uses `*`; en producción usa HTTPS, por ejemplo
+  `https://rag.tudominio.com`.
+- Si faltan las claves, la API responde `503` en los endpoints protegidos
+  (fail-closed), no los deja abiertos.
+
+En `docker-compose.yml`, el frontend recibe la URL interna y la clave de
+cliente; el administrador y la clave de Qdrant solo se pasan a los servicios
+que los necesitan:
+
+```yaml
+  qdrant:
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    environment:
+      - "QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:?Defina QDRANT_API_KEY en .env}"
+    networks: [backend]
+
+  api:
+    environment:
+      - "QDRANT_API_KEY=${QDRANT_API_KEY:?Defina QDRANT_API_KEY en .env}"
+      - "API_CLIENT_KEY=${API_CLIENT_KEY:?Defina API_CLIENT_KEY en .env}"
+      - "API_CLIENT_KEYS=${API_CLIENT_KEYS:-}"
+      - "API_ADMIN_KEY=${API_ADMIN_KEY:?Defina API_ADMIN_KEY en .env}"
+      - "CORS_ORIGINS=${CORS_ORIGINS:?Defina CORS_ORIGINS con el dominio del frontend}"
+    networks: [backend, frontend_net]
+
+  frontend:
+    environment:
+      - API_URL=http://api:8000
+      - "API_CLIENT_KEY=${API_CLIENT_KEY:?Defina API_CLIENT_KEY en .env}"
+    networks: [frontend_net]
+```
+
+Abre al público solo el puerto **3000** (Frontend). El puerto **8000** (API)
+debe exponerse únicamente si hay clientes externos que envíen su propia API key;
+en caso contrario, restríngelo al proxy/firewall. Qdrant queda en
+`127.0.0.1:6333/6334` (no accesible desde internet) y aislado en la red
+`backend`, a la que el frontend no tiene acceso. Para administrar Qdrant usa un
+túnel SSH o el propio servidor.
 
 ---
 

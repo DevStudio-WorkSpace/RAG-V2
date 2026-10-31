@@ -46,8 +46,10 @@ SALIDA = os.path.join(DATA_DIR, "descriptores.json")
 
 def resolver_ruta(fila):
     """Ruta de la imagen del producto. SOLO se busca en images_normalized/
-    (nombre exacto del CSV o su equivalente <id>.jpg)."""
-    for nombre in (fila.get("imagen", ""), str(fila.get("id", "")) + ".jpg"):
+    (nombre exacto del CSV o su equivalente <id>.png, con <id>.jpg como
+    fallback por si el banco se generó con la conversión anterior)."""
+    id_prod = str(fila.get("id", ""))
+    for nombre in (fila.get("imagen", ""), id_prod + ".png", id_prod + ".jpg"):
         ruta = os.path.join(IMAGES_NORM, nombre)
         if os.path.exists(ruta):
             return ruta

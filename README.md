@@ -126,6 +126,14 @@ Reporta: registros totales/válidos, IDs duplicados, nombres vacíos, URLs vací
 
 ### Paso 6 — Levantar la API (Sala 3)
 
+Antes de arrancar, crea `.env` a partir de `.env.example` y define claves
+aleatorias distintas (la API falla cerrado sin ellas):
+
+```bash
+cp .env.example .env
+python -c "import secrets; print('API_CLIENT_KEY=' + secrets.token_urlsafe(48)); print('API_ADMIN_KEY=' + secrets.token_urlsafe(48))"
+```
+
 ```bash
 uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -138,7 +146,9 @@ Al iniciar carga el índice y el modelo CLIP una sola vez. Endpoints:
 Prueba rápida desde otra terminal:
 
 ```bash
-curl -X POST -F "file=@data/images_normalized/SBX-01-0001.jpg" http://localhost:8000/search/image
+curl -X POST -H "X-API-Key: $API_CLIENT_KEY" \
+  -F "file=@data/images_normalized/SBX-01-0001.jpg" \
+  http://localhost:8000/search/image
 ```
 
 Verificación de salud:
@@ -167,7 +177,7 @@ cd frontend
 npm run dev
 ```
 
-Abre `http://localhost:3000` en el navegador. La app es cliente puro de la API (`NEXT_PUBLIC_API_URL=http://localhost:8000`): sube una imagen y obtiene el Top 5 con imagen, ID, nombre, URL y score.
+Antes de arrancar, copia `frontend/.env.example` a `frontend/.env.local` y define `API_URL=http://localhost:8000` y `API_CLIENT_KEY` (la misma del backend). Abre `http://localhost:3000`: la app usa el proxy server-side `/api/search`, que añade la clave sin exponerla al navegador, y muestra el Top 5 con imagen, ID, nombre, URL y score.
 
 ---
 
@@ -253,6 +263,41 @@ Si se quiere reemplazar el banco actual (por ejemplo, pasar de SBX a otro provee
 
 `GET /health` devuelve: `status`, `products`, `embeddings`, `model`, `desfase_detectado`, `observacion`.
 
+## Autenticación y CORS
+
+La API usa **API keys con roles** mediante el header `X-API-Key`:
+
+- `API_CLIENT_KEY`: permite búsquedas (`/search/image`, `/search/image/v2`, `/search/image/qdrant`).
+- `API_CLIENT_KEYS` (opcional): claves adicionales por cliente con formato `nombre:clave,otro:clave`. Permite identificar integraciones sin compartir una única clave.
+- `API_ADMIN_KEY`: permite indexación y administración (`POST /index/qdrant`, `GET /health/qdrant`, `GET /collections/qdrant`). También puede buscar.
+- `GET /health` es público para liveness/readiness y no expone secretos.
+- Si las claves no están configuradas, los endpoints protegidos responden `503` (fail-closed). Clave ausente o inválida → `401`; clave válida sin rol admin → `403`.
+- `QDRANT_API_KEY` protege Qdrant. En Docker, sus puertos quedan en `127.0.0.1` y el frontend no comparte red con Qdrant.
+
+Configurar en `.env` (ver `.env.example`):
+
+```dotenv
+API_CLIENT_KEY=...
+# Opcional: web:...,mobile:...
+API_CLIENT_KEYS=
+API_ADMIN_KEY=...
+QDRANT_API_KEY=...
+# Desarrollo; en producción: https://rag.tudominio.com
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+```
+
+Ejemplo de búsqueda directa:
+
+```bash
+curl -X POST http://localhost:8000/search/image \
+  -H "X-API-Key: $API_CLIENT_KEY" \
+  -F "file=@data/consultas/consulta.jpg" \
+  -F "modo=auto" \
+  -F "modelo=fusion"
+```
+
+`CORS_ORIGINS` solo acepta orígenes explícitos `http://` o `https://`; el valor `*` se ignora. En producción usa únicamente el dominio real con HTTPS, por ejemplo `CORS_ORIGINS=https://rag.tudominio.com`. El frontend Next.js **no** recibe claves en el navegador: usa el proxy server-side `/api/search` y `/api/health`, que añade `X-API-Key` desde `API_CLIENT_KEY` (`frontend/.env.local` en desarrollo).
+
 ## Modos del endpoint (Sala 2, Hito 2)
 
 - `auto` / `completo`: prepara la consulta (Sala 2) + motor Hito 2 (reranking).
@@ -285,9 +330,12 @@ La API NO debe cerrarse ante:
 sala-5/
 ├── api/                 # FastAPI + motores de búsqueda
 │   ├── main.py           #   endpoints /search/image (modos) y /health
+│   ├── security.py       #   API keys con roles client/admin y fail-closed
 │   ├── search_engine.py  #   motor Hito 1 (embeddings.npy + ids.npy + products.csv)
 │   └── search_engine_hito2.py # motor Hito 2 (recuperación amplia + reranking)
 ├── frontend/            # Next.js (React) cliente puro de la API
+│   ├── src/app/api/search/route.ts  # proxy server-side con X-API-Key
+│   ├── src/app/api/health/route.ts  # proxy server-side de /health
 │   └── ...               #   sube imagen, Top 5, nombre, imagen, URL, score
 ├── data/
 │   ├── DATA_NEW/         # imágenes nuevas SBX-###-NNNN.png (fuente, NO modificar)
@@ -329,6 +377,11 @@ sala-5/
 
 - **`ModuleNotFoundError`**: activar el venv (`. ..\.venv\Scripts\activate.fish`) e instalar dependencias (`pip install -r requirements.txt`).
 - **La API no responde en `/health`**: verificar que esté corriendo (`uvicorn api.main:app --host 0.0.0.0 --port 8000`).
+- **`401` / `403` al buscar**: falta el header `X-API-Key` o la clave no tiene el rol requerido. El frontend debe usar el proxy `/api/search` con `API_CLIENT_KEY` configurada en `frontend/.env.local`.
+- **`503` en endpoints protegidos**: faltan
+  `API_CLIENT_KEY`/`API_CLIENT_KEYS` o `API_ADMIN_KEY` en el entorno del
+  servidor, o `QDRANT_API_KEY` al usar Docker/Qdrant remoto. El sistema falla
+  cerrado por seguridad.
 - **El validador reporta imágenes faltantes**: asegurar de haber corrido `normalizar_data_new.py` (el validador apunta a `data/images_normalized/`).
 - **Errores de codificación en consola (Windows)**: usar `set PYTHONIOENCODING=utf-8` antes de ejecutar.
 - **Primera ejecución lenta**: la descarga de los modelos CLIP/OpenCLIP/SigLIP y el procesamiento de las 284 imágenes toma unos minutos.
