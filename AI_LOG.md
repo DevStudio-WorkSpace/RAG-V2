@@ -338,9 +338,11 @@ usuario sean SIEMPRE las normalizadas de data/images_normalized/ (Sala 1, sin
 marco ni texto externo), en lugar de data/images_final/.
 **Resultado:**
 - scripts/generar_embeddings.py: IMAGES_DIR -> data/images_normalized/ +
-  esolver_ruta_imagen() (fallback <id>.jpg porque la normalización
+  
+esolver_ruta_imagen() (fallback <id>.jpg porque la normalización
   convierte todo a .jpg y 177 filas del CSV usan .png/.gif/.jpeg).
-- rontend/app.py: uta_local() ahora intenta el nombre exacto del CSV y,
+- rontend/app.py: 
+uta_local() ahora intenta el nombre exacto del CSV y,
   si falta, el equivalente <id>.jpg en images_normalized/ (antes 177
   productos caían a la URL remota).
 - scripts/validate_dataset.py: valida contra data/images_normalized/ con el
