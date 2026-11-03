@@ -336,7 +336,9 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [ ] Volumen para caché de Hugging Face.
 - [x] Healthchecks y readiness en `docker-compose.yml`.
 - [ ] Backups de `data/` y `qdrant_data/`.
-- [ ] Monitoreo, logs con rotación y alertas.
+- [ ] Monitoreo (escrito; falta probar con Docker/VPS).
+- [ ] Alertas.
+- [ ] Logs con rotación (responsable: compañero).
 - [ ] Rollback documentado (imagen/tag anterior).
 
 ### 3.5 Verificación en el servidor

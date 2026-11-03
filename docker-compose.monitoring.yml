@@ -1,0 +1,12 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.9
+    container_name: sublitex_uptime_kuma
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+
+volumes:
+  uptime_kuma_data:
