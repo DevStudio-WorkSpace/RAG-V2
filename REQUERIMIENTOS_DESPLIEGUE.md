@@ -338,7 +338,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [ ] Backups de `data/` y `qdrant_data/`.
 - [ ] Monitoreo (escrito; falta probar con Docker/VPS).
 - [ ] Alertas.
-- [ ] Logs con rotación (responsable: compañero).
+- [x] Logs con rotación (responsable: compañero).
 - [ ] Rollback documentado (imagen/tag anterior).
 
 ### 3.5 Verificación en el servidor
