@@ -330,7 +330,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Torch CPU instalado explícitamente en Dockerfile _(completado)_.
 - [x] Versiones de Python pineadas en requirements _(completado)_.
 - [ ] `package-lock.json` + `npm ci` en frontend.
-- [ ] Imagen de Qdrant con tag fijo (no `:latest`).
+- [x] Imagen de Qdrant con tag fijo (no `:latest`).
 - [x] `.env` por secretos, sin `COPY .env*`.
 - [x] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
 - [ ] Volumen para caché de Hugging Face.
