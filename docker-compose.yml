@@ -1,6 +1,6 @@
 services:
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.20.0
     container_name: sublitex_qdrant
     restart: unless-stopped
     # Seguridad: Qdrant sin puertos públicos (solo red interna / localhost)
