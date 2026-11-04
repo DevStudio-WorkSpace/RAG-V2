@@ -1,5 +1,8 @@
 # Ejecución con Docker y Verificación — RAG Visual Sublitex
 
+> Referencia anterior: los puertos y algunos pasos no corresponden al Compose actual. Para repetir la ejecución verificada, usar la [guía de staging](../sala6/STAGING_VIRTUALBOX.md). Ejecutar comandos desde la raíz del repositorio.
+
+
 Guía rápida y directa para compilar, levantar y verificar el stack completo (**FastAPI + Qdrant + Next.js**) con Docker.
 
 ---

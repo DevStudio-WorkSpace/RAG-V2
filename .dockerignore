@@ -11,3 +11,7 @@ data
 qdrant_data
 frontend
 logs
+
+# Backups locales generados por scripts/backup.sh
+backups/
+*.tar.gz

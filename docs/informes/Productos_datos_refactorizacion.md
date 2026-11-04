@@ -1,4 +1,7 @@
-# Informe de refactorización — Producto y datos (REQUERIMIENTOS_DESPLIEGUE.md §3.1)
+# Informe de refactorización — Producto y datos (docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md §3.1)
+
+> Informe histórico del trabajo realizado. Para el estado vigente de índices y pruebas consultar [Sala 6](../sala6/ESTADO_SALA6.md).
+
 
 **Fecha:** 2026-10-30
 **Rama:** `sala-4`
@@ -152,7 +155,7 @@ La API devuelve nombres `.png`, que el proxy del frontend sirve con `content-typ
 "Demo privada vs. producción pública vs. Hito 3" es una **decisión de negocio/despliegue**, no un artefacto de código. No existe en el repo ninguna señal que la fije y **no la inventé**.
 
 - Lo que sí quedó congelado a nivel de **datos**: el catálogo queda fijado en **577 productos de `DATA_NEW`** (ni los 284 previos, ni los 15.000 del Hito 3, que sigue pospuesto).
-- Para cerrar este ítem basta una frase del supervisor en `REQUERIMIENTOS_DESPLIEGUE.md` §6.1.
+- Para cerrar este ítem basta una frase del supervisor en `docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md` §6.1.
 
 ### 4.2 Actividad 2 — Nombres y URLs reales ⛔ (archivos correctos ✅)
 

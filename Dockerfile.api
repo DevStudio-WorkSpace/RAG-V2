@@ -30,6 +30,7 @@ COPY scripts/ ./scripts/
 
 # Seguridad: Crear usuario no-root (con home para caché de Hugging Face)
 RUN useradd -m -u 10001 appuser && \
+    mkdir -p /home/appuser/.cache/huggingface && \
     chown -R appuser:appuser /app /home/appuser
 USER appuser
 

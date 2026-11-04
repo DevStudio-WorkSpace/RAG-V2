@@ -223,15 +223,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[API] ERROR al cargar el modelo CLIP: {e}")
 
-    try:
-        get_openclip()
-    except Exception as e:
-        print(f"[API] AVISO al precalentar OpenCLIP (se cargará bajo demanda): {e}")
+    # En staging con poca RAM se pueden cargar los modelos extra bajo demanda.
+    if os.getenv("PRELOAD_EXTRA_MODELS", "true").lower() in ("1", "true", "yes"):
+        try:
+            get_openclip()
+        except Exception as e:
+            print(f"[API] AVISO al precalentar OpenCLIP (se cargará bajo demanda): {e}")
 
-    try:
-        get_siglip()
-    except Exception as e:
-        print(f"[API] AVISO al precalentar SigLIP (se cargará bajo demanda): {e}")
+        try:
+            get_siglip()
+        except Exception as e:
+            print(f"[API] AVISO al precalentar SigLIP (se cargará bajo demanda): {e}")
 
     yield
 
@@ -397,13 +399,18 @@ def _error_dimensiones(imagen) -> str | None:
 @app.post("/search/image", dependencies=[Depends(require_client)])
 async def search_image(
     request: Request,
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
     modo: str = Form("auto"),
     modelo: str = Form("clip"),
 ):
     """
     Recibe una imagen (JPG/PNG) y devuelve los 5 productos más parecidos.
     """
+    if file is None:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "El archivo enviado no es una imagen válida"},
+        )
     # 1. Rate Limiting por IP (Seguridad)
     client_ip = request.client.host if request.client else "unknown"
     if not _check_rate_limit(client_ip):
@@ -562,7 +569,7 @@ async def search_image(
 
 @app.post("/search/image/v2", dependencies=[Depends(require_client)])
 async def search_image_v2(
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
     modelo: str = Form("clip"),
 ):
     """
@@ -581,7 +588,7 @@ async def search_image_v2(
                                robusto a oclusiones: puntos que tapen diseño).
     """
     # Mismo control de tipo de archivo que el endpoint del Hito 1
-    if file.content_type and file.content_type not in MIME_PERMITIDOS:
+    if file is None or (file.content_type and file.content_type not in MIME_PERMITIDOS):
         return JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"}
@@ -717,7 +724,7 @@ def indexar_qdrant(
 
 @app.post("/search/image/qdrant", dependencies=[Depends(require_client)])
 async def search_image_qdrant(
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
     top_k: int = Form(5),
     color_filtro: str = Form(None),
     min_score: float = Form(0.5),
@@ -736,7 +743,7 @@ async def search_image_qdrant(
       - min_score: score mínimo de similitud (default 0.5)
       - modelo: "clip", "openclip" o "fusion"
     """
-    if file.content_type and file.content_type not in MIME_PERMITIDOS:
+    if file is None or (file.content_type and file.content_type not in MIME_PERMITIDOS):
         return JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"}

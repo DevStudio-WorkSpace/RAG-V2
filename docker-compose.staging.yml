@@ -1,0 +1,37 @@
+# Complemento para la VM local: no usar como configuración de producción.
+# docker compose -p ragv2staging -f docker-compose.yml -f docker-compose.staging.yml up -d
+services:
+  api:
+    environment:
+      PRELOAD_EXTRA_MODELS: "false"
+      OMP_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+    volumes:
+      - hf_cache:/home/appuser/.cache/huggingface
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+  qdrant:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+  frontend:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+  proxy:
+    ports: !override
+      - "127.0.0.1:8080:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+volumes:
+  hf_cache:

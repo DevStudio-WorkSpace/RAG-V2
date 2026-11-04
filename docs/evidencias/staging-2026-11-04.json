@@ -1,0 +1,177 @@
+{
+  "fecha": "2026-11-04",
+  "entorno": "VirtualBox Ubuntu-Docker",
+  "base_commit": "7e6b42c218e01065fe11d03138f5b69822067a92",
+  "cambios_sin_commit": true,
+  "integracion": [
+    {
+      "prueba": "orden_ids",
+      "ok": true,
+      "detalle": 577
+    },
+    {
+      "prueba": "embeddings",
+      "ok": true,
+      "detalle": [
+        577,
+        512
+      ]
+    },
+    {
+      "prueba": "embeddings_clip",
+      "ok": true,
+      "detalle": [
+        577,
+        512
+      ]
+    },
+    {
+      "prueba": "embeddings_openclip",
+      "ok": true,
+      "detalle": [
+        577,
+        512
+      ]
+    },
+    {
+      "prueba": "embeddings_siglip",
+      "ok": true,
+      "detalle": [
+        577,
+        768
+      ]
+    },
+    {
+      "prueba": "salud_proxy",
+      "ok": true,
+      "detalle": {
+        "status": "ok",
+        "products": 577,
+        "embeddings": 577,
+        "model": "openai/clip-vit-base-patch32",
+        "desfase_detectado": false,
+        "observacion": "",
+        "modelo_openclip": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
+        "indice_openclip_ok": true,
+        "modelos_fusion": [
+          "openai/clip-vit-base-patch32",
+          "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
+          "google/siglip-base-patch16-224"
+        ]
+      }
+    },
+    {
+      "prueba": "frontend",
+      "ok": true,
+      "detalle": 200
+    },
+    {
+      "prueba": "sin_clave",
+      "ok": true,
+      "detalle": 401
+    },
+    {
+      "prueba": "clave_invalida",
+      "ok": true,
+      "detalle": 401
+    },
+    {
+      "prueba": "cliente_sin_rol_admin",
+      "ok": true,
+      "detalle": 403
+    },
+    {
+      "prueba": "archivo_invalido",
+      "ok": true,
+      "detalle": {
+        "status": 400,
+        "body": "{\"error\":\"El archivo enviado no es una imagen válida\"}"
+      }
+    },
+    {
+      "prueba": "imagen_pequena",
+      "ok": true,
+      "detalle": {
+        "status": 400,
+        "body": "{\"error\":\"La imagen es demasiado pequeña (16x16); se requiere un mínimo de 32px por lado para una búsqueda fiable.\"}"
+      }
+    },
+    {
+      "prueba": "sin_archivo",
+      "ok": true,
+      "detalle": 400
+    },
+    {
+      "prueba": "busqueda_original",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "segundos": 1.066,
+        "top1": "SBX-01-0001",
+        "resultados": 5,
+        "error": null
+      }
+    },
+    {
+      "prueba": "busqueda_auto",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "segundos": 19.93,
+        "top1": "SBX-01-0001",
+        "resultados": 1,
+        "error": null
+      }
+    },
+    {
+      "prueba": "imagen_frontend",
+      "ok": true,
+      "detalle": 200
+    },
+    {
+      "prueba": "api_sigue_activa",
+      "ok": true,
+      "detalle": "GET /health"
+    },
+    {
+      "total": 17,
+      "correctas": 17
+    }
+  ],
+  "qdrant": {
+    "index_status": 200,
+    "index": {
+      "status": "ok",
+      "productos_indexados": 577,
+      "coleccion": "sublitex_fashion_v1"
+    },
+    "health_status": 200,
+    "health": {
+      "status": "ok",
+      "collection": "sublitex_fashion_v1",
+      "points": 577,
+      "qdrant_url": "http://qdrant:6333",
+      "on_disk": true
+    },
+    "search_status": 200,
+    "top1": "SBX-01-0001",
+    "count": 5
+  },
+  "sin_archivo": {
+    "/search/image": 400,
+    "/search/image/v2": 400,
+    "/search/image/qdrant": 400
+  },
+  "curl_busqueda": {
+    "http": 200,
+    "segundos": 7.746116,
+    "imagen": "data/consultas/SBX-01-0001_exacta.jpg",
+    "modo": "auto",
+    "modelo": "clip"
+  },
+  "archivos_verificados": {
+    "api/main.py": "06f5a3def0a11bc7931b82d527bf66990204260659d5c06dfe754be723628059",
+    "Dockerfile.api": "9ae23fdbfc245d55f31c1496f7f625e24381e9385156a696983be7d5d786f31d",
+    "scripts/verificar_staging.py": "eef2df3dd7dfcd72d1cef0edfa564818205ee5bafb2c69c49449336e0729da67"
+  }
+}

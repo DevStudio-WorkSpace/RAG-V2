@@ -46,3 +46,7 @@ frontend/.theme_pref.json
 # Consultas subidas a la API (evidencia local; pueden contener datos de usuarios)
 /data/queries_original/
 /data/queries_procesadas/
+
+# Backups locales generados por scripts/backup.sh
+backups/
+*.tar.gz

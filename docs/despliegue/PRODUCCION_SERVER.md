@@ -1,5 +1,8 @@
 # Guía de Despliegue en Servidor de Producción (RAG Sublitex)
 
+> Guía en revisión. Backup, restauración y rollback aún requieren correcciones y pruebas; consultar el [estado de Sala 6](../sala6/ESTADO_SALA6.md) antes de ejecutar procedimientos. Los comandos parten de la raíz del repositorio.
+
+
 Esta guía detalla el procedimiento estándar para verificar, transferir, configurar y levantar el sistema RAG (FastAPI + Qdrant + Next.js) en un servidor de producción (VPS, AWS, GCP, DigitalOcean, etc.).
 
 ---

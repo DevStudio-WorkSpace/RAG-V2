@@ -1037,3 +1037,45 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 
 **Nota:** no se hizo commit ni push. Pendiente: reconstruir imagen del API (`docker compose up -d --build api`) para aplicar en contenedor y re-ejecutar búsqueda/evaluación.
 
+
+## Fecha: 2026-11-04 — Revisión de Sala 6 y preparación de delegación
+
+**Prompt:** «Revisa todo el proyecto, con mi equipo quedamos en seguir por sala 6, buscamos completar los checklist, que hace falta? actualmente tengo cambios por commitear y aun no se si es posible, quiero llegar a un punto para poder delegar a los demas los checklist que hacen falta pero necesitamos un punto clave de donde empezar».
+
+**Resultado:** revisión de reglas, checklist, motores/API/proxies, datos e índices, evaluación, Docker/seguridad, monitoreo y cinco archivos pendientes. Se añadió ESTADO_SALA6.md con evidencias, discrepancias, revisión de backup/restauración/rollback, reparto propuesto y criterios de aceptación. TRABAJO.md ausente. Sin cambios funcionales ni commit/push.
+
+**Verificación:** sintaxis AST de api/core/scripts correcta; catálogo 577 filas con imágenes existentes, 577 nombres-ID y URLs de ejemplo; dimensiones de índices leídas de sus encabezados (577 filas). Orden de ids.npy no verificado. git diff --check correcto. Sin Docker/Bash/.venv en este equipo y localhost:80 sin servicio: no se ejecutaron build, curl de búsqueda real ni simulacro de recuperación. Métricas citadas son históricas; H1 n=0 impide declarar comparación completa.
+
+## Fecha: 2026-11-04 — Copia de pruebas operativa en VirtualBox
+
+**Prompt:** «bien sigamos con la copia de pruebas en virtualbox, que es todo lo necesario, lo que puedas hazlo tu y dime si funciono».
+
+**Trabajo:** copia aislada en /home/vboxuser/Desktop/TRABAJOS/RAG-V2-staging vía SSH. Archivo de 1052 entradas, huella SHA-256 comprobada; excluidos secretos, Git, dependencias y consultas subidas por usuarios. Secretos nuevos generados dentro de VM, permisos 600. Se añadió docker-compose.staging.yml (recursos locales, proxy solo loopback, caché persistente), PRELOAD_EXTRA_MODELS configurable sin cambiar el valor original por defecto, scripts/verificar_staging.py y docs/STAGING_VIRTUALBOX.md. Se corrigió creación/permisos del directorio HF en Dockerfile.api y falta de archivo como 400 en los tres endpoints. Correcciones sincronizadas; hashes de archivos coinciden entre Windows y VM.
+
+**Verificación:** build original completo API/frontend correcto; reconstrucción y arranque con ajustes correctos; 17/17 verificaciones de integración pasadas; IDs coinciden en contenido y orden con 577 productos; cuatro índices con filas/dimensiones válidas, vectores finitos/no nulos; pruebas de salud, interfaz, imágenes, 401/403 y errores 400; búsqueda exacta original y auto con CLIP, ID esperado Top1; petición curl con consulta real HTTP 200. Qdrant indexado con 577 puntos y búsqueda Top1 correcta. Volumen HF nuevo escribible por UID 10001. py_compile de archivos tocados y compilación de api/core/scripts en Linux; bash -n del backup correcto. Evidencia estructurada en docs/evidencias/staging-2026-11-04.json. Túnel local 8080 habilitado para acceso desde Windows.
+
+**Límites:** no prueba de Fusión, calidad de 50 consultas, restauración/rollback, HTTPS o alertas; no se declara listo para producción. npm reportó 17 vulnerabilidades (16 moderadas/1 crítica), pendientes de análisis. Muestras de latencia aisladas, no percentiles. Unos 7 GB libres en VM. Sin staging Git, commit ni push.
+
+## Fecha: 2026-11-04 — Portabilidad de pruebas y alcance del próximo commit
+
+**Prompt:** «para que mis compañeros sepan, al hacer estas pruebas en virtualbox, ssh, esto si alguien ejecuta el proyecto pero normal sin ssh y virtualbox, tendran el mismo resultado, como para que se haga una mencion, ademas, quiero saber si ahora la app como esta puedo commitear algo que sea relevante, que hemos descubierto que podemos aportar en el proximo commit?».
+
+**Resultado:** se aclaró en README.md y docs/STAGING_VIRTUALBOX.md que SSH/VirtualBox son herramientas de acceso/alojamiento; la reproducción depende del código, datos, índices, modelos, preprocesamiento y dependencias. Docker directo puede repetir el flujo con configuración equivalente; instalación nativa, igualdad exacta de scores/tiempos y Fusión no están verificadas. Se recomienda un commit enfocado en correcciones de caché y error 400 sin archivo, precarga configurable, complemento staging, verificador, documentación y evidencias. Backups/rollback quedan separados hasta validarlos. No se hizo staging Git, commit ni push.
+
+**Verificación:** revisión del diff y git diff --check; cambios de esta intervención solo documentales. Se conservan las evidencias previas de integración.
+
+## Fecha: 2026-11-04 — Organización de documentación y estructura
+
+**Prompt:** «Bien tambien, quedaria organizar las carpetas, estructura para que el proyecto se lea mejor».
+
+**Resultado:** se agruparon guías en docs/despliegue, checklist en docs/planificacion, diagnóstico/staging en docs/sala6, informe histórico en docs/informes y borrador de operaciones en docs/propuestas. Se creó docs/README.md como índice con estados de validación; docs/evidencias permanece en su ruta. Se movieron las dos imágenes técnicas de la raíz a evaluation/fixtures. Se actualizaron enlaces, menciones y mapa del README; se aclaró el carácter histórico o pendiente de las guías antiguas. Se conservaron los cambios previos del usuario y las rutas canónicas de código, scripts, datos y configuración Docker. Referencias de entradas antiguas de AI_LOG describen ubicaciones históricas; consultar docs/README.md para las actuales. TRABAJO.md sigue ausente. No se hizo staging Git, commit ni push.
+
+**Verificación:** 10 traslados confirmados sin copias en rutas anteriores; 0 enlaces locales rotos en README y docs; hashes de api/main.py, Dockerfile.api y scripts/verificar_staging.py idénticos a los de la ejecución verificada; git diff --check correcto. Consulta real curl por túnel a VirtualBox: HTTP 200; API healthy y cuatro servicios activos. La reorganización es local: la copia de la VM conserva su distribución documental anterior hasta una nueva sincronización; el código de ejecución no cambió.
+
+## Fecha: 2026-11-04 — Commit y publicación de la base verificada de Sala 6
+
+**Prompt:** «bien entonces, si ahora mismo puedes ver mi proyecto y tal, haz el commit con mi usuario de git y sube».
+
+**Alcance autorizado:** commit de correcciones verificadas de API/caché, configuración y verificador de staging, evidencias, organización documental y fixtures, README y registro IA. Identidad Git existente: kannodi. Destino: origin/sala-6. Se mantienen fuera del commit scripts/backup.sh, la propuesta local de operaciones y las secciones de respaldo/rollback no verificadas de la guía de servidor (el traslado de la versión anterior y su nota de revisión sí se incluyen). No se publican secretos ni archivos de transferencia. Las entradas anteriores del registro pueden mencionar esos borradores como trabajo local.
+
+**Verificación previa:** py_compile de api/main.py y scripts/verificar_staging.py; git diff --check; revisión de evidencias de 17/17 pruebas y Qdrant; revisión de enlaces locales; consulta del remoto antes de publicar. Sin force push.

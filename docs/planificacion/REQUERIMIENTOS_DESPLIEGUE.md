@@ -3,7 +3,7 @@
 **Fecha:** 2026-10-30
 **Alcance:** auditoría del repositorio `RAG-V2` (FastAPI + Next.js + Qdrant) para determinar qué debe autorizar/entregar el supervisor y qué requisitos faltan antes de desplegar.
 **Estado:** Actualizado tras los últimos commits y pruebas locales (`a0e893f8`, `e343bd04`).
-**Fuentes revisadas:** `AGENTS.md`, `README.md`, `PRODUCCION_SERVER.md`, `docker-compose.yml`, `Dockerfile.api`, `.dockerignore`, `frontend/Dockerfile`, `frontend/.dockerignore`, `api/main.py`, `api/search_engine.py`, `api/qdrant_engine.py`, `core/`, `requirements.txt`, `data/products.csv`, `frontend/src/`.
+**Fuentes revisadas:** `AGENTS.md`, `README.md`, `docs/despliegue/PRODUCCION_SERVER.md`, `docker-compose.yml`, `Dockerfile.api`, `.dockerignore`, `frontend/Dockerfile`, `frontend/.dockerignore`, `api/main.py`, `api/search_engine.py`, `api/qdrant_engine.py`, `core/`, `requirements.txt`, `data/products.csv`, `frontend/src/`.
 **Alcance:** auditoría y plan de despliegue para el repositorio `RAG-V2` (**FastAPI + Next.js + Qdrant**).
 **Decisión de alcance confirmada:** **Stack exclusivo FastAPI + Next.js + Qdrant**. Se **descarta WordPress** (por ser restrictivo) y se **posponen las 15.000 imágenes**. El despliegue se enfoca 100% en el sistema autónomo con el catálogo actual/validado (~284 productos base ampliables progresivamente).
 
@@ -201,7 +201,7 @@ Evidencia:
 
 Evidencia:
 
-- `PRODUCCION_SERVER.md` presenta Qdrant como obligatorio.
+- `docs/despliegue/PRODUCCION_SERVER.md` presenta Qdrant como obligatorio.
 - `POST /search/image` usa el motor `.npy` (`api/search_engine.py`).
 - Qdrant solo se usa en endpoints separados (`/search/image/qdrant`, `/index/qdrant`).
 - `qdrant_data/` está en `.gitignore`, así que un despliegue limpio arranca sin vectores hasta ejecutar `scripts/migrar_a_qdrant.py`.
@@ -213,7 +213,7 @@ Evidencia:
 - Decidir un backend canónico: `.npy` o Qdrant.
 - Si es Qdrant: migrar, crear snapshot y verificar la colección al arranque.
 - Documentar el procedimiento de reconstrucción del índice.
-- Alinear `PRODUCCION_SERVER.md`, `README.md` y `AGENTS.md`.
+- Alinear `docs/despliegue/PRODUCCION_SERVER.md`, `README.md` y `AGENTS.md`.
 
 ---
 
@@ -448,7 +448,7 @@ Reglas:
 | `api/main.py:696`                     | `POST /index/qdrant` sin autenticación                                |
 | `Dockerfile.api`                      | Resuelto PyTorch CPU wheels, pero mantiene `COPY .env*`               |
 | `requirements.txt`                    | Versiones pineadas, pero mantiene `ultralytics` (AGPL-3.0) sin uso    |
-| `PRODUCCION_SERVER.md`                | Presenta Qdrant como obligatorio, pero `/search/image` usa `.npy`     |
+| `docs/despliegue/PRODUCCION_SERVER.md`                | Presenta Qdrant como obligatorio, pero `/search/image` usa `.npy`     |
 | `README.md`                           | Referencia scripts/archivos eliminados                                |
 | `AGENTS.md`                           | Hito 3 exige ~15.000 diseños, 60 consultas y plugin WordPress         |
 

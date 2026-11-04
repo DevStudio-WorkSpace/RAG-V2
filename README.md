@@ -6,14 +6,20 @@ Plataforma de búsqueda visual de camisetas deportivas basada en **embeddings CL
 
 > **Frase de validación:** «Una imagen se carga una sola vez, se procesa con un solo modelo, se compara contra un solo índice y los resultados se muestran en una sola interfaz.»
 
+## Documentación y trabajo del equipo
+
+Consultar el [índice de documentación](docs/README.md) para encontrar el diagnóstico de Sala 6, la guía de pruebas, los checklist y las propuestas pendientes. `TRABAJO.md` aún falta en esta copia y debe recuperarse como fuente de requisitos.
+
 ## Flujo del sistema
+
+**Sala 6 — pruebas de integración:** se verificó el stack en Ubuntu/Docker dentro de VirtualBox, administrado por SSH: 17/17 comprobaciones con CLIP correctas. VirtualBox y SSH son herramientas del entorno de pruebas; otros equipos pueden ejecutar el stack directamente con Docker. Para reproducir las condiciones, consultar la [guía de staging y sus límites](docs/sala6/STAGING_VIRTUALBOX.md). No se ha validado equivalencia de una instalación nativa sin Docker, Fusión ni preparación completa para producción.
 
 ```text
 data/DATA_NEW/  (imágenes nuevas SBX-###-NNNN.png)
         │
 [crear_csv_data_new.py] → data/products.csv   (Sala 1: id, proveedor, pagina, imagen, nombre_original, url)
         │
-[normalizar_data_new.py] → data/images_normalized/   (copia a JPG, mismo ID, sin tocar originales)
+[normalizar_data_new.py] → data/images_normalized/   (conserva PNG, mismo ID, sin tocar originales)
         │
 [generar_embeddings.py] → data/embeddings.npy + data/ids.npy   (Sala 4, Hito 1: CLIP, L2, 512 dims)
 [generar_indices_comparativos.py] → embeddings_clip/openclip/siglip.npy   (Sala 4, Hito 2)
@@ -68,7 +74,7 @@ python scripts/crear_csv_data_new.py
 
 Salida esperada:
 
-- `data/products.csv` con 284 filas: `id,proveedor,pagina,imagen,nombre_original,url`.
+- `data/products.csv` con 577 filas: `id,proveedor,pagina,imagen,nombre_original,url`.
 - IDs sin duplicados; columnas exactas del contrato común.
 
 ### Paso 2 — Normalizar las imágenes (images_normalized/)
@@ -91,7 +97,7 @@ python scripts/generar_embeddings.py
 
 Salida esperada:
 
-- `data/embeddings.npy` — matriz `(284, 512)` float32, normalizada L2.
+- `data/embeddings.npy` — matriz `(577, 512)` float32, normalizada L2.
 - `data/ids.npy` — 284 IDs alineados posición a posición con los embeddings.
 
 > La correspondencia posición ↔ ID es obligatoria: si se altera el orden, el sistema devolvería nombres asociados a la imagen equivocada.
@@ -327,49 +333,55 @@ La API NO debe cerrarse ante:
 ## Estructura del proyecto
 
 ```text
-sala-5/
-├── api/                 # FastAPI + motores de búsqueda
-│   ├── main.py           #   endpoints /search/image (modos) y /health
-│   ├── security.py       #   API keys con roles client/admin y fail-closed
-│   ├── search_engine.py  #   motor Hito 1 (embeddings.npy + ids.npy + products.csv)
-│   └── search_engine_hito2.py # motor Hito 2 (recuperación amplia + reranking)
-├── frontend/            # Next.js (React) cliente puro de la API
-│   ├── src/app/api/search/route.ts  # proxy server-side con X-API-Key
-│   ├── src/app/api/health/route.ts  # proxy server-side de /health
-│   └── ...               #   sube imagen, Top 5, nombre, imagen, URL, score
-├── data/
-│   ├── DATA_NEW/         # imágenes nuevas SBX-###-NNNN.png (fuente, NO modificar)
-│   ├── images_normalized/# banco canónico JPG, mismo ID que products.csv
-│   ├── products.csv      # dataset canónico (ÚNICA fuente de productos)
-│   ├── embeddings.npy    # vectores CLIP (Hito 1)
-│   ├── embeddings_clip.npy      # vectores CLIP sobre images_normalized (Sala 4, Hito 2)
-│   ├── embeddings_openclip.npy  # vectores OpenCLIP sobre images_normalized (Sala 4, Hito 2)
-│   ├── embeddings_siglip.npy    # vectores SigLIP 768d sobre images_normalized (Sala 4, Hito 2)
-│   ├── ids.npy           # IDs alineados con embeddings
-│   ├── evaluation.csv    # resultado de evaluaciones
-│   └── tiempos.csv       # tiempo de generación de índices
-├── scripts/              # crear_csv_data_new, normalizar_data_new, generar_embeddings,
-│   │                     # generar_indices_comparativos, validate_dataset, etc.
-├── evaluation/           # plan de pruebas y consultas de evaluación
-├── requirements.txt      # dependencias Python
-├── .env / .env.example   # configuración de entorno
-├── AGENTS.md             # reglas de trabajo para la IA
-├── TRABAJO.md            # consigna oficial del proyecto
-├── README.md             # este documento
-└── main.py               # runner del scraper (legacy, no usado en el flujo actual)
+RAG-V2/
+├── api/                       # FastAPI, seguridad, preprocesamiento y motores
+├── core/                      # configuración y servicios Qdrant
+├── frontend/                  # interfaz Next.js en src/; clientes previos en app.py/evaluador.py
+├── data/                      # catálogo, índices e imágenes canónicos (rutas sin cambios)
+│   ├── products.csv           # única fuente de productos
+│   ├── ids.npy                # IDs alineados con los vectores
+│   ├── embeddings.npy         # Hito 1
+│   ├── embeddings_clip.npy    # Hito 2 / CLIP
+│   ├── embeddings_openclip.npy
+│   ├── embeddings_siglip.npy
+│   ├── images_normalized/     # imágenes del catálogo
+│   ├── DATA_NEW/              # fuente de imágenes; no modificar originales
+│   └── consultas/             # imágenes para pruebas
+├── scripts/                   # generación, migración, evaluación y verificación
+├── evaluation/                # casos y resultados de evaluación
+│   └── fixtures/              # imágenes técnicas de prueba JPEG/WebP
+├── docs/
+│   ├── README.md              # índice de documentación y estado de las guías
+│   ├── sala6/                 # diagnóstico y staging verificado
+│   ├── despliegue/            # Docker, servidor y monitoreo
+│   ├── planificacion/         # checklist y decisiones
+│   ├── informes/              # antecedentes de datos/refactorización
+│   ├── propuestas/            # borradores pendientes de validar
+│   └── evidencias/            # resultados registrados de pruebas
+├── backups/                   # archivos locales ignorados por Git
+├── docker-compose.yml         # stack principal
+├── docker-compose.staging.yml  # complemento para pruebas locales
+├── docker-compose.monitoring.yml
+├── Dockerfile.api
+├── Caddyfile
+├── requirements.txt
+├── .env.example               # plantilla; los secretos reales quedan fuera de Git
+├── AGENTS.md                  # reglas de trabajo
+├── AI_LOG.md                  # registro de intervenciones de IA
+└── README.md                  # entrada al proyecto
 ```
 
 ## Archivos generados clave
 
 | Archivo                          | Contenido                                                                    |
 | -------------------------------- | ---------------------------------------------------------------------------- |
-| `data/products.csv`            | 284 filas: `id, proveedor, pagina, imagen, nombre_original, url`           |
-| `data/embeddings.npy`          | Matriz `(284, 512)` float32, normalizada L2 (CLIP, Hito 1)                 |
-| `data/embeddings_clip.npy`     | Matriz `(284, 512)` CLIP sobre `images_normalized/` (Sala 4, Hito 2)     |
-| `data/embeddings_openclip.npy` | Matriz `(284, 512)` OpenCLIP sobre `images_normalized/` (Sala 4, Hito 2) |
-| `data/embeddings_siglip.npy`   | Matriz `(284, 768)` SigLIP sobre `images_normalized/` (Sala 4, Hito 2)   |
-| `data/ids.npy`                 | 284 IDs en el mismo orden que los embeddings                                 |
-| `data/images_normalized/`      | 284 imágenes normalizadas `SBX-###-NNNN.jpg`                              |
+| `data/products.csv`            | 577 filas: `id, proveedor, pagina, imagen, nombre_original, url`           |
+| `data/embeddings.npy`          | Matriz `(577, 512)` float32, normalizada L2 (CLIP, Hito 1)                 |
+| `data/embeddings_clip.npy`     | Matriz `(577, 512)` CLIP sobre `images_normalized/` (Sala 4, Hito 2)     |
+| `data/embeddings_openclip.npy` | Matriz `(577, 512)` OpenCLIP sobre `images_normalized/` (Sala 4, Hito 2) |
+| `data/embeddings_siglip.npy`   | Matriz `(577, 768)` SigLIP sobre `images_normalized/` (Sala 4, Hito 2)   |
+| `data/ids.npy`                 | 577 IDs en el mismo orden que los embeddings                                 |
+| `data/images_normalized/`      | 577 imágenes PNG referenciadas por el catálogo; el banco contiene archivos adicionales                              |
 | `data/tiempos.csv`             | Tiempo de generación por modelo (Sala 4, Hito 2)                            |
 | `data/evaluation.csv`          | Evaluación de consultas (Sala 2)                                            |
 
