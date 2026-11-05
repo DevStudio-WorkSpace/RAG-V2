@@ -8,12 +8,10 @@ import { searchImage, imageUrl } from "@/lib/api";
 import { Icons } from "@/components/Icons";
 import { ResultCardSkeleton } from "@/components/Skeleton";
 
-type SearchModel = "fusion" | "clip" | "openclip";
+type SearchModel = "clip";
 
 const MODEL_OPTIONS: Array<{ value: SearchModel; label: string; desc: string }> = [
-  { value: "fusion", label: "Fusión (Recomendado)", desc: "CLIP + OpenCLIP + SigLIP" },
-  { value: "openclip", label: "OpenCLIP", desc: "Más robusto a franjas/diseños" },
-  { value: "clip", label: "CLIP", desc: "Clásico y rápido" },
+  { value: "clip", label: "CLIP + Qdrant", desc: "Índice vectorial canónico" },
 ];
 
 export default function SearchPage() {
@@ -23,7 +21,7 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [searchModel, setSearchModel] = useState<SearchModel>("fusion");
+  const [searchModel, setSearchModel] = useState<SearchModel>("clip");
 
   // Modals for details & comparison
   const [selectedJerseyModal, setSelectedJerseyModal] = useState<CatalogJersey | null>(null);
@@ -184,7 +182,7 @@ export default function SearchPage() {
               Motor de búsqueda
             </span>
             <div className="text-xs text-[var(--foreground-muted)]">
-              Selecciona el modelo según el tipo de consulta
+              CLIP consulta la colección vectorial canónica de Qdrant
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

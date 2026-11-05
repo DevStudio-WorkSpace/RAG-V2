@@ -7,6 +7,14 @@
 **Alcance:** auditoría y plan de despliegue para el repositorio `RAG-V2` (**FastAPI + Next.js + Qdrant**).
 **Decisión de alcance confirmada:** **Stack exclusivo FastAPI + Next.js + Qdrant**. Se **descarta WordPress** (por ser restrictivo) y se **posponen las 15.000 imágenes**. El despliegue se enfoca 100% en el sistema autónomo con el catálogo actual/validado (~284 productos base ampliables progresivamente).
 
+**Actualización técnica 2026-11-05:** la búsqueda canónica ya usa Qdrant con
+CLIP/512 y Cosine. El lifespan valida o crea la colección, puede restaurar un
+snapshot local y migra los índices `.npy` solo cuando Qdrant está vacío; los
+aliases antiguos están deprecated. La UI usa CLIP. Las observaciones de
+arquitectura de las secciones siguientes son evidencia histórica de la auditoría
+de octubre y no describen el estado actual. La restauración aún requiere una
+prueba real en staging.
+
 ---
 
 ## 0. Veredicto rápido

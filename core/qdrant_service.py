@@ -205,9 +205,7 @@ class QdrantService:
         Elimina todos los puntos de la colección actual.
         Útil para reindexar desde cero.
         """
-        from qdrant_client.http.models import FilterSelector
-
-        # Qdrant no tiene "delete all" directo; se elimina y se recrea la colección
+        # Qdrant no tiene "delete all" directo; se elimina y se recrea la colección.
         try:
             self.db.client.delete_collection(collection_name=self.collection_name)
         except Exception as e:

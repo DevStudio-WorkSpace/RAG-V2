@@ -33,7 +33,7 @@ export async function healthCheck(): Promise<{
 
 export async function searchImage(
   file: File,
-  modelo: string = "fusion"
+  modelo: string = "clip"
 ): Promise<{ data: SearchResult | null; error: string | null }> {
   // Validación cliente: tipo y tamaño ANTES de enviar (evita viajes inútiles)
   if (!file.type.startsWith("image/")) {

@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     QDRANT_COLLECTION_NAME: str = "sublitex_fashion_v1"
     QDRANT_TIMEOUT: int = 30
     QDRANT_GRPC_TIMEOUT: int = 10
-    QDRANT_VECTOR_SIZE: int = 512  # CLIP=512, SigLIP=768
+    QDRANT_VECTOR_SIZE: int = 512  # Colección canónica CLIP
+    QDRANT_SNAPSHOT_PATH: str = ""
     
     # API
     API_HOST: str = "0.0.0.0"

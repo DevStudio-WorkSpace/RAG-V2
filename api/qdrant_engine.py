@@ -29,13 +29,6 @@ logger = logging.getLogger(__name__)
 # Instancia singleton del servicio Qdrant
 _qdrant_service: QdrantService | None = None
 
-# Estado de compatibilidad con el motor anterior (embeddings .npy)
-_df = None
-_embeddings_norm = None
-_ids = None
-_indice_cargado = False
-
-
 def _get_qdrant() -> QdrantService:
     """Retorna la instancia singleton de QdrantService, inicializándola si es necesario."""
     global _qdrant_service
@@ -51,20 +44,17 @@ def cargar_indice() -> None:
     No carga embeddings en memoria (Qdrant los gestiona en disco), pero
     verifica la salud de la colección y la crea si no existe.
     """
-    global _indice_cargado
     qdrant = _get_qdrant()
     salud = qdrant.health()
-    _indice_cargado = salud["status"] == "ok"
-    if not _indice_cargado:
-        logger.warning(
-            f"Qdrant no responde correctamente: {salud}. "
-            "La colección se creará automáticamente al indexar."
+    if salud["status"] != "ok":
+        raise RuntimeError(
+            f"Qdrant no está disponible o la colección no está lista: {salud}"
         )
-    else:
-        logger.info(
-            f"Índice Qdrant listo: colección '{salud['collection']}' con "
-            f"{salud['points']} puntos."
-        )
+    logger.info(
+        "Índice Qdrant listo: colección '%s' con %s puntos.",
+        salud["collection"],
+        salud["points"],
+    )
 
 
 def search_similar(
@@ -150,11 +140,14 @@ def indexar_productos_desde_csv(csv_path: str | None = None, embeddings_path: st
         csv_path = os.path.join(BASE_DIR, "data", "products.csv")
     if embeddings_path is None:
         embeddings_path = os.path.join(BASE_DIR, "data", "embeddings.npy")
+    ids_path = os.path.join(os.path.dirname(embeddings_path), "ids.npy")
 
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"No se encontró {csv_path}")
     if not os.path.exists(embeddings_path):
         raise FileNotFoundError(f"No se encontró {embeddings_path}")
+    if not os.path.exists(ids_path):
+        raise FileNotFoundError(f"No se encontró el archivo de IDs alineados: {ids_path}")
 
     qdrant = _get_qdrant()
 
@@ -162,25 +155,49 @@ def indexar_productos_desde_csv(csv_path: str | None = None, embeddings_path: st
     productos = []
     with open(csv_path, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
+        columnas = ["id", "proveedor", "pagina", "imagen", "nombre_original", "url"]
+        if reader.fieldnames != columnas:
+            raise ValueError(
+                f"Las columnas de {csv_path} deben ser exactamente: "
+                f"{','.join(columnas)}"
+            )
         for fila in reader:
             productos.append(fila)
 
     # Cargar embeddings
     embeddings = np.load(embeddings_path).astype(np.float32)
 
+    if embeddings.ndim != 2 or embeddings.shape[1] != settings.QDRANT_VECTOR_SIZE:
+        raise ValueError(
+            f"Los embeddings deben tener forma (N, {settings.QDRANT_VECTOR_SIZE}); "
+            f"se recibió {embeddings.shape}"
+        )
+    if not np.isfinite(embeddings).all():
+        raise ValueError(f"Hay valores no finitos en {embeddings_path}")
+    if np.any(np.linalg.norm(embeddings, axis=1) == 0):
+        raise ValueError(f"Hay embeddings nulos en {embeddings_path}")
     if len(productos) != embeddings.shape[0]:
         raise ValueError(
             f"Desfase: {len(productos)} productos en CSV vs "
             f"{embeddings.shape[0]} embeddings en {embeddings_path}"
         )
 
-    ids = []
+    ids = np.load(ids_path, allow_pickle=True)
+    csv_ids = [str(fila.get("id", "")) for fila in productos]
+    ids_cargados = [str(product_id) for product_id in ids]
+    if ids_cargados != csv_ids:
+        raise ValueError(
+            f"IDs desalineados: {ids_path} debe coincidir posición por posición "
+            f"con la columna id de {csv_path}"
+        )
+    if any(not product_id for product_id in csv_ids) or len(set(csv_ids)) != len(csv_ids):
+        raise ValueError(f"Los IDs en {csv_path} deben ser únicos y no vacíos")
+
     vectors = []
     payloads = []
 
     for i, fila in enumerate(productos):
-        pid = str(fila.get("id", f"producto_{i}"))
-        ids.append(pid)
+        pid = csv_ids[i]
         vectors.append(embeddings[i])
         payloads.append(
             {

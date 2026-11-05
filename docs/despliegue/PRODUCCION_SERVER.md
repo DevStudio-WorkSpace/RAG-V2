@@ -161,18 +161,43 @@ Deberás ver los tres contenedores activos:
 
 ---
 
-## 5. Poblado e Indexación en Qdrant (Solo la primera vez)
+## 5. Inicialización, migración y snapshots de Qdrant
 
-Una vez que los contenedores estén corriendo, ejecuta la migración de vectores dentro del contenedor de la API:
+En un volumen vacío, el lifespan de FastAPI crea y valida la colección
+`sublitex_fashion_v1` (512 dimensiones, Cosine), y migra automáticamente los
+vectores de `data/embeddings.npy` junto con `products.csv` e `ids.npy`. La API
+no queda lista si Qdrant no responde, el esquema no coincide o los IDs están
+desalineados.
+
+El comando de migración sigue disponible para reindexar manualmente:
 
 ```bash
-docker exec -it sublitex_api python scripts/migrar_a_qdrant.py
+docker exec sublitex_api python scripts/migrar_a_qdrant.py
 ```
 
-Este script:
-1. Crea la colección `sublitex_fashion_v1` si no existe.
-2. Carga los metadatos desde `data/products.csv`.
-3. Sube los 284 vectores CLIP desde `data/embeddings.npy`.
+Opcionalmente, define `QDRANT_SNAPSHOT_PATH` en `.env` con una URL `file://`
+dentro del volumen de Qdrant, por ejemplo
+`file:///qdrant/storage/snapshots/sublitex_fashion_v1/<archivo>.snapshot`.
+Compose guarda los snapshots de Qdrant en ese volumen persistente. Créalo con
+el cliente Python de Qdrant (por ejemplo, dentro del contenedor API):
+
+```bash
+docker exec sublitex_api python -c "from api.qdrant_engine import _get_qdrant; service = _get_qdrant(); print(service.db.client.create_snapshot(service.collection_name).name)"
+```
+
+Si la colección aún no existe, el arranque verifica el archivo y solicita a
+Qdrant restaurarlo con prioridad `snapshot` antes de crear una colección
+vacía. La restauración no sobrescribe una colección que ya existe. Comprueba
+el estado con:
+
+```bash
+curl -H "X-API-Key: $API_ADMIN_KEY" http://localhost:8000/health/qdrant
+```
+
+Los snapshots deben crearse y copiarse al volumen como parte del procedimiento
+de backup; `QDRANT_SNAPSHOT_PATH` solo automatiza la recuperación en el arranque.
+Valida una restauración en staging antes de usarla como procedimiento de
+recuperación de producción.
 
 ---
 

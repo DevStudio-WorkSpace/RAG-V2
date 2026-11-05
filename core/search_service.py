@@ -12,38 +12,36 @@ def perform_hybrid_search(db_manager, query_vector, color_dominante, limit=5, mi
     # Normalizar color para búsqueda case-insensitive
     color_normalizado = str(color_dominante or "").strip().capitalize()
     
-    filtro = Filter(
-        must=[
-            FieldCondition(
-                key="color",
-                match=MatchValue(value=color_normalizado)
-            )
-        ]
-    )
-    
     try:
-        # Búsqueda estricta por color con score mínimo
-        resultados = db_manager.client.query_points(
-            collection_name=db_manager.collection_name,
-            query=query_vector.tolist(),
-            query_filter=filtro,
-            limit=limit,
-            offset=offset,
-            score_threshold=min_score
-        ).points
-        
-        # Fallback
-        if not resultados:
-            logger.info("No hubo coincidencia exacta de color. Realizando fallback vectorial...")
+        opciones = {
+            "collection_name": db_manager.collection_name,
+            "query": query_vector.tolist(),
+            "limit": limit,
+            "offset": offset,
+            "score_threshold": min_score,
+        }
+        if color_normalizado:
+            filtro = Filter(
+                must=[
+                    FieldCondition(
+                        key="color",
+                        match=MatchValue(value=color_normalizado),
+                    )
+                ]
+            )
             resultados = db_manager.client.query_points(
-                collection_name=db_manager.collection_name,
-                query=query_vector.tolist(),
-                limit=limit,
-                offset=offset,
-                score_threshold=min_score
+                **opciones,
+                query_filter=filtro,
             ).points
-            
-        return resultados
+            if resultados:
+                return resultados
+            logger.info(
+                "No hubo coincidencia exacta de color; se usa búsqueda vectorial."
+            )
+
+        return db_manager.client.query_points(
+            **opciones,
+        ).points
     except Exception as e:
         logger.error(f"Error durante la búsqueda híbrida en Qdrant: {e}")
-        raise e
+        raise

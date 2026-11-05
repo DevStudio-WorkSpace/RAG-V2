@@ -767,11 +767,16 @@ def search_similar_reranked(
     top_k: int = 5,
     candidatos_iniciales: int = 30,
     modelo: str = "clip",
+    usar_qdrant: bool = False,
+    color_filtro: str | None = None,
+    min_score: float = 0.5,
 ) -> list[dict]:
     """
     Búsqueda visual con reranking (Hito 2) con un solo modelo de embeddings.
 
-    Paso 1: recuperación amplia contra el índice NORMALIZADO de Sala 4
+    Paso 1: recuperación amplia contra Qdrant cuando ``usar_qdrant`` es True;
+    el modo de compatibilidad usa el índice NORMALIZADO de Sala 4.
+    El índice normalizado de Sala 4
     (data/embeddings_<modelo>.npy sobre data/images_normalized/), pidiendo
     candidatos_iniciales en vez de top_k directo. `modelo` puede ser "clip"
     (openai/clip-vit-base-patch32), "openclip"
@@ -782,10 +787,27 @@ def search_similar_reranked(
     búsqueda de imágenes).
     Paso 3: umbral dinámico que permite devolver menos de top_k resultados.
     """
-    candidatos = buscar_en_indice_normalizado(
-        query_embedding, top_k=candidatos_iniciales, modelo=modelo
+    if usar_qdrant:
+        if modelo != "clip":
+            raise ValueError("La colección Qdrant activa solo admite el modelo CLIP.")
+        from api.qdrant_engine import search_similar as search_qdrant
+
+        candidatos = search_qdrant(
+            query_embedding,
+            top_k=candidatos_iniciales,
+            color_filtro=color_filtro,
+            min_score=min_score,
+        )
+    else:
+        candidatos = buscar_en_indice_normalizado(
+            query_embedding, top_k=candidatos_iniciales, modelo=modelo
+        )
+    return _rerank_candidatos(
+        candidatos,
+        query_image,
+        etiqueta_modelo=modelo,
+        top_k=top_k,
     )
-    return _rerank_candidatos(candidatos, query_image, etiqueta_modelo=modelo)
 
 
 def recuperacion_fusion(

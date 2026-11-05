@@ -24,7 +24,7 @@ data/DATA_NEW/  (imágenes nuevas SBX-###-NNNN.png)
 [generar_embeddings.py] → data/embeddings.npy + data/ids.npy   (Sala 4, Hito 1: CLIP, L2, 512 dims)
 [generar_indices_comparativos.py] → embeddings_clip/openclip/siglip.npy   (Sala 4, Hito 2)
         │
-[FastAPI api/main.py] → POST /search/image (modos) + GET /health   (Sala 3)
+[FastAPI api/main.py] → CLIP + Qdrant → POST /search/image + GET /health
         │
 [frontend/ Next.js] → sube imagen, Top 5, nombre, imagen, URL, score   (cliente puro de la API)
 ```
@@ -104,7 +104,9 @@ Salida esperada:
 
 ### Paso 4 — Generar índices comparativos (Sala 4, Hito 2)
 
-Genera los tres índices sobre `images_normalized/` (necesarios porque la interfaz usa el modelo `fusion` por defecto):
+Genera los índices comparativos sobre `images_normalized/`. No son necesarios
+para la búsqueda canónica: FastAPI usa CLIP y Qdrant; OpenCLIP y SigLIP se
+mantienen para evaluación comparativa.
 
 ```bash
 python scripts/generar_indices_comparativos.py
@@ -144,10 +146,16 @@ python -c "import secrets; print('API_CLIENT_KEY=' + secrets.token_urlsafe(48));
 uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Al iniciar carga el índice y el modelo CLIP una sola vez. Endpoints:
+Al iniciar valida la colección Qdrant (vector CLIP de 512 dimensiones y Cosine),
+la restaura desde `QDRANT_SNAPSHOT_PATH` si está configurado y la colección no
+existe, o la crea. Si queda vacía, migra automáticamente `products.csv`,
+`embeddings.npy` e `ids.npy` después de validar su alineación. CLIP se carga una
+sola vez. Endpoints principales:
 
-- `GET /health` — estado, cantidad de productos/embeddings, modelo y desfase detectado.
-- `POST /search/image` — recibe una imagen (multipart) y el `modo` de búsqueda. Devuelve el Top 5 con ID, nombre, imagen, URL, score y metadatos de reranking.
+- `GET /health` — salud, backend Qdrant, colección y cantidad de puntos.
+- `POST /search/image` — consulta CLIP, recuperación amplia en Qdrant y reranking visual.
+- `POST /index/qdrant` — reindexación administrativa; requiere `API_ADMIN_KEY`.
+- `POST /search/image/qdrant` y `/search/image/v2` — alias de compatibilidad obsoletos.
 
 Prueba rápida desde otra terminal:
 
@@ -168,8 +176,8 @@ Respuesta esperada (ejemplo):
 ```json
 {
   "status": "ok",
-  "products": 284,
-  "embeddings": 284,
+  "products": 577,
+  "embeddings": 577,
   "model": "openai/clip-vit-base-patch32",
   "desfase_detectado": false,
   "observacion": "..."
@@ -184,6 +192,21 @@ npm run dev
 ```
 
 Antes de arrancar, copia `frontend/.env.example` a `frontend/.env.local` y define `API_URL=http://localhost:8000` y `API_CLIENT_KEY` (la misma del backend). Abre `http://localhost:3000`: la app usa el proxy server-side `/api/search`, que añade la clave sin exponerla al navegador, y muestra el Top 5 con imagen, ID, nombre, URL y score.
+
+### Medir latencia bajo concurrencia
+
+El script envía peticiones HTTP multipart reales a `/search/image` y reporta
+p50, p95, throughput y errores. Exporta `API_CLIENT_KEY` antes de ejecutarlo:
+
+```bash
+python scripts/load_test_qdrant.py \
+  --url http://127.0.0.1:8000/search/image \
+  --image data/consultas/consulta.jpg \
+  --requests 50 --concurrency 10 --warmup 2
+```
+
+Los tiempos incluyen CLIP, Qdrant y el reranking; mide contra el mismo entorno y
+catálogo para comparar cambios. El script no modifica el índice.
 
 ---
 
@@ -212,7 +235,7 @@ Nuevas imágenes en data/DATA_NEW/
 5) validate_dataset.py     →  validación de integridad
         │
         ▼
-6) Reiniciar la API        →  uvicorn recarga el índice nuevo
+6) POST /index/qdrant      →  actualiza la colección activa (requiere admin)
 ```
 
 ### Caso A: Cargar un banco completamente nuevo
@@ -228,14 +251,15 @@ Si se quiere reemplazar el banco actual (por ejemplo, pasar de SBX a otro provee
    rd /s /q data\images_normalized
    ```
 3. Ejecutar los pasos 1 a 6 de la **Guía de inicialización del sistema**.
-4. Reiniciar la API para que cargue el nuevo índice.
+4. Reindexar en Qdrant con la clave administrativa y comprobar `GET /health`.
 
 ### Caso B: Actualizar / añadir imágenes al banco existente
 
 1. Añadir las nuevas imágenes PNG a `data/DATA_NEW/` respetando la nomenclatura `SBX-###-NNNN.png` y sin repetir IDs ya existentes.
 2. Ejecutar los pasos 1 a 4 (los scripts regeneran todo el catálogo desde `DATA_NEW`, por lo que las imágenes nuevas se incluyen automáticamente).
 3. Ejecutar `scripts/validate_dataset.py` para verificar que no hay duplicados ni imágenes dañadas.
-4. Reiniciar la API.
+4. Ejecutar `POST /index/qdrant` con `API_ADMIN_KEY`; reiniciar la API no
+   reindexa una colección existente automáticamente.
 
 ### Reglas importantes de carga
 
@@ -243,28 +267,32 @@ Si se quiere reemplazar el banco actual (por ejemplo, pasar de SBX a otro provee
 - **`ids.npy` debe conservar el MISMO orden que `embeddings.npy`** (posición 0 → id 0, etc.). Siempre validar la alineación al cargar.
 - **Nomenclatura de IDs:** `SBX-###-NNNN` (patrón `SBX-\d{2}-\d{4}`).
 - **`images_normalized/` es el banco canónico.** Las imágenes originales en `DATA_NEW/` no se modifican ni se borran.
-- Los únicos índices permitidos son: `embeddings.npy`, `embeddings_clip.npy`, `embeddings_openclip.npy`, `embeddings_siglip.npy` + `ids.npy`. **Prohibido** crear archivos tipo `index_embeddings.npy`, `embeddings_productos.npy`, `embeddings_final_v2.npy` o rutas duplicadas.
+- El único índice de búsqueda activo es la colección Qdrant. Los `.npy` anteriores son fuentes de migración y evaluación comparativa. **Prohibido** crear archivos tipo `index_embeddings.npy`, `embeddings_productos.npy`, `embeddings_final_v2.npy` o rutas duplicadas.
 
 ---
 
 ## Contrato de respuesta
 
-`POST /search/image` (form-data: `file` + `modo`) devuelve una lista de objetos con al menos:
+`POST /search/image` (form-data: `file` + `modo`) devuelve un objeto con una
+lista `resultados` de objetos con al menos:
 
 ```json
-[
-  {
-    "id": "SBX-01-0001",
-    "nombre": "SBX-01-0001",
-    "imagen": "SBX-01-0001.jpg",
-    "url": "https://ejemplo.com/SBX-01-0001",
-    "proveedor": "SBX",
-    "score": 0.82,
-    "score_reranking": 0.85,
-    "posicion_final": 1,
-    "modelo_utilizado": "clip+openclip+siglip"
-  }
-]
+{
+  "backend": "qdrant",
+  "resultados": [
+    {
+      "id": "SBX-01-0001",
+      "nombre": "SBX-01-0001",
+      "imagen": "SBX-01-0001.jpg",
+      "url": "https://ejemplo.com/SBX-01-0001",
+      "proveedor": "SBX",
+      "score": 0.82,
+      "score_reranking": 0.85,
+      "posicion_final": 1,
+      "modelo_utilizado": "clip+color+estructura+patron+marco+franjas"
+    }
+  ]
+}
 ```
 
 `GET /health` devuelve: `status`, `products`, `embeddings`, `model`, `desfase_detectado`, `observacion`.
@@ -288,6 +316,7 @@ API_CLIENT_KEY=...
 API_CLIENT_KEYS=
 API_ADMIN_KEY=...
 QDRANT_API_KEY=...
+QDRANT_SNAPSHOT_PATH=
 # Desarrollo; en producción: https://rag.tudominio.com
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
@@ -299,8 +328,15 @@ curl -X POST http://localhost:8000/search/image \
   -H "X-API-Key: $API_CLIENT_KEY" \
   -F "file=@data/consultas/consulta.jpg" \
   -F "modo=auto" \
-  -F "modelo=fusion"
+  -F "modelo=clip"
 ```
+
+En Docker, para restaurar opcionalmente un snapshot compartido con Qdrant,
+define por ejemplo
+`QDRANT_SNAPSHOT_PATH=file:///qdrant/storage/snapshots/sublitex_fashion_v1/snapshot.snapshot`.
+Compose configura esa carpeta dentro del volumen persistente de Qdrant. El
+archivo debe existir y corresponder a esa colección; se restaura con prioridad
+de snapshot solo cuando la colección no existe.
 
 `CORS_ORIGINS` solo acepta orígenes explícitos `http://` o `https://`; el valor `*` se ignora. En producción usa únicamente el dominio real con HTTPS, por ejemplo `CORS_ORIGINS=https://rag.tudominio.com`. El frontend Next.js **no** recibe claves en el navegador: usa el proxy server-side `/api/search` y `/api/health`, que añade `X-API-Key` desde `API_CLIENT_KEY` (`frontend/.env.local` en desarrollo).
 
@@ -308,11 +344,13 @@ curl -X POST http://localhost:8000/search/image \
 
 - `auto` / `completo`: prepara la consulta (Sala 2) + motor Hito 2 (reranking).
 - `procesada`: imagen preparada + motor Hito 2.
-- `clasico`: Hito 1 + preprocesamiento de Sala 2 (sin reranking).
-- `original`: Hito 1 con la consulta tal cual llega.
-- `legacy`: solo la lista del motor (comportamiento Hito 1).
+- `auto` / `completo` / `procesada`: CLIP + Qdrant y reranking visual.
+- `clasico` / `original` / `legacy`: compatibilidad temporal `.npy` del Hito 1,
+  solo para comparación histórica.
 
-El parámetro `modelo` (`clip` | `openclip` | `fusion`) se envía junto con `modo`; `fusion` es el recomendado por defecto (CLIP + OpenCLIP + SigLIP).
+El modelo soportado por el backend canónico es `clip` (512 dimensiones). Las
+rutas `/search/image/qdrant` y `/search/image/v2` están marcadas como
+deprecated en OpenAPI y apuntan al mismo flujo.
 
 ## Reglas de la evaluación (Hito 2)
 

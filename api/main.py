@@ -1,14 +1,14 @@
-import base64
 import io
+import logging
 import os
 import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from threading import Lock
 
-import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from fastapi import Depends, FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,8 +17,7 @@ from sentence_transformers import SentenceTransformer
 
 
 # ── Tipos de imagen admitidos por la API ───────────────────────────────────
-# Se usa en los tres endpoints de búsqueda para validar el content-type
-# del archivo subido. Se incluye WebP junto a JPEG/PNG.
+# La validación final del formato la realiza Pillow sobre el contenido.
 # También se acepta application/octet-stream porque algunos clientes (ej. curl)
 # no siempre adjuntan el MIME correcto; la validación real la hace Pillow al
 # abrir la imagen, la cual detecta el formato desde los bytes.
@@ -26,11 +25,8 @@ MIME_PERMITIDOS = ("image/jpeg", "image/jpg", "image/png", "image/webp", "applic
 
 # Asegurar importación del módulo search_engine independientemente del working directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from api.search_engine import cargar_indice, info_indice, search_similar
-from api.search_engine_hito2 import (
-    search_similar_reranked,
-    search_similar_reranked_fusion,
-)
+from api.search_engine import search_similar
+from api.search_engine_hito2 import search_similar_reranked
 from api.preprocesar_consulta import preparar_consulta
 from api.security import (
     advertencias_config_seguridad,
@@ -40,200 +36,46 @@ from api.security import (
 from api.qdrant_engine import (
     cargar_indice as cargar_indice_qdrant,
     info_indice as info_indice_qdrant,
-    search_similar as search_similar_qdrant,
     health as health_qdrant,
     indexar_productos_desde_csv,
 )
 from core.config import settings
 
 MODEL_NAME = "clip-ViT-B-32"  # equivalente a openai/clip-vit-base-patch32
+logger = logging.getLogger(__name__)
 _model = None
 
-# Modelos de embeddings disponibles en el motor Hito 2 (Sala 4). "clip" es el
-# estándar del proyecto; "openclip" es la mejora solicitada: más robusto a
-# franjas/dibujos centrales y variaciones de diseño. "fusion" combina CLIP +
-# OpenCLIP + SigLIP en la recuperación (lo más robusto a oclusiones). Los
-# índices se generan con scripts/generar_indices_comparativos.py.
-MODELOS_VALIDOS = ("clip", "openclip", "fusion")
-MODELOS_ETIQUETA = {
-    "clip": "openai/clip-vit-base-patch32",
-    "openclip": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
-    "fusion": "fusion(clip+openclip+siglip)",
-}
-_openclip = None  # (modelo, processor) de transformers, lazy
-_siglip = None    # (modelo, processor) de transformers, lazy
+MODELOS_ETIQUETA = {"clip": "openai/clip-vit-base-patch32"}
 
 
-def get_openclip():
-    """Singleton del modelo OpenCLIP (laion/CLIP-ViT-B-32-laion2B-s34B-b79K)
-    vía transformers. Carga perezosa: solo cuando se usa modelo=openclip."""
-    global _openclip
-    if _openclip is None:
-        try:
-            import torch
-            from transformers import CLIPModel, CLIPProcessor
-
-            modelo = CLIPModel.from_pretrained(MODELOS_ETIQUETA["openclip"])
-            processor = CLIPProcessor.from_pretrained(MODELOS_ETIQUETA["openclip"])
-            modelo.eval()
-            _openclip = (modelo, processor)
-            print(f"[API] Modelo OpenCLIP '{MODELOS_ETIQUETA['openclip']}' "
-                  f"cargado correctamente (torch {torch.__version__}).")
-        except Exception as e:
-            raise RuntimeError(
-                f"No se pudo cargar el modelo OpenCLIP: {e}"
-            ) from e
-    return _openclip
-
-
-def get_siglip():
-    """Singleton del modelo SigLIP (google/siglip-base-patch16-224) vía
-    transformers. Carga perezosa: solo cuando se usa modelo=fusion."""
-    global _siglip
-    if _siglip is None:
-        try:
-            import torch
-            from transformers import SiglipModel, SiglipImageProcessor
-
-            modelo = SiglipModel.from_pretrained("google/siglip-base-patch16-224")
-            processor = SiglipImageProcessor.from_pretrained(
-                "google/siglip-base-patch16-224"
-            )
-            modelo.eval()
-            _siglip = (modelo, processor)
-            print(f"[API] Modelo SigLIP 'google/siglip-base-patch16-224' "
-                  f"cargado correctamente (torch {torch.__version__}).")
-        except Exception as e:
-            raise RuntimeError(f"No se pudo cargar el modelo SigLIP: {e}") from e
-    return _siglip
-
-
-def _embedding_openclip(imagen) -> np.ndarray:
-    """Embedding L2-normalizado de la imagen con OpenCLIP (transformers).
-    La salida de get_image_features puede ser un tensor o un objeto
-    BaseModelOutputWithPooling; se extrae el campo image_embeds como en
-    scripts/generar_indices_comparativos.py para mantener coherencia."""
-    import torch
-
-    modelo, processor = get_openclip()
-    inputs = processor(images=imagen, return_tensors="pt")
-    with torch.no_grad():
-        features = modelo.get_image_features(**inputs)
-    if not torch.is_tensor(features):
-        features = getattr(features, "image_embeds", None) or features.pooler_output
-    features = features / features.norm(p=2, dim=-1, keepdim=True)
-    return features.cpu().numpy().astype(np.float32)[0]
-
-
-def _embedding_siglip(imagen) -> np.ndarray:
-    """Embedding L2-normalizado de la imagen con SigLIP (transformers).
-    Misma extracción que en scripts/generar_indices_comparativos.py."""
-    import torch
-
-    modelo, processor = get_siglip()
-    inputs = processor(images=imagen, return_tensors="pt")
-    with torch.no_grad():
-        features = modelo.get_image_features(**inputs)
-    if not torch.is_tensor(features):
-        features = getattr(features, "image_embeds", None) or features.pooler_output
-    features = features / features.norm(p=2, dim=-1, keepdim=True)
-    return features.cpu().numpy().astype(np.float32)[0]
-
-
-def _recortes_consulta(imagen):
-    """Recortes inteligentes de la consulta para maximizar la detección del diseño.
-    
-    Estrategia mejorada (P0): en vez de solo cuadrantes, usamos:
-    1. Imagen completa
-    2. Recorte central (60% del área) - donde típicamente está el diseño
-    3. Mitad superior (diseño suele estar arriba)
-    4. Recorte con margen del 15% por lado (elimina bordes)
-    5. Cuadrante superior-izquierdo (zona más probable del diseño)
-    
-    Esto aumenta la robustez a oclusiones y mejora la detección en fotos de personas."""
-    w, h = imagen.size
-    recortes = [imagen]  # Siempre incluir la imagen completa
-    
-    # Recorte central (60% del área)
-    cx, cy = w // 2, h // 2
-    rw, rh = int(w * 0.3), int(h * 0.3)  # 30% de cada lado = 60% central
-    if rw > 10 and rh > 10:
-        recortes.append(imagen.crop((cx - rw, cy - rh, cx + rw, cy + rh)))
-    
-    # Mitad superior (donde típicamente está el diseño en camisetas)
-    if h > 20:
-        recortes.append(imagen.crop((0, 0, w, h // 2)))
-    
-    # Recorte con margen del 15% (elimina bordes potencialmente ruidosos)
-    mx, my = int(w * 0.15), int(h * 0.15)
-    if mx > 5 and my > 5:
-        recortes.append(imagen.crop((mx, my, w - mx, h - my)))
-    
-    # Cuadrante superior-izquierdo (zona más probable del diseño)
-    mw, mh = w // 2, h // 2
-    if mw > 10 and mh > 10:
-        recortes.append(imagen.crop((0, 0, mw, mh)))
-    
-    return recortes
-
-
-def _encodificar_fusion(imagen) -> dict:
-    """Embeddings multi-recorte de la imagen con los tres modelos de la
-    fusión: cada modelo devuelve una lista de vectores (uno por recorte)."""
-    recortes = _recortes_consulta(imagen)
-    return {
-        "clip": [get_model().encode(r) for r in recortes],
-        "openclip": [_embedding_openclip(r) for r in recortes],
-        "siglip": [_embedding_siglip(r) for r in recortes],
-    }
-
-
-def _encodificar(imagen, modelo: str):
-    """Devuelve el embedding (o dict de embeddings en modo fusion) de la
-    imagen con el modelo indicado."""
-    if modelo == "openclip":
-        return _embedding_openclip(imagen)
-    if modelo == "fusion":
-        return _encodificar_fusion(imagen)
+def _encodificar(imagen, modelo: str = "clip"):
+    """Genera un embedding CLIP compatible con la colección Qdrant activa."""
+    if modelo != "clip":
+        raise ValueError("La colección Qdrant activa solo admite el modelo CLIP.")
     return get_model().encode(imagen)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Carga el índice de vectores y el modelo CLIP una sola vez al iniciar el servidor."""
+async def lifespan(_: FastAPI):
+    """Verifica Qdrant, migra el índice inicial si está vacío y carga CLIP."""
     for aviso in advertencias_config_seguridad():
-        print(f"[API] AVISO DE SEGURIDAD: {aviso}")
+        logger.warning("AVISO DE SEGURIDAD: %s", aviso)
 
-    try:
-        cargar_indice()
-        print("[API] Índice de embeddings y dataset cargado correctamente.")
-    except Exception as e:
-        print(f"[API] AVISO al cargar índice: {e}")
-
-    # Inicializar Qdrant (backend escalable para RAG)
-    try:
-        cargar_indice_qdrant()
-        print("[API] Índice Qdrant inicializado correctamente.")
-    except Exception as e:
-        print(f"[API] AVISO al inicializar Qdrant: {e}")
+    cargar_indice_qdrant()
+    estado = info_indice_qdrant()
+    if estado["products"] == 0:
+        total = indexar_productos_desde_csv()
+        if total == 0:
+            raise RuntimeError(
+                "La colección Qdrant está vacía y no se pudieron migrar productos."
+            )
+        logger.info("Migrados %s productos a Qdrant durante el arranque.", total)
 
     try:
         get_model()
-        print(f"[API] Modelo CLIP '{MODEL_NAME}' cargado correctamente.")
+        logger.info("Modelo CLIP '%s' cargado correctamente.", MODEL_NAME)
     except Exception as e:
-        print(f"[API] ERROR al cargar el modelo CLIP: {e}")
-
-    # En staging con poca RAM se pueden cargar los modelos extra bajo demanda.
-    if os.getenv("PRELOAD_EXTRA_MODELS", "true").lower() in ("1", "true", "yes"):
-        try:
-            get_openclip()
-        except Exception as e:
-            print(f"[API] AVISO al precalentar OpenCLIP (se cargará bajo demanda): {e}")
-
-        try:
-            get_siglip()
-        except Exception as e:
-            print(f"[API] AVISO al precalentar SigLIP (se cargará bajo demanda): {e}")
+        logger.exception("No se pudo precargar el modelo CLIP; se intentará al buscar: %s", e)
 
     yield
 
@@ -260,27 +102,26 @@ app.add_middleware(
 # antes de hacer el reranking por color.
 CANDIDATOS_INICIALES = 30
 
-# La fusión recupera más candidatos (varios modelos = más robusto) para darle
-# al reranking más chances de "resucitar" el producto correcto ocluido.
-CANDIDATOS_INICIALES_FUSION = 200
-
-
-def _motor_reranked(embedding, query_image, modelo: str):
-    """Despacha al motor Hito 2 según el modelo elegido. `embedding` es un
-    vector para clip/openclip y un dict {modelo: vector} para fusion."""
-    if modelo == "fusion":
-        return search_similar_reranked_fusion(
-            embedding,
-            query_image=query_image,
-            top_k=5,
-            candidatos_iniciales=CANDIDATOS_INICIALES_FUSION,
-        )
+def _motor_reranked(
+    embedding,
+    query_image,
+    modelo: str,
+    top_k: int = 5,
+    color_filtro: str | None = None,
+    min_score: float = 0.5,
+):
+    """Recupera candidatos en Qdrant y aplica el reranking visual del Hito 2."""
+    if modelo != "clip":
+        raise ValueError("La colección Qdrant activa solo admite el modelo CLIP.")
     return search_similar_reranked(
         embedding,
         query_image=query_image,
-        top_k=5,
+        top_k=top_k,
         candidatos_iniciales=CANDIDATOS_INICIALES,
         modelo=modelo,
+        usar_qdrant=True,
+        color_filtro=color_filtro,
+        min_score=min_score,
     )
 
 # Tamaño mínimo (px por lado) para aceptar una imagen de consulta. Por debajo
@@ -288,48 +129,26 @@ def _motor_reranked(embedding, query_image, modelo: str):
 # estructura tengan sentido, y CLIP produce vectores poco fiables.
 MIN_DIM = 32
 
-# Guardado de las dos versiones de cada consulta (Sala 2, Hito 2)
-# Directorios de consultas y política de retención (Seguridad)
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-QUERIES_ORIGINAL_DIR = os.path.join(BASE_DIR, "data", "queries_original")
-QUERIES_PROCESADA_DIR = os.path.join(BASE_DIR, "data", "queries_procesadas")
+# Límite del archivo subido para evitar lecturas sin cota en el servidor.
 MAX_UPLOAD_SIZE = 15 * 1024 * 1024  # 15 MB límite de tamaño de subida
 
 # Control básico de Rate Limiting en memoria por IP
 _request_counts = {}
+_request_counts_lock = Lock()
 RATE_LIMIT_WINDOW = 60  # segundos
 RATE_LIMIT_MAX_REQUESTS = 60  # máx peticiones por minuto por IP
 
 
 def _check_rate_limit(client_ip: str) -> bool:
     """Verifica si la IP excede el límite de peticiones (Rate Limiting)."""
-    now = time.time()
-    if client_ip not in _request_counts:
-        _request_counts[client_ip] = []
-    
-    # Filtrar peticiones fuera de la ventana de tiempo
-    _request_counts[client_ip] = [t for t in _request_counts[client_ip] if now - t < RATE_LIMIT_WINDOW]
-    
-    if len(_request_counts[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
-        return False
-    
-    _request_counts[client_ip].append(now)
-    return True
-
-
-def _limpiar_consultas_antiguas():
-    """Borra consultas almacenadas con más de 24 horas para cumplir política de retención."""
-    try:
+    with _request_counts_lock:
         now = time.time()
-        max_age = 24 * 3600  # 24 horas
-        for folder in (QUERIES_ORIGINAL_DIR, QUERIES_PROCESADA_DIR):
-            if os.path.exists(folder):
-                for f in os.listdir(folder):
-                    fp = os.path.join(folder, f)
-                    if os.path.isfile(fp) and (now - os.path.getmtime(fp) > max_age):
-                        os.remove(fp)
-    except Exception:
-        pass
+        requests = _request_counts.setdefault(client_ip, [])
+        requests[:] = [started for started in requests if now - started < RATE_LIMIT_WINDOW]
+        if len(requests) >= RATE_LIMIT_MAX_REQUESTS:
+            return False
+        requests.append(now)
+        return True
 
 
 def get_model():
@@ -348,41 +167,27 @@ def health():
     comprobar el estado del servicio sin credenciales.
     """
     try:
-        info = info_indice()
-        indice_openclip = os.path.join(BASE_DIR, "data", "embeddings_openclip.npy")
+        info = info_indice_qdrant()
+        if info["status"] != "ok":
+            return JSONResponse(
+                status_code=503,
+                content={"status": "error", "detail": "Qdrant no está disponible"},
+            )
         return {
             "status": "ok",
             "products": info["products"],
             "embeddings": info["embeddings"],
-            "model": "openai/clip-vit-base-patch32",
-            "desfase_detectado": info.get("desfase_detectado", False),
-            "observacion": info.get("observacion", ""),
-            "modelo_openclip": "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
-            "indice_openclip_ok": os.path.exists(indice_openclip),
-            "modelos_fusion": ["openai/clip-vit-base-patch32",
-                               "laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
-                               "google/siglip-base-patch16-224"],
+            "model": MODELOS_ETIQUETA["clip"],
+            "backend": "qdrant",
+            "collection": info["collection"],
+            "desfase_detectado": False,
+            "observacion": info["observacion"],
         }
     except Exception as e:
         return JSONResponse(
             status_code=500,
             content={"status": "error", "detail": str(e)}
         )
-
-
-def _imagen_b64(imagen) -> str:
-    """Codifica una imagen PIL en base64 (JPEG)."""
-    buf = io.BytesIO()
-    imagen.convert("RGB").save(buf, "JPEG", quality=90)
-    return base64.b64encode(buf.getvalue()).decode("ascii")
-
-
-def _guardar_versiones(query_id, original, procesada):
-    """Guarda la consulta original y la procesada para comparar resultados."""
-    os.makedirs(QUERIES_ORIGINAL_DIR, exist_ok=True)
-    os.makedirs(QUERIES_PROCESADA_DIR, exist_ok=True)
-    original.save(os.path.join(QUERIES_ORIGINAL_DIR, f"{query_id}.jpg"), "JPEG", quality=92)
-    procesada.save(os.path.join(QUERIES_PROCESADA_DIR, f"{query_id}.jpg"), "JPEG", quality=92)
 
 
 def _error_dimensiones(imagen) -> str | None:
@@ -396,22 +201,77 @@ def _error_dimensiones(imagen) -> str | None:
     return None
 
 
-@app.post("/search/image", dependencies=[Depends(require_client)])
-async def search_image(
+def _leer_imagen_subida(file: UploadFile | None):
+    if file is None or (file.content_type and file.content_type not in MIME_PERMITIDOS):
+        return None, JSONResponse(
+            status_code=400,
+            content={"error": "El archivo enviado no es una imagen válida"},
+        )
+
+    contents = file.file.read(MAX_UPLOAD_SIZE + 1)
+    if len(contents) > MAX_UPLOAD_SIZE:
+        return None, JSONResponse(
+            status_code=413,
+            content={
+                "error": (
+                    "El archivo excede el tamaño máximo permitido de "
+                    f"{MAX_UPLOAD_SIZE // (1024 * 1024)}MB."
+                )
+            },
+        )
+
+    try:
+        imagen = Image.open(io.BytesIO(contents)).convert("RGB")
+    except (
+        OSError,
+        ValueError,
+        UnidentifiedImageError,
+        Image.DecompressionBombError,
+    ):
+        return None, JSONResponse(
+            status_code=400,
+            content={"error": "El archivo enviado no es una imagen válida"},
+        )
+
+    error_dim = _error_dimensiones(imagen)
+    if error_dim:
+        return None, JSONResponse(status_code=400, content={"error": error_dim})
+    return imagen, None
+
+
+@app.post(
+    "/search/image",
+    dependencies=[Depends(require_client)],
+    tags=["búsqueda"],
+)
+@app.post(
+    "/search/image/qdrant",
+    dependencies=[Depends(require_client)],
+    deprecated=True,
+    tags=["compatibilidad"],
+)
+@app.post(
+    "/search/image/v2",
+    dependencies=[Depends(require_client)],
+    deprecated=True,
+    tags=["compatibilidad"],
+)
+def search_image(
     request: Request,
     file: UploadFile | None = File(None),
     modo: str = Form("auto"),
     modelo: str = Form("clip"),
+    top_k: int = Form(5, ge=1, le=50),
+    color_filtro: str | None = Form(None),
+    min_score: float = Form(0.5, ge=-1.0, le=1.0),
 ):
     """
-    Recibe una imagen (JPG/PNG) y devuelve los 5 productos más parecidos.
+    Busca en Qdrant y aplica el reranking visual del Hito 2.
+
+    ``/search/image/qdrant`` y ``/search/image/v2`` son alias de compatibilidad
+    temporal. Los modos ``original``, ``clasico`` y ``legacy`` se conservan
+    únicamente como baseline del Hito 1 para la evaluación comparativa.
     """
-    if file is None:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "El archivo enviado no es una imagen válida"},
-        )
-    # 1. Rate Limiting por IP (Seguridad)
     client_ip = request.client.host if request.client else "unknown"
     if not _check_rate_limit(client_ip):
         return JSONResponse(
@@ -419,120 +279,75 @@ async def search_image(
             content={"error": "Demasiadas peticiones. Por favor intente más tarde (Rate limit excedido)."}
         )
 
-    # 2. Límite de tamaño de subida en servidor (Seguridad)
-    contents = await file.read()
-    if len(contents) > MAX_UPLOAD_SIZE:
-        return JSONResponse(
-            status_code=413,
-            content={"error": f"El archivo excede el tamaño máximo permitido de {MAX_UPLOAD_SIZE // (1024*1024)}MB."}
-        )
-
-    # 3. Limpieza periódica de consultas antiguas (Retención/borrado)
-    _limpiar_consultas_antiguas()
-
-    if file.content_type and file.content_type not in MIME_PERMITIDOS:
+    if modo not in ("auto", "completo", "procesada", "original", "clasico", "legacy"):
         return JSONResponse(
             status_code=400,
-            content={"error": "El archivo enviado no es una imagen válida"}
+            content={"error": f"Modo desconocido: {modo}"},
         )
+    if modelo != "clip":
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": (
+                    "La colección Qdrant activa utiliza CLIP (512 dimensiones); "
+                    "seleccione modelo=clip."
+                )
+            },
+        )
+
+    imagen, error_imagen = _leer_imagen_subida(file)
+    if error_imagen:
+        return error_imagen
 
     try:
-        contenido = contents
-        imagen = Image.open(io.BytesIO(contenido)).convert("RGB")
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "El archivo enviado no es una imagen válida"}
-        )
-
-    error_dim = _error_dimensiones(imagen)
-    if error_dim:
-        return JSONResponse(status_code=400, content={"error": error_dim})
-
-    if modelo not in MODELOS_VALIDOS:
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Modelo desconocido '{modelo}'; modelos válidos: "
-                     f"{', '.join(MODELOS_VALIDOS)}"}
-        )
-    if modelo in ("openclip", "fusion") and modo in ("legacy", "original", "clasico"):
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Los modelos OpenCLIP y fusion solo aplican a los "
-                     "modos del motor Hito 2 (auto/completo/procesada); los modos "
-                     "clasico/original/legacy usan el Hito 1 con CLIP."}
-        )
-
-    try:
-        model = get_model()
+        get_model()
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"error": f"Error al cargar el modelo CLIP: {str(e)}"}
+            content={"error": f"Error al cargar el modelo CLIP: {e}"},
         )
 
     try:
         t0 = time.perf_counter()
         etiqueta_modelo = MODELOS_ETIQUETA[modelo]
         if modo == "legacy":
+            logger.warning("modo=legacy usa el índice .npy solo para evaluación histórica.")
             embedding = _encodificar(imagen, "clip")
-            return search_similar(embedding, top_k=5)
+            return search_similar(embedding, top_k=top_k)
 
         if modo == "original":
-            # Hito 1 con la consulta tal cual llega, sin preprocesar (ruta
-            # rápida usada por la comparación Hito 1 vs Hito 2).
+            logger.warning("modo=original usa el índice .npy solo como baseline del Hito 1.")
             embedding = _encodificar(imagen, "clip")
-            res_original = search_similar(embedding, top_k=5)
+            resultados = search_similar(embedding, top_k=top_k)
             return {
                 "query_id": f"q_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}",
                 "modo": "original",
                 "modelo": etiqueta_modelo,
-                "preprocesamiento": {
-                    "ok": False, "pasos": [], "backend": None,
-                    "bbox": None, "recorte_pct": None, "tiempo_segundos": None,
-                },
                 "tiempo_segundos": round(time.perf_counter() - t0, 3),
-                "resultados": res_original,
+                "resultados": resultados,
             }
 
         prep = preparar_consulta(imagen)
         procesada = prep["procesada"]
+        embedding = _encodificar(procesada, "clip")
 
-        # Comparaciones Hito 1 (índice CLIP openai) solo en modo clip: con
-        # OpenCLIP no tiene sentido mezclar su embedding contra el índice H1.
-        # En los demás modos solo se calcula el embedding de la consulta
-        # preparada (ahorra ~50% del cómputo en fusion, que usa multi-recorte).
-        res_original = None
-        res_procesada = None
-        if modelo == "clip":
-            emb_original = _encodificar(imagen, modelo)
-            emb_procesada = _encodificar(procesada, modelo)
-            res_original = search_similar(emb_original, top_k=5)
-            res_procesada = search_similar(emb_procesada, top_k=5)
-        else:
-            emb_procesada = _encodificar(procesada, modelo)
-
-        query_id = f"q_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
-        _guardar_versiones(query_id, imagen, procesada)
-
-        if modo in ("completo", "auto"):
-            # Pipeline completo: Sala 1 + Sala 2 + Sala 3 (mejor Top 5).
-            # La respuesta incluye resultados_original/procesada para comparar
-            # (solo en modo clip: son comparaciones contra el índice del Hito 1).
-            modo_usado = "completo"
-            resultados = _motor_reranked(emb_procesada, procesada, modelo)
-        elif modo == "clasico":
-            # Hito 1 con el preprocesamiento de Sala 2 (sin reranking)
+        if modo == "clasico":
+            logger.warning("modo=clasico usa el índice .npy solo como baseline del Hito 1.")
+            resultados = search_similar(embedding, top_k=top_k)
             modo_usado = "clasico"
-            resultados = search_similar(_encodificar(procesada, "clip"), top_k=5)
         else:
-            # "procesada", "auto" y cualquier modo no reconocido: motor Hito 2
-            # sobre la consulta preparada (recuperación amplia + reranking).
-            modo_usado = "procesada" if modo == "procesada" else "completo"
-            resultados = _motor_reranked(emb_procesada, procesada, modelo)
+            resultados = _motor_reranked(
+                embedding,
+                procesada,
+                modelo,
+                top_k=top_k,
+                color_filtro=color_filtro,
+                min_score=min_score,
+            )
+            modo_usado = "qdrant" if request.url.path.endswith("/qdrant") else "completo"
 
         return {
-            "query_id": query_id,
+            "query_id": f"q_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}",
             "modo": modo_usado,
             "modelo": etiqueta_modelo,
             "preprocesamiento": {
@@ -544,97 +359,12 @@ async def search_image(
                 "tiempo_segundos": prep["tiempo_segundos"],
             },
             "tiempo_segundos": round(time.perf_counter() - t0, 3),
-            "imagen_original_b64": _imagen_b64(imagen),
-            "imagen_procesada_b64": _imagen_b64(procesada),
+            "backend": "qdrant" if modo_usado != "clasico" else "npy-compatibility",
+            "top_k": top_k,
+            "color_filtro": color_filtro,
+            "min_score": min_score,
+            "candidatos_evaluados": CANDIDATOS_INICIALES if modo_usado != "clasico" else top_k,
             "resultados": resultados,
-            "resultados_original": res_original,
-            "resultados_procesada": res_procesada,
-        }
-    except FileNotFoundError as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Falta un archivo de datos: {str(e)}"}
-        )
-    except ValueError as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Error interno: {str(e)}"}
-        )
-
-
-@app.post("/search/image/v2", dependencies=[Depends(require_client)])
-async def search_image_v2(
-    file: UploadFile | None = File(None),
-    modelo: str = Form("clip"),
-):
-    """
-    Hito 2: Motor mejorado con reranking por color HSV.
-    Recibe la imagen igual que /search/image, pero en vez de devolver el
-    top 5 directo de CLIP, hace una recuperación amplia de
-    CANDIDATOS_INICIALES y reordena combinando el score de embeddings con el
-    score del histograma HSV de la imagen real (recuperación amplia +
-    reranking + umbral dinámico, ver api/search_engine_hito2.py).
-
-    Parametro de formulario `modelo`:
-      - "clip"     (default): openai/clip-vit-base-patch32.
-      - "openclip"           : laion/CLIP-ViT-B-32-laion2B-s34B-b79K (más
-                               robusto a franjas/dibujos centrales).
-      - "fusion"             : combina CLIP + OpenCLIP + SigLIP (lo más
-                               robusto a oclusiones: puntos que tapen diseño).
-    """
-    # Mismo control de tipo de archivo que el endpoint del Hito 1
-    if file is None or (file.content_type and file.content_type not in MIME_PERMITIDOS):
-        return JSONResponse(
-            status_code=400,
-            content={"error": "El archivo enviado no es una imagen válida"}
-        )
-
-    try:
-        contenido = await file.read()
-        imagen = Image.open(io.BytesIO(contenido)).convert("RGB")
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "El archivo enviado no es una imagen válida"}
-        )
-
-    error_dim = _error_dimensiones(imagen)
-    if error_dim:
-        return JSONResponse(status_code=400, content={"error": error_dim})
-
-    if modelo not in MODELOS_VALIDOS:
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Modelo desconocido '{modelo}'; modelos válidos: "
-                     f"{', '.join(MODELOS_VALIDOS)}"}
-        )
-
-    try:
-        model = get_model()
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Error al cargar el modelo CLIP: {str(e)}"}
-        )
-
-    try:
-        t0 = time.perf_counter()
-        embedding = _encodificar(imagen, modelo)
-        resultados = _motor_reranked(embedding, imagen, modelo)
-        tiempo_segundos = round(time.perf_counter() - t0, 4)
-        return {
-            "resultados": resultados,
-            "tiempo_segundos": tiempo_segundos,
-            "candidatos_evaluados": (
-                CANDIDATOS_INICIALES_FUSION if modelo == "fusion"
-                else CANDIDATOS_INICIALES
-            ),
-            "modelo": MODELOS_ETIQUETA[modelo],
         }
     except FileNotFoundError as e:
         return JSONResponse(
@@ -719,80 +449,6 @@ def indexar_qdrant(
         return JSONResponse(
             status_code=500,
             content={"error": f"Error indexando en Qdrant: {str(e)}"}
-        )
-
-
-@app.post("/search/image/qdrant", dependencies=[Depends(require_client)])
-async def search_image_qdrant(
-    file: UploadFile | None = File(None),
-    top_k: int = Form(5),
-    color_filtro: str = Form(None),
-    min_score: float = Form(0.5),
-    modelo: str = Form("clip"),
-):
-    """
-    Búsqueda de imágenes usando Qdrant como backend vectorial.
-
-    Recibe una imagen, genera su embedding con el modelo indicado y busca
-    vectores similares en Qdrant con filtro opcional por color.
-
-    Parametros:
-      - file: imagen JPG/PNG
-      - top_k: número de resultados (default 5)
-      - color_filtro: filtrar por este color (búsqueda híbrida)
-      - min_score: score mínimo de similitud (default 0.5)
-      - modelo: "clip", "openclip" o "fusion"
-    """
-    if file is None or (file.content_type and file.content_type not in MIME_PERMITIDOS):
-        return JSONResponse(
-            status_code=400,
-            content={"error": "El archivo enviado no es una imagen válida"}
-        )
-
-    if modelo not in MODELOS_VALIDOS:
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Modelo desconocido '{modelo}'; modelos válidos: {', '.join(MODELOS_VALIDOS)}"}
-        )
-
-    try:
-        contenido = await file.read()
-        imagen = Image.open(io.BytesIO(contenido)).convert("RGB")
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "El archivo enviado no es una imagen válida"}
-        )
-
-    error_dim = _error_dimensiones(imagen)
-    if error_dim:
-        return JSONResponse(status_code=400, content={"error": error_dim})
-
-    try:
-        t0 = time.perf_counter()
-        embedding = _encodificar(imagen, modelo)
-        resultados = search_similar_qdrant(
-            query_embedding=embedding,
-            top_k=top_k,
-            color_filtro=color_filtro,
-            min_score=min_score,
-        )
-        tiempo_segundos = round(time.perf_counter() - t0, 4)
-
-        return {
-            "query_id": f"q_q_{int(time.perf_counter() * 1000)}",
-            "modo": "qdrant",
-            "modelo": MODELOS_ETIQUETA.get(modelo, modelo),
-            "top_k": top_k,
-            "color_filtro": color_filtro,
-            "min_score": min_score,
-            "tiempo_segundos": tiempo_segundos,
-            "resultados": resultados,
-        }
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Error en búsqueda Qdrant: {str(e)}"}
         )
 
 

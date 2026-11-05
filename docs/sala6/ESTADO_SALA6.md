@@ -5,6 +5,20 @@ Alcance: revisión de requisitos disponibles, código de búsqueda/API/interfaz,
 
 **Actualización posterior a la auditoría:** se habilitó una copia aislada en VirtualBox y se ejecutaron pruebas reales. Build API/frontend correcto, IDs alineados, 17/17 pruebas de integración correctas y Qdrant con 577 puntos y Top 1 exacto verificado. Se corrigieron permisos de caché y el 422 sin archivo; se añadió configuración de staging y precarga opcional de modelos extra. Ver [guía y resultados](STAGING_VIRTUALBOX.md). Los límites de ejecución descritos al final corresponden a la auditoría inicial de Windows y ya no impiden probar en la VM. No se cerraron automáticamente las casillas de producción ni se realizaron commits.
 
+**Actualización de implementación — 2026-11-05:** por instrucción del usuario,
+`POST /search/image` consulta Qdrant con CLIP y recuperación amplia antes del
+reranking; el arranque valida o crea la colección y migra los `.npy` solo si
+está vacía. Las rutas `/search/image/qdrant` y `/search/image/v2` quedaron como
+alias deprecated; los modos `.npy` son baseline de evaluación. Compose guarda
+snapshots bajo `/qdrant/storage/snapshots`, dentro del volumen persistente, y la
+recuperación solicita prioridad `snapshot` para que una colección nueva reciba
+los puntos del respaldo. En esta sesión se validaron el esquema 512/Cosine,
+búsqueda e IDs con Qdrant local, y el Compose se validó sintácticamente. La API
+no estaba activa y el intérprete local no tiene instalados
+`sentence-transformers` ni `pydantic-settings`: falta repetir las pruebas HTTP
+y de restauración contra Qdrant en staging; este cambio no equivale a un
+despliegue ni altera la evidencia de staging del 4 de noviembre.
+
 ## Veredicto
 
 Se puede continuar en Sala 6, pero todavía no hay evidencia suficiente para declarar cerrada la operación ni autorizar producción. El punto de partida recomendado es una **base reproducible de staging privado**, con catálogo de 577 productos, backend/modelo explícitos y una búsqueda real verificada. Sala 6 se interpreta aquí como la rama actual y el trabajo operativo del checklist §3; no se encontró una especificación formal de esa sala.

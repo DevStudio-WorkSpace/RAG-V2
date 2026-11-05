@@ -26,8 +26,10 @@ aplicable a la tarea desde `docs/README.md`.
   búsqueda del frontend, manejo de errores, evaluación comparativa sobre las
   mismas consultas y revisión humana del Top 5. Descartar el documento antiguo
   no elimina estos requisitos de calidad.
-- Elegir el backend canónico y unificar el modelo predeterminado siguen siendo
-  decisiones pendientes. No declararlas resueltas por la presencia de Qdrant.
+- Por instrucción explícita del usuario del 2026-11-05, Qdrant es el backend
+  canónico de búsqueda y el modelo activo es CLIP de 512 dimensiones con Cosine.
+  Los índices `.npy` quedan como fuente de migración y baseline histórico; no
+  son backend de las búsquedas normales.
 
 ## 2. Objetivo del proyecto
 
@@ -35,7 +37,7 @@ Motor de búsqueda visual RAG para camisetas deportivas:
 
 1. Se sube una imagen de consulta.
 2. CLIP genera su embedding.
-3. El motor busca en el **índice único**.
+3. La API consulta la colección única de Qdrant (CLIP, 512 dimensiones).
 4. La API devuelve Top 5 con ID, nombre, imagen, URL y score.
 5. La interfaz muestra los resultados y registra evaluación.
 
@@ -49,11 +51,11 @@ sola interfaz.»
 proyecto/
 ├── api/
 │   ├── main.py                 # API FastAPI (endpoints /search/image y /health)
-│   ├── search_engine.py        # motor Hito 1 (embeddings.npy + ids.npy + products.csv)
-│   └── search_engine_hito2.py  # motor Hito 2 (recuperación amplia + reranking)
+│   ├── search_engine.py        # baseline Hito 1 para evaluación/migración
+│   └── search_engine_hito2.py  # recuperación Qdrant + reranking visual
 ├── data/
 │   ├── products.csv            # ÚNICA fuente de productos
-│   ├── embeddings.npy          # ÚNICO índice de vectores (Hito 1)
+│   ├── embeddings.npy          # fuente de migración/baseline, no índice activo
 │   ├── ids.npy                 # alineado posición a posición con embeddings.npy
 │   ├── embeddings_clip.npy     # índice normalizado de Sala 4 (Hito 2)
 │   ├── images_original/        # originales (NO modificar ni borrar)
@@ -89,12 +91,14 @@ arriba.
 - Existen índices comparativos `embeddings_openclip.npy` y
   `embeddings_siglip.npy` y un modo Fusión. No crear copias adicionales ni
   presentar Fusión como validado por las pruebas realizadas con CLIP.
-- **Índice Hito 1:** `data/embeddings.npy` + `data/ids.npy` + `products.csv`
-  (generados por `scripts/generar_embeddings.py` sobre `images_normalized`).
-- **Índice Hito 2 (Sala 4):** `data/embeddings_clip.npy` + `data/ids.npy`
-  generados por `scripts/generar_indices_comparativos.py` sobre
-  `images_normalized`. El motor Hito 2 lo usa y, si no existe, cae al Hito 1.
-- **Motor Hito 2:** recuperación amplia (30 candidatos) + reranking visual
+- **Índice canónico:** colección Qdrant configurada en `QDRANT_COLLECTION_NAME`,
+  vector CLIP de 512 dimensiones y Cosine. El arranque valida el esquema,
+  restaura opcionalmente un snapshot y migra los `.npy` si la colección está vacía.
+- **Archivos `.npy`:** `data/embeddings.npy` + `data/ids.npy` son la fuente de
+  migración y baseline de evaluación del Hito 1; no se consultan en el flujo
+  normal. `embeddings_clip.npy`, OpenCLIP y SigLIP permanecen como artefactos
+  comparativos, no como índices activos de la API.
+- **Motor Hito 2:** recuperación amplia desde Qdrant (30 candidatos) + reranking visual
   (color HSV por regiones frente/espalda, estructura 32×32, color dominante,
   gama, patrón, marco, franjas) + umbral dinámico (puede devolver < top_k).
 - **La interfaz NO genera embeddings ni busca localmente.** Solo consume la API.
@@ -123,13 +127,11 @@ objetos con al menos:
 `GET /health` devuelve: `status`, `products`, `embeddings`, `model`,
 `desfase_detectado`, `observacion`.
 
-## 7. Modos del endpoint (Sala 2, Hito 2)
+## 7. Modos del endpoint
 
-- `auto` / `completo`: prepara la consulta (Sala 2) + motor Hito 2 (reranking).
-- `procesada`: imagen preparada + motor Hito 2.
-- `clasico`: Hito 1 + preprocesamiento de Sala 2 (sin reranking).
-- `original`: Hito 1 con la consulta tal cual llega.
-- `legacy`: solo la lista del motor (comportamiento Hito 1).
+- `auto` / `completo` / `procesada`: Qdrant + CLIP y reranking del Hito 2.
+- `clasico` / `original` / `legacy`: compatibilidad `.npy` del Hito 1,
+  exclusivamente para comparación histórica.
 
 ## 8. Reglas de la evaluación (Hito 2)
 

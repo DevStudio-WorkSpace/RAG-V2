@@ -3,7 +3,6 @@
 services:
   api:
     environment:
-      PRELOAD_EXTRA_MODELS: "false"
       OMP_NUM_THREADS: "2"
       MKL_NUM_THREADS: "2"
     volumes:
