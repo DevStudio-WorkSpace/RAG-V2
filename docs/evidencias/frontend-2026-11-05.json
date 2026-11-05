@@ -1,0 +1,173 @@
+{
+  "fecha": "2026-11-05",
+  "base_commit": "dfb3005d7122db13a7e9088e24e3ea618e3eef38",
+  "aporte_reutilizado": "0f41d2fa07abf880a4a8643649736e6a361babeb",
+  "entorno": "Windows cliente -> tunel SSH -> Ubuntu VirtualBox/Docker",
+  "frontend": {
+    "npm_ci": true,
+    "build": true,
+    "typescript": true,
+    "lint": {
+      "errores": 0,
+      "advertencias": 4
+    },
+    "npm_audit_reportado": {
+      "moderadas": 8,
+      "criticas": 1
+    },
+    "docker_image_id": "sha256:f9a7c5524f2e1534d59b474351277b0abd31e26befa95d33f3c00bcabd2ca672"
+  },
+  "proxy": {
+    "api_url": "http://api:8000",
+    "browser_bundles": 15,
+    "relative_search": true,
+    "direct_local_api": false,
+    "client_secret_leaked": false
+  },
+  "cliente_windows": {
+    "http": 200,
+    "segundos": 17.098712,
+    "backend": "qdrant",
+    "top1": "SBX-01-0001",
+    "resultados": 1,
+    "archivo": "data/consultas/SBX-01-0001_exacta.jpg"
+  },
+  "integracion": [
+    {
+      "prueba": "orden_ids",
+      "ok": true,
+      "detalle": 577
+    },
+    {
+      "prueba": "embeddings",
+      "ok": true,
+      "detalle": [
+        577,
+        512
+      ]
+    },
+    {
+      "prueba": "embeddings_clip",
+      "ok": true,
+      "detalle": [
+        577,
+        512
+      ]
+    },
+    {
+      "prueba": "embeddings_openclip",
+      "ok": true,
+      "detalle": [
+        577,
+        512
+      ]
+    },
+    {
+      "prueba": "embeddings_siglip",
+      "ok": true,
+      "detalle": [
+        577,
+        768
+      ]
+    },
+    {
+      "prueba": "salud_proxy",
+      "ok": true,
+      "detalle": {
+        "status": "ok",
+        "products": 577,
+        "embeddings": 577,
+        "model": "openai/clip-vit-base-patch32",
+        "backend": "qdrant",
+        "collection": "sublitex_fashion_v1",
+        "desfase_detectado": false,
+        "observacion": "Índice respaldado por Qdrant (almacenamiento en disco)"
+      }
+    },
+    {
+      "prueba": "frontend",
+      "ok": true,
+      "detalle": 200
+    },
+    {
+      "prueba": "sin_clave",
+      "ok": true,
+      "detalle": 401
+    },
+    {
+      "prueba": "clave_invalida",
+      "ok": true,
+      "detalle": 401
+    },
+    {
+      "prueba": "cliente_sin_rol_admin",
+      "ok": true,
+      "detalle": 403
+    },
+    {
+      "prueba": "archivo_invalido",
+      "ok": true,
+      "detalle": {
+        "status": 400,
+        "body": "{\"error\":\"El archivo enviado no es una imagen válida\"}"
+      }
+    },
+    {
+      "prueba": "imagen_pequena",
+      "ok": true,
+      "detalle": {
+        "status": 400,
+        "body": "{\"error\":\"La imagen es demasiado pequeña (16x16); se requiere un mínimo de 32px por lado para una búsqueda fiable.\"}"
+      }
+    },
+    {
+      "prueba": "sin_archivo",
+      "ok": true,
+      "detalle": 400
+    },
+    {
+      "prueba": "busqueda_original",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "segundos": 0.958,
+        "top1": "SBX-01-0001",
+        "resultados": 5,
+        "error": null
+      }
+    },
+    {
+      "prueba": "busqueda_auto",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "segundos": 30.618,
+        "top1": "SBX-01-0001",
+        "resultados": 1,
+        "error": null
+      }
+    },
+    {
+      "prueba": "imagen_frontend",
+      "ok": true,
+      "detalle": 200
+    },
+    {
+      "prueba": "api_sigue_activa",
+      "ok": true,
+      "detalle": "GET /health"
+    },
+    {
+      "total": 17,
+      "correctas": 17
+    }
+  ],
+  "backend_prueba": "Imagen previa de dependencias verificada + codigo actual API/core/scripts. httpx 0.28.1 satisface la nueva restriccion >=0.27,<1. Build completo nuevo del backend cancelado por espacio de VM; no se afirma validacion de ese build limpio.",
+  "alcance": "Prueba de proxy desde Windows a VM por tunel. Dominio publico, HTTPS y navegador en otro dispositivo pendientes.",
+  "hashes": {
+    "frontend/Dockerfile": "46c5332db6b9dbf54a2e527383819d4f82f41ca8a6c0fdabdc0f7de851d93d73",
+    "frontend/package.json": "0624c1a6bd77a2201c8e771f9685f933dcf43f1fccf83d6a41f4acaebb18b729",
+    "frontend/package-lock.json": "664dba1d0c8076e506b233f3ad89758d281619e9205213fb477f4343aecb4a22",
+    "api/main.py": "1b8a6a3abec797655f51f018069052e4ba95e5b06872ec0b8557455c3418b10e"
+  }
+}

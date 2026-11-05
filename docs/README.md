@@ -7,6 +7,7 @@ Para incorporarse al equipo, leer primero el README de la raíz y después el es
 | Saber qué falta y repartir tareas | [Estado de Sala 6](sala6/ESTADO_SALA6.md) | Auditoría con actualización tras las pruebas |
 | Repetir las pruebas y entender su alcance | [Staging en VirtualBox o Docker directo](sala6/STAGING_VIRTUALBOX.md) | Entorno probado; 17/17 comprobaciones |
 | Consultar los resultados registrados | [Evidencia de staging](evidencias/staging-2026-11-04.json) | Datos de la ejecución; no sustituye la evaluación completa |
+| Revisar la entrega de frontend §3.4/§3.5 | [npm ci y proxy de API](sala6/FRONTEND_NPM_CI.md) | Build e integración verificados; dominio/HTTPS final pendiente |
 | Consultar checklist y decisiones | [Requerimientos de despliegue](planificacion/REQUERIMIENTOS_DESPLIEGUE.md) | Contiene discrepancias pendientes señaladas en la auditoría |
 | Preparar monitoreo | [Monitoreo](despliegue/MONITOREO.md) | Guía; alertas con script probadas en local, monitoreo pendiente de validación en VPS |
 | Consultar despliegue y operación | [Servidor de producción](despliegue/PRODUCCION_SERVER.md) | En revisión: respaldo, restauración y rollback pendientes de prueba |

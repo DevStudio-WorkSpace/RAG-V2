@@ -337,7 +337,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] `.dockerignore` en raíz y frontend _(completado)_.
 - [x] Torch CPU instalado explícitamente en Dockerfile _(completado)_.
 - [x] Versiones de Python pineadas en requirements _(completado)_.
-- [ ] `package-lock.json` + `npm ci` en frontend.
+- [x] `package-lock.json` + `npm ci` en frontend. Aporte `0f41d2fa` incorporado; instalación, build y TypeScript verificados en Docker el 2026-11-05. Ver [evidencia frontend](../sala6/FRONTEND_NPM_CI.md).
 - [x] Imagen de Qdrant con tag fijo (no `:latest`).
 - [x] `.env` por secretos, sin `COPY .env*`.
 - [x] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
@@ -360,7 +360,8 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [ ] Imagen <32 px → 400.
 - [ ] Imagen externa → 200 sin cerrar el servidor.
 - [ ] Medir p95 con `clip` y con `fusion`.
-- [ ] Confirmar que el frontend remoto llama a la API pública, no a `localhost`.
+- [x] Verificar en staging que el frontend usa `/api/search` y el proxy server-side llega a `http://api:8000`, sin exigir una API en el localhost del cliente. Comprobado desde Windows a la VM por túnel SSH el 2026-11-05; ver [pruebas y límites](../sala6/FRONTEND_NPM_CI.md).
+  - [ ] Repetir con dominio/HTTPS y acceso externo en el despliegue final. La API interna puede permanecer sin exposición pública directa.
 
 ### 3.6 Solo si es Hito 3
 
