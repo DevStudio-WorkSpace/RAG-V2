@@ -8,7 +8,7 @@ Plataforma de búsqueda visual de camisetas deportivas basada en **embeddings CL
 
 ## Documentación y trabajo del equipo
 
-Consultar el [índice de documentación](docs/README.md) para encontrar el diagnóstico de Sala 6, la guía de pruebas, los checklist y las propuestas pendientes. `TRABAJO.md` aún falta en esta copia y debe recuperarse como fuente de requisitos.
+Consultar el [índice de documentación](docs/README.md) para encontrar el diagnóstico de Sala 6, la guía de pruebas, los checklist y las propuestas pendientes. `TRABAJO.md` quedó descartado como requisito vigente; el alcance y las reglas actuales están en `AGENTS.md`.
 
 ## Flujo del sistema
 

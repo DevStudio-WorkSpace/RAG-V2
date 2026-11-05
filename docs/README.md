@@ -22,6 +22,6 @@ Para incorporarse al equipo, leer primero el README de la raíz y después el es
 - `propuestas/`: borradores locales pendientes de validar; pueden no estar incluidos en Git.
 - `evidencias/`: resultados registrados, sin secretos.
 
-`AGENTS.md` y `AI_LOG.md` permanecen en la raíz. `TRABAJO.md`, fuente de requisitos indicada por las reglas, aún debe recuperarse. Esta organización no cambia los estados de los checklist ni las rutas del sistema.
+`AGENTS.md` y `AI_LOG.md` permanecen en la raíz. `TRABAJO.md` se conserva únicamente en el historial y quedó descartado como requisito vigente por decisión del usuario del 2026-11-05; consultar el alcance actual en `AGENTS.md`. Esta organización no cambia los estados de los checklist ni las rutas del sistema.
 
 La documentación propia del frontend sigue en `frontend/README.md` y `frontend/UI_SECCIONES.md`. Su archivo `AGENTS.md` conserva las instrucciones aplicables a ese directorio.

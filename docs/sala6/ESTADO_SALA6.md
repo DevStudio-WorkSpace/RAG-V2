@@ -9,7 +9,7 @@ Alcance: revisión de requisitos disponibles, código de búsqueda/API/interfaz,
 
 Se puede continuar en Sala 6, pero todavía no hay evidencia suficiente para declarar cerrada la operación ni autorizar producción. El punto de partida recomendado es una **base reproducible de staging privado**, con catálogo de 577 productos, backend/modelo explícitos y una búsqueda real verificada. Sala 6 se interpreta aquí como la rama actual y el trabajo operativo del checklist §3; no se encontró una especificación formal de esa sala.
 
-`TRABAJO.md`, declarado fuente de verdad por AGENTS.md, no existe en esta copia. Recuperarlo y confirmar el alcance es la primera tarea del coordinador. `docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md` tiene secciones duplicadas y afirmaciones contradictorias: no basta con contar sus casillas marcadas.
+Actualización 2026-11-05: el usuario descartó `TRABAJO.md` como requisito vigente después de revisar su historial. No es necesario recuperarlo para continuar Sala 6; consultar el alcance actualizado en `AGENTS.md`. `docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md` tiene secciones duplicadas y afirmaciones contradictorias: no basta con contar sus casillas marcadas.
 
 ## Lo comprobado en esta revisión
 
@@ -46,7 +46,7 @@ También hay divergencias de contrato: /search/image devuelve un objeto con resu
 
 | Orden / responsable sugerido | Checklist | Entregable verificable |
 | --- | --- | --- |
-| 0. Coordinador + producto | §3.1 y requisitos | Recuperar TRABAJO.md; confirmar staging o producción, catálogo SBX/577, backend y modelo; proporcionar nombres/URLs o declarar datos de demo; dejar Hito 3 fuera si sigue pospuesto |
+| 0. Coordinador + producto | §3.1 y requisitos | Confirmar staging o producción dentro del alcance vigente de AGENTS.md, catálogo SBX/577, backend y modelo; proporcionar nombres/URLs o declarar datos de demo; dejar Hito 3 fuera si sigue pospuesto |
 | 1. Integración/backend | §3.2 | Registrar decisión de backend único y rutas experimentales; validar IDs por contenido/orden y todos los índices; fijar modelo en UI/API; conciliar contrato de respuesta |
 | 2. Operaciones: backups | §3.4 respaldos | Script robusto + guía única + ejecución programada + copia fuera del VPS. Restaurar catálogo y colección Qdrant en entorno aislado y demostrar conteos, IDs y búsqueda correcta; acordar pérdida de datos y tiempo de recuperación tolerables |
 | 3. Operaciones: despliegue/rollback | §3.4 build | Lockfile + npm ci, volumen HF, imágenes con tags trazables. Build limpio y retorno probado a una imagen anterior, sin depender de reconstrucción ni borrar volúmenes |

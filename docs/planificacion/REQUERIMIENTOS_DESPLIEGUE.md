@@ -333,7 +333,9 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Imagen de Qdrant con tag fijo (no `:latest`).
 - [x] `.env` por secretos, sin `COPY .env*`.
 - [x] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
-- [ ] Volumen para caché de Hugging Face.
+- [ ] Volumen para caché de Hugging Face en el despliegue principal.
+  - [x] Completado y probado en staging: volumen `hf_cache` en `docker-compose.staging.yml`, permisos de escritura corregidos y descarga/carga de CLIP verificadas (2026-11-04).
+  - [ ] Incorporar y verificar el volumen en la configuración principal antes de cerrar este requisito de despliegue.
 - [x] Healthchecks y readiness en `docker-compose.yml`.
 - [ ] Backups de `data/` y `qdrant_data/`.
 - [ ] Monitoreo (escrito; falta probar con Docker/VPS).

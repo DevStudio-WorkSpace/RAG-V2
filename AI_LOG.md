@@ -1079,3 +1079,23 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 **Alcance autorizado:** commit de correcciones verificadas de API/caché, configuración y verificador de staging, evidencias, organización documental y fixtures, README y registro IA. Identidad Git existente: kannodi. Destino: origin/sala-6. Se mantienen fuera del commit scripts/backup.sh, la propuesta local de operaciones y las secciones de respaldo/rollback no verificadas de la guía de servidor (el traslado de la versión anterior y su nota de revisión sí se incluyen). No se publican secretos ni archivos de transferencia. Las entradas anteriores del registro pueden mencionar esos borradores como trabajo local.
 
 **Verificación previa:** py_compile de api/main.py y scripts/verificar_staging.py; git diff --check; revisión de evidencias de 17/17 pruebas y Qdrant; revisión de enlaces locales; consulta del remoto antes de publicar. Sin force push.
+
+## Fecha: 2026-11-04 — Registro del avance de caché en el checklist
+
+**Prompt:** «se marcó el check que hice?».
+
+**Resultado:** el requisito general de volumen Hugging Face seguía abierto. Se añadió una subcasilla completada para staging, respaldada por las pruebas existentes, y una pendiente explícita para incorporarlo/verificarlo en el despliegue principal. No se declara completado el requisito de producción. Solo documentación; git diff --check. Sin commit ni push de esta actualización.
+
+## Fecha: 2026-11-05 — Retiro de TRABAJO.md como requisito vigente
+
+**Prompt:** «bien entonces, descartalo y edita agent.md».
+
+**Resultado:** actualizado AGENTS.md por instrucción explícita del usuario. TRABAJO.md es referencia histórica en Git, sin obligación de restaurarlo y sin bloquear tareas por su ausencia. Alcance actual: buscador autónomo FastAPI/Next.js/Qdrant, catálogo SBX y cierre operativo/evaluación de Sala 6; WordPress y 15.000 diseños fuera hasta nueva instrucción. Se conservan requisitos de calidad, seguridad y alineación; backend canónico/modelo predeterminado permanecen pendientes. Se actualizaron las referencias al frontend, catálogo/modelos y entorno real para evitar restaurar decisiones antiguas. README e índice/diagnóstico dejaron de exigir recuperar el documento. No se restauró ni eliminó archivo histórico, no se modificó código, no se hizo commit/push.
+
+**Verificación:** revisión de menciones vigentes de TRABAJO.md, enlaces locales y git diff --check. No se repitieron pruebas de ejecución por tratarse de documentación.
+
+## Fecha: 2026-11-05 — Commit del alcance y avance de Sala 6
+
+**Prompt:** «bien haz el commit necesario, luego explicanos las tareas restantes y segun como las avanzamos».
+
+**Resultado:** preparación de commit documental de AGENTS.md, README, índice documental, estado de Sala 6 y avance de caché en checklist. Se conservan fuera los borradores de backup/rollback y las entradas locales del registro relativas a Microsoft Project, ajenas al proyecto RAG. Se usa la identidad Git existente kannodi. Verificación de diff y enlaces locales; sin cambios de ejecución ni repetición de inferencia. Esta instrucción solicita commit; no incluye un nuevo push.

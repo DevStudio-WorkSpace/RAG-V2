@@ -1,14 +1,33 @@
 # AGENTS.md — Reglas de trabajo para la IA en este repositorio
 
 > La IA DEBE leer este archivo al inicio de cada sesión y seguirlo.
-> La fuente de verdad de los requisitos es el archivo **`TRABAJO.md`**
-> ubicado en la raíz del proyecto. Este archivo resume sus reglas operativas.
+> El alcance vigente se define por las instrucciones del usuario y las reglas
+> de este archivo. La documentación se consulta desde **`docs/README.md`**.
 
-## 1. Antes de tocar código: leer el docx
+## 1. Antes de tocar código: revisar el alcance vigente
 
-Al comenzar cada sesión, la IA DEBE extraer y revisar el contenido de
-`TRABAJO.md`. 
-El trabajo siempre debe alinearse con lo que pide ese documento, no con suposiciones.
+Al comenzar cada sesión, leer este archivo, `README.md` y la documentación
+aplicable a la tarea desde `docs/README.md`.
+
+- `TRABAJO.md` queda descartado como requisito vigente por decisión del usuario
+  del 2026-11-05. Es un antecedente conservado en Git: no recuperarlo, exigirlo
+  ni bloquear tareas por su ausencia. No restablecer sus requisitos por defecto.
+- Alcance actual: buscador visual autónomo con FastAPI, frontend Next.js y
+  servicios Qdrant, sobre el catálogo SBX actual. Continuar Sala 6 con pruebas,
+  reproducibilidad, seguridad, respaldos, recuperación, monitoreo y evaluación.
+- WordPress/WooCommerce y la ampliación a 15.000 diseños quedan fuera del alcance
+  actual hasta una nueva instrucción explícita del usuario.
+- Consultar `docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md` para el checklist,
+  `docs/sala6/ESTADO_SALA6.md` para el diagnóstico y
+  `docs/sala6/STAGING_VIRTUALBOX.md` para las pruebas verificadas. Contienen
+  antecedentes y pendientes: sus afirmaciones deben contrastarse con el código
+  y las evidencias; una casilla marcada no sustituye una prueba.
+- Se mantienen los requisitos de catálogo/IDs alineados, API como única vía de
+  búsqueda del frontend, manejo de errores, evaluación comparativa sobre las
+  mismas consultas y revisión humana del Top 5. Descartar el documento antiguo
+  no elimina estos requisitos de calidad.
+- Elegir el backend canónico y unificar el modelo predeterminado siguen siendo
+  decisiones pendientes. No declararlas resueltas por la presencia de Qdrant.
 
 ## 2. Objetivo del proyecto
 
@@ -41,7 +60,8 @@ proyecto/
 │   ├── images_normalized/      # banco canónico de imágenes (Sala 1, Hito 2)
 │   └── products.csv            # ÚNICA fuente de productos (mismo ID que images_normalized)
 ├── frontend/
-│   └── app.py                  # Streamlit = cliente PURO de la API
+│   ├── src/                    # Next.js = cliente de la API mediante proxies
+│   └── app.py                  # cliente Streamlit anterior; no es la UI principal
 ├── scripts/                    # validación, embeddings, evaluación, etc.
 ├── requirements.txt
 └── README.md
@@ -58,12 +78,17 @@ arriba.
 - `ids.npy` debe conservar el MISMO orden que `embeddings.npy`
   (posición 0 → id 0, etc.). Si se desalinea, el sistema devuelve nombres
   incorrectos. SIEMPRE validar la alineación al cargar.
-- Nomenclatura de IDs: `AIM-P001-001` (patrón `AIM-P###-NNN`).
+- El catálogo activo usa IDs SBX (ej. `SBX-01-0001`) e imágenes PNG.
+  AIM corresponde al catálogo anterior. No renombrar IDs ni cambiar formatos
+  para ajustarlos a ejemplos históricos.
 
 ## 5. Arquitectura de referencia
 
-- **Un solo modelo CLIP:** `openai/clip-vit-base-patch32` (en código se usa
+- **Modelo base verificado en staging:** `openai/clip-vit-base-patch32` (en código se usa
   `SentenceTransformer("clip-ViT-B-32")`).
+- Existen índices comparativos `embeddings_openclip.npy` y
+  `embeddings_siglip.npy` y un modo Fusión. No crear copias adicionales ni
+  presentar Fusión como validado por las pruebas realizadas con CLIP.
 - **Índice Hito 1:** `data/embeddings.npy` + `data/ids.npy` + `products.csv`
   (generados por `scripts/generar_embeddings.py` sobre `images_normalized`).
 - **Índice Hito 2 (Sala 4):** `data/embeddings_clip.npy` + `data/ids.npy`
@@ -128,7 +153,7 @@ La API NO debe cerrarse ante:
 
 ## 10. Flujo de trabajo estándar para cada tarea
 
-1. Leer este archivo y el docx si aplica.
+1. Leer este archivo y la documentación vigente aplicable (§1).
 2. Explorar el código existente ANTES de modificar (buscar patrones, no asumir).
 3. Implementar en la estructura canónica, sin duplicar motores ni índices.
 4. Verificar: `python -m py_compile` de los archivos tocados y probar la API
@@ -137,11 +162,18 @@ La API NO debe cerrarse ante:
 6. Actualizar `AI_LOG.md` con el prompt de IA usado (requisito del proyecto).
 7. NO commitear a menos que lo pida el usuario explícitamente.
 
-## 11. Medio ambiente de ejecución (Linux/Arch, shell fish)
+## 11. Medio ambiente de ejecución
+
+- Comprobar el entorno real antes de ejecutar comandos. El repositorio se
+  trabaja también desde Windows/PowerShell y se probó en Ubuntu/Docker dentro
+  de VirtualBox por SSH. Adaptar comandos y activación de venv al sistema/shell.
+- Para staging y acceso, seguir `docs/sala6/STAGING_VIRTUALBOX.md`.
+- Las indicaciones fish siguientes aplican únicamente a ese entorno Linux.
 
 - No usar pip del sistema (PEP 668). Usar el venv: `source .venv/bin/activate.fish`.
 - La API se levanta con: `uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload`.
-- La interfaz con: `streamlit run frontend/app.py`.
+- La interfaz principal Next.js se inicia desde `frontend/` con `npm run dev`
+  o mediante Docker. `streamlit run frontend/app.py` es el cliente anterior.
 - El torch instalado es la build CPU (sin NVIDIA), por la falta de GPU y por
   espacio en `/tmp` (tmpfs). No reinstalar torch CUDA.
 - Si falta espacio al instalar, apuntar `TMPDIR=/var/tmp` (el disco tiene ~400 GB).
