@@ -50,3 +50,7 @@ frontend/.theme_pref.json
 # Backups locales generados por scripts/backup.sh
 backups/
 *.tar.gz
+
+# Estado local de las alertas (scripts/health_alert.py)
+/.alert_state.json
+/.alert_state.json.tmp

@@ -339,7 +339,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Healthchecks y readiness en `docker-compose.yml`.
 - [ ] Backups de `data/` y `qdrant_data/`.
 - [ ] Monitoreo (escrito; falta probar con Docker/VPS).
-- [ ] Alertas.
+- [x] Alertas.
 - [x] Logs con rotación (responsable: compañero).
 - [ ] Rollback documentado (imagen/tag anterior).
 
@@ -356,10 +356,8 @@ Según `AGENTS.md` y especificaciones del proyecto:
 
 ### 3.6 Solo si es Hito 3
 
-- [ ] 15.000 diseños normalizados.
-- [ ] Embeddings de todo el banco.
-- [ ] 60 consultas (10 exactas, 10 cambios pequeños, 10 recoloreadas/logos, 10 recortadas, 10 mockups, 10 personas).
-- [ ] Comparación Hito 2 vs. Hito 3.
+
+
 - [ ] Plugin WordPress instalable.
 - [ ] Buscador visual dentro de WordPress.
 - [ ] Configuración de URL/timeout/máximo de resultados.
