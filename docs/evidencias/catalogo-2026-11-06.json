@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-06",
+  "sourceCommit": "705e1fa6",
+  "catalogStatus": 200,
+  "csvCount": 577,
+  "apiCount": 577,
+  "differentRecords": [],
+  "uniqueIds": 577,
+  "images": [
+    {
+      "contentType": [
+        "image/png"
+      ],
+      "bytes": 652236,
+      "status": 200,
+      "id": "SBX-01-0001"
+    },
+    {
+      "contentType": [
+        "image/png"
+      ],
+      "bytes": 1567741,
+      "status": 200,
+      "id": "SBX-01-0002"
+    },
+    {
+      "contentType": [
+        "image/png"
+      ],
+      "bytes": 367897,
+      "status": 200,
+      "id": "SBX-01-0003"
+    },
+    {
+      "contentType": [
+        "image/png"
+      ],
+      "bytes": 300202,
+      "status": 200,
+      "id": "SBX-01-0004"
+    },
+    {
+      "contentType": [
+        "image/png"
+      ],
+      "bytes": 251876,
+      "status": 200,
+      "id": "SBX-01-0005"
+    },
+    {
+      "contentType": [
+        "image/png"
+      ],
+      "bytes": 484741,
+      "status": 200,
+      "id": "SBX-01-0006"
+    }
+  ]
+}

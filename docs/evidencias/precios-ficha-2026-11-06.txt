@@ -1,0 +1,115 @@
+
+  - generic: Atelier Sublitex · Reconocimiento Visual de Camisetas
+  - heading "Encuentra o confecciona cualquier camiseta deportiva a partir de una foto" [level=1]
+  - paragraph: Sube una foto tomada en tienda, captura de partido o diseño digital. El buscador visual identifica el diseño y te conecta con el catálogo de confección a medida de alta gama.
+  - generic: "¿Deseas probar ahora? Selecciona un modelo de muestra:"
+  - generic: 1 clic para analizar
+  - button "Camiseta Sublitex SBX-01-0001 Camiseta Sublitex SBX-01-0001 Atelier Sublitex":
+    - img "Camiseta Sublitex SBX-01-0001"
+    - generic: Camiseta Sublitex SBX-01-0001
+    - generic: Atelier Sublitex
+  - button "Camiseta Sublitex SBX-01-0002 Camiseta Sublitex SBX-01-0002 Atelier Sublitex":
+    - img "Camiseta Sublitex SBX-01-0002"
+    - generic: Camiseta Sublitex SBX-01-0002
+    - generic: Atelier Sublitex
+  - button "Camiseta Sublitex SBX-01-0003 Camiseta Sublitex SBX-01-0003 Atelier Sublitex":
+    - img "Camiseta Sublitex SBX-01-0003"
+    - generic: Camiseta Sublitex SBX-01-0003
+    - generic: Atelier Sublitex
+  - button "Camiseta Sublitex SBX-01-0004 Camiseta Sublitex SBX-01-0004 Atelier Sublitex":
+    - img "Camiseta Sublitex SBX-01-0004"
+    - generic: Camiseta Sublitex SBX-01-0004
+    - generic: Atelier Sublitex
+  - button "Camiseta Sublitex SBX-01-0005 Camiseta Sublitex SBX-01-0005 Atelier Sublitex":
+    - img "Camiseta Sublitex SBX-01-0005"
+    - generic: Camiseta Sublitex SBX-01-0005
+    - generic: Atelier Sublitex
+  - button "Camiseta Sublitex SBX-01-0006 Camiseta Sublitex SBX-01-0006 Atelier Sublitex":
+    - img "Camiseta Sublitex SBX-01-0006"
+    - generic: Camiseta Sublitex SBX-01-0006
+    - generic: Atelier Sublitex
+  - text: Motor de búsqueda
+  - generic: CLIP consulta la colección vectorial canónica de Qdrant
+  - button "CLIP + Qdrant"
+  - generic: Imagen Cargada y Lista para Analizar
+  - generic: sbx-01-0003.jpg
+  - generic: 359.3 KB
+  - generic: ·
+  - generic: "Motor: CLIP + Qdrant"
+  - button "Buscar en Catálogo":
+    - generic: Buscar en Catálogo
+  - button "Cambiar"
+  - generic: Foto de Consulta
+  - img "Foto de consulta"
+  - generic: Reconocimiento & Comparación Textil
+  - generic: Aísla el torso de la prenda, neutralizando fondos y percheros.
+  - generic: Extrae la paleta cromática, geometría de bastones y escudos.
+  - generic: Entrega ficha técnica con opciones de tela sublimada para tu equipo.
+  - generic: "Modo: Multimodal Fashion-CLIP"
+  - generic: Listo para buscar
+  - heading "Modelos Coincidentes Encontrados (1)" [level=2]
+  - paragraph: Clasificados por similitud de patronaje, estructura gráfica y paleta de color.
+  - button "Ver ficha técnica de Camiseta Sublitex SBX-01-0003":
+    - img "SBX-01-0003"
+    - generic: Ver Ficha Técnica
+  - generic: "#1"
+  - generic: ·
+  - generic: Código SBX-01-0003
+  - generic: ·
+  - generic: Catálogo Oficial
+  - heading "SBX-01-0003" [level=3]
+  - generic: "0.9023"
+  - generic: Score de similitud · Alta similitud
+  - generic: ·
+  - generic: Confección a medida
+  - generic: ·
+  - generic: Bajo pedido
+  - generic: ·
+  - generic: "Corte: A medida"
+  - generic: "Tejido: Tejido técnico sublimable (a definir)"
+  - generic: "Precio equipo (12+): A consultar"
+  - generic: "Tiempo de entrega: A consultar"
+  - button "Comparar con mi foto":
+    - generic: Comparar con mi foto
+  - button "Ver modelo" [active]:
+    - generic: Ver modelo
+  - link "Ver producto":
+    - /url: https://ejemplo.com/SBX-01-0003
+    - generic: Ver producto
+  - link "Cotizar Confección":
+    - /url: https://wa.me/?text=Hola%20Atelier%20Sublitex%2C%20me%20interesa%20cotizar%20el%20modelo%20SBX-01-0003%20(SBX-01-0003)%20que%20encontr%C3%A9%20por%20b%C3%BAsqueda%20visual.%20Cantidad%3A%20____%20Tallas%3A%20____%20Nombres%2Fdorsales%3A%20____%20Logos%3A%20____
+    - generic: Cotizar Confección
+  - text: Ficha Técnica & Patronaje Atelier
+  - heading "Camiseta Sublitex SBX-01-0003" [level=3]
+  - button:
+  - img "Camiseta Sublitex SBX-01-0003"
+  - paragraph: Modelo del catálogo oficial. Confección en sublimación a medida con tejidos técnicos. Cotización según cantidad, tallas y acabados.
+  - generic: Tejido Técnico
+  - generic: Tejido técnico sublimable (a definir)
+  - generic: Cuello & Acabado
+  - generic: A elegir según modelo
+  - generic: Corte & Mangas
+  - generic: A elegir según modelo
+  - generic: Técnica de Impresión
+  - generic: Sublimación digital UltraHD
+  - generic: Muestra Individual
+  - text: A consultar
+  - generic: Equipo Completo (12+)
+  - text: A consultar
+  - generic: Liga / Torneo (30+)
+  - text: A consultar
+  - button "Cerrar"
+  - link "Cotizar por WhatsApp":
+    - /url: https://wa.me/?text=Hola%20Atelier%20Sublitex%2C%20vi%20la%20ficha%20t%C3%A9cnica%20de%20la%20camiseta%20Camiseta%20Sublitex%20SBX-01-0003%20(C%C3%B3digo%3A%20SBX-01-0003)%20y%20deseo%20cotizarla%20para%20mi%20equipo.
+    - generic: Cotizar por WhatsApp
+- contentinfo:
+  - generic: Atelier Sublitex
+  - generic: ·
+  - generic: Alta Sastrería Deportiva & Búsqueda Visual de Camisetas
+  - link "Buscador por Imagen":
+    - /url: /search
+  - link "Catálogo de Prendas":
+    - /url: /catalog
+  - link "Muestrario de Casos":
+    - /url: /eval
+  - button "Cotización Directa"

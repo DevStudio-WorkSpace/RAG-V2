@@ -25,6 +25,33 @@ Cada casilla requiere resultado observado y evidencia. Las pruebas automáticas 
 
 ## Siguiente paso de frontend
 
+### Validación del catálogo integrado — 2026-11-06
+
+Se transfirió el frontend del commit `705e1fa6` a la copia de VirtualBox, se
+construyó su imagen (build/TypeScript correctos) y se recreó únicamente el servicio
+frontend. Corre con UID 1000 (`node`) y su healthcheck quedó saludable. No se
+reconstruyó la API ni se validaron los nuevos ajustes de HTTPS/proxy o las nuevas
+versiones de requirements.txt. La prueba utiliza el proxy HTTP que ya estaba
+ejecutándose y el túnel local de staging.
+
+- [x] `/api/catalog` responde 200: 577 productos y 577 IDs únicos; todos los registros y su orden coinciden con el CSV local, comparando ID, nombre, imagen, proveedor y URL.
+- [x] Las seis imágenes de muestra responden 200 con tipo `image/png`; en navegador se comprobaron cargadas, con ancho natural de 2000 px.
+- [x] Catálogo con 577 modelos y paginación a la página 2; filtro por SBX-01-0001 reduce a un modelo y vuelve a página 1.
+- [x] Ficha del catálogo abre el modelo filtrado. El enlace «Ver producto» coincide con la URL del CSV. No se comprobó un destino comercial real.
+- [x] «Buscar Similares» lleva al buscador. La muestra SBX-01-0001 bloquea controles mientras procesa, devuelve ese ID en Top 1 (0.8755) y los reactiva al terminar.
+- [x] «Ver modelo» desde ese resultado abre la ficha de SBX-01-0001 y puede cerrarse.
+- [x] Petición curl al proxy `/api/search` con `data/consultas/SBX-01-0010_sin_marco.jpg`, CLIP/auto: 200 y Top 1 SBX-01-0010 (0.7749).
+- [ ] Sustituir URLs de ejemplo por destinos reales acordados por el equipo: el enlace comprobado apunta a `https://ejemplo.com/SBX-01-0001`.
+- [x] Precios sin definir corregidos: resultado y fichas de búsqueda/catálogo muestran «A consultar» en las siete ubicaciones afectadas. Verificado en navegador con SBX-01-0003 tras reconstruir frontend; build/TypeScript correctos, lint sin errores (una advertencia previa en app.js), servicio saludable y curl de búsqueda 200. [Captura de ficha corregida](../evidencias/precios-corregidos-2026-11-06.png); árboles visibles de [resultado](../evidencias/precios-resultado-2026-11-06.txt), [ficha de búsqueda](../evidencias/precios-ficha-2026-11-06.txt) y [ficha de catálogo](../evidencias/precios-catalogo-2026-11-06.txt).
+
+Evidencias: [comparación e imágenes](../evidencias/catalogo-2026-11-06.json),
+[respuesta de búsqueda](../evidencias/catalogo-busqueda-2026-11-06.json),
+[recorrido observado](../evidencias/catalogo-recorrido-2026-11-06.txt) y
+[detalle observado](../evidencias/catalogo-detalle-2026-11-06.txt).
+El navegador no pudo generar capturas en esta ejecución; los TXT registran su
+árbol visible, no son capturas de pantalla. No se inspeccionaron visualmente los
+577 modelos ni se certificó calidad global del ranking.
+
 Revisar la adaptación a pantallas estrechas antes de pasar a un celular real.
 Comprobar, por ejemplo, anchos de 360, 390 y 768 píxeles: que no haya desbordamiento
 horizontal, que muestras, selector, botones y mensajes puedan usarse y que los

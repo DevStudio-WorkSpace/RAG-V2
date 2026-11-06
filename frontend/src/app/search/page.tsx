@@ -552,7 +552,7 @@ export default function SearchPage() {
                         <div>
                           <span className="text-[var(--foreground-subtle)]">Precio equipo (12+):</span>{" "}
                           <span className="font-bold font-mono text-[#C5A880] tabular-nums">
-                            S/ {matchedJersey.priceTeam} c/u
+                            A consultar
                           </span>
                         </div>
                         <div>
@@ -757,19 +757,19 @@ export default function SearchPage() {
               <div>
                 <span className="text-[var(--foreground-subtle)] block text-[11px]">Muestra Individual</span>
                 <span className="font-bold font-mono text-[var(--foreground-heading)] text-sm">
-                  S/ {selectedJerseyModal.priceRetail}
+                  A consultar
                 </span>
               </div>
               <div>
                 <span className="text-[var(--foreground-subtle)] block text-[11px]">Equipo Completo (12+)</span>
                 <span className="font-bold font-mono text-[#C5A880] text-sm">
-                  S/ {selectedJerseyModal.priceTeam} c/u
+                  A consultar
                 </span>
               </div>
               <div>
                 <span className="text-[var(--foreground-subtle)] block text-[11px]">Liga / Torneo (30+)</span>
                 <span className="font-bold font-mono text-emerald-400 text-sm">
-                  S/ {selectedJerseyModal.priceLeague} c/u
+                  A consultar
                 </span>
               </div>
             </div>

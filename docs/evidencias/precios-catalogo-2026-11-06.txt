@@ -1,0 +1,66 @@
+
+  - generic: Atelier Sublitex · Archivo & Confección Deportiva
+  - heading "Catálogo Oficial" [level=1]
+  - paragraph: Catálogo completo con todos los modelos disponibles. Todos los precios son a consultar. Cotiza directo por WhatsApp con cantidad, tallas y personalización.
+  - searchbox "Buscar en catálogo": SBX-01-0003
+  - generic: 1 modelos · Página 1 / 1
+  - button "Ver ficha técnica de Camiseta Sublitex SBX-01-0003" [active]:
+    - img "Camiseta Sublitex SBX-01-0003"
+    - generic: SBX-01-0003
+    - generic: Ver Ficha de Patronaje
+  - generic: Catálogo Oficial
+  - generic: ·
+  - generic: Bajo pedido
+  - generic: ·
+  - generic: A medida
+  - heading "Camiseta Sublitex SBX-01-0003" [level=3]
+  - paragraph: Modelo del catálogo oficial. Confección en sublimación a medida con tejidos técnicos. Cotización según cantidad, tallas y acabados.
+  - generic: "Precio:"
+  - text: A consultar
+  - generic: Entrega
+  - text: A consultar
+  - generic: "Código:"
+  - generic: SBX-01-0003
+  - link "Buscar Similares":
+    - /url: /search
+    - generic: Buscar Similares
+  - link "Cotizar":
+    - /url: https://wa.me/?text=Hola%20Atelier%20Sublitex%2C%20me%20interesa%20cotizar%20el%20modelo%20SBX-01-0003%20(Camiseta%20Sublitex%20SBX-01-0003)%20del%20cat%C3%A1logo%20oficial.%20Cantidad%3A%20____%20Tallas%3A%20____%20Nombres%2Fdorsales%3A%20____%20Logos%3A%20____
+    - generic: Cotizar
+  - text: Especificaciones Técnicas & Patronaje
+  - heading "Camiseta Sublitex SBX-01-0003" [level=3]
+  - button:
+  - img "Camiseta Sublitex SBX-01-0003"
+  - paragraph: Modelo del catálogo oficial. Confección en sublimación a medida con tejidos técnicos. Cotización según cantidad, tallas y acabados.
+  - generic: Tejido Recomendado
+  - generic: Tejido técnico sublimable (a definir)
+  - generic: Tipo de Cuello
+  - generic: A elegir según modelo
+  - generic: Corte de Manga
+  - generic: A elegir según modelo
+  - generic: Técnica de Sublimado
+  - generic: Sublimación digital UltraHD
+  - generic: Muestra Individual
+  - text: A consultar
+  - generic: Equipo (12+)
+  - text: A consultar
+  - generic: Liga / Torneo (30+)
+  - text: A consultar
+  - button "Cerrar"
+  - link "Ver producto":
+    - /url: https://ejemplo.com/SBX-01-0003
+    - generic: Ver producto
+  - link "Cotizar por WhatsApp":
+    - /url: https://wa.me/?text=Hola%20Atelier%20Sublitex%2C%20vi%20la%20ficha%20t%C3%A9cnica%20de%20la%20camiseta%20Camiseta%20Sublitex%20SBX-01-0003%20(C%C3%B3digo%3A%20SBX-01-0003)%20y%20deseo%20cotizarla.
+    - generic: Cotizar por WhatsApp
+- contentinfo:
+  - generic: Atelier Sublitex
+  - generic: ·
+  - generic: Alta Sastrería Deportiva & Búsqueda Visual de Camisetas
+  - link "Buscador por Imagen":
+    - /url: /search
+  - link "Catálogo de Prendas":
+    - /url: /catalog
+  - link "Muestrario de Casos":
+    - /url: /eval
+  - button "Cotización Directa"

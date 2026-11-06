@@ -269,19 +269,19 @@ export default function CatalogPage() {
               <div>
                 <span className="text-[var(--foreground-subtle)] block text-[11px]">Muestra Individual</span>
                 <span className="font-bold font-mono text-[var(--foreground-heading)] text-sm">
-                  S/ {selectedJersey.priceRetail}
+                  A consultar
                 </span>
               </div>
               <div>
                 <span className="text-[var(--foreground-subtle)] block text-[11px]">Equipo (12+)</span>
                 <span className="font-bold font-mono text-[#C5A880] text-sm">
-                  S/ {selectedJersey.priceTeam} c/u
+                  A consultar
                 </span>
               </div>
               <div>
                 <span className="text-[var(--foreground-subtle)] block text-[11px]">Liga / Torneo (30+)</span>
                 <span className="font-bold font-mono text-emerald-400 text-sm">
-                  S/ {selectedJersey.priceLeague} c/u
+                  A consultar
                 </span>
               </div>
             </div>

@@ -366,6 +366,9 @@ Según `AGENTS.md` y especificaciones del proyecto:
 
 #### Pruebas funcionales del frontend en staging
 
+- [x] Catálogo integrado desde CSV: 577 registros coincidentes, seis imágenes de muestra, filtro/paginación y recorrido muestra → resultado → ficha verificados el 2026-11-06. Ver evidencias en el registro de pruebas manuales.
+- [x] Precios sin definir: «A consultar» en resultados y fichas de búsqueda/catálogo; verificado en staging el 2026-11-06.
+- [ ] Reemplazar URLs de ejemplo por destinos acordados; el recorrido técnico no certifica esos datos comerciales.
 - [x] Estado de carga y presentación de resultados.
 - [x] Bloqueo temporal de muestras, selector, Cambiar, arrastre y Ctrl+V durante búsqueda; reactivación al terminar.
 - [x] Nueva consulta con sustitución de resultados anteriores.

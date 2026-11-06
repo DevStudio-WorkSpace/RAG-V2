@@ -1255,3 +1255,30 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 **Prompt:** «añade el que se hicieron tests en el commit, adicionalmente ahora que toca en la parte frontend? haz los cambios».
 
 **Resultado:** preparación de commit enfocado en bloqueo temporal de entradas y registro de tests. Se documentan como verificadas en staging la carga/resultados, bloqueo de muestras/selector/Cambiar/arrastre/pegado, nueva consulta, validaciones de tipo/tamaño, recuperación tras tamaño inválido y caída de API. Se conserva el alcance de cada evidencia (navegador, captura o declaración). Checklist principal e índice enlazan el registro; errores de API se vinculan a comprobaciones ya realizadas. Siguiente trabajo documentado: adaptación estrecha y luego celular real, todavía pendientes. Mensaje de commit incluirá Tests con build/TypeScript, lint 0 errores/4 advertencias, pruebas funcionales y curl. No se afirma nueva suite unitaria ni se repite testing de ejecución por cambios posteriores solo documentales. Borradores de operaciones y archivos ajenos quedan fuera. Esta instrucción autoriza el commit; no solicita un nuevo push.
+
+## Fecha: 2026-11-06 — Integración local de avances de sala-6
+
+- Prompt: «en mi repo local trae cambios, comentame que traemos».
+- Se consultó origin/sala-6 y se terminó la integración de bf2d6680 con el trabajo local 6f52707a mediante 705e1fa6.
+- Se resolvió el conflicto del checklist conservando el alcance y las evidencias de las pruebas manuales de frontend.
+- Cambios recibidos: catálogo desde products.csv, proveedor compartido de catálogo, enlace al producto, Docker sin root para frontend/proxy, healthchecks, configuración de HTTPS y versiones fijadas de dependencias Python.
+- Verificación: git diff --cached --check sin errores y ningún conflicto pendiente. No se ejecutó build local (frontend/node_modules ausente), ni se actualizó o probó la VM en esta tarea.
+- Se conservaron los cambios locales de operación, propuestas, scripts y otros archivos pendientes; no se realizó push.
+
+## Fecha: 2026-11-06 — Validación del catálogo integrado en frontend
+
+- Prompt: «avancemos con el primero», referido a probar catálogo, imágenes, muestras, búsqueda y detalle tras integrar cambios.
+- Se guardó una copia previa de frontend/configuración en la VM y se transfirió el frontend de 705e1fa6. Build Next.js/TypeScript correcto; recreado solo frontend, UID 1000, saludable. API y proxy en ejecución se conservaron; HTTPS y nuevas dependencias Python fuera de esta prueba.
+- /api/catalog respondió 200 con 577 registros únicos y coincidencia de todos los campos expuestos y su orden con products.csv local. Seis imágenes PNG respondieron 200 y cargaron en navegador.
+- Se verificaron paginación, filtro por ID, ficha, enlace de producto, navegación a buscador, muestra SBX-01-0001 (Top 1, 0.8755), bloqueo/reactivación y apertura/cierre de detalle desde resultado. Curl con consulta sin marco SBX-01-0010 respondió 200, Top 1 esperado (0.7749).
+- Hallazgos pendientes: URLs de ejemplo y precios nulos mostrados como S/ sin importe. No se enviaron cotizaciones ni se abrieron destinos externos.
+- Evidencia JSON y árboles visibles TXT en docs/evidencias/catalogo-*. El navegador no pudo generar screenshots. Se actualizaron checklist y registro manual sin marcar validación comercial, móvil o producción.
+- No se modificó código funcional, no se hizo commit ni push. Los pendientes locales previos se conservaron.
+
+## Fecha: 2026-11-06 — Corregir presentación de precios sin definir
+
+- Prompt: «haz loscambios», sobre los precios vacíos confirmados en capturas del resultado y Ver modelo.
+- Se sustituyeron siete expresiones de precio por «A consultar» en search/page.tsx y catalog/page.tsx, coherente con los campos de precio tipados como null del catálogo actual. No se inventaron importes ni se modificaron URLs.
+- Transferido a VirtualBox, build Next.js/TypeScript correcto, lint 0 errores y 1 advertencia previa en app.js. Recreado únicamente frontend; saludable. Curl con imagen real de data/consultas respondió 200.
+- Navegador: consulta SBX-01-0003 devuelve ese ID primero (0.9023); resultado y fichas de búsqueda/catálogo muestran «A consultar». Captura y árboles visibles guardados en docs/evidencias/precios-*; checklist actualizado.
+- Se eliminó únicamente la imagen temporal de lint creada en esta tarea, recuperando espacio; se conservaron datos y servicios existentes. No se hizo commit ni push.
