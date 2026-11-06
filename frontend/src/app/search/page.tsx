@@ -28,9 +28,12 @@ export default function SearchPage() {
   const [compareModal, setCompareModal] = useState<{ query: string; match: ApiResult } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // El ref bloquea también eventos que llegan antes del siguiente render.
+  const searchInFlightRef = useRef(false);
 
   // Load image from File
   const handleFile = useCallback((f: File) => {
+    if (searchInFlightRef.current) return;
     if (!f.type.startsWith("image/")) {
       setError("Por favor sube un archivo de imagen válido (JPG, PNG o WEBP).");
       return;
@@ -51,9 +54,13 @@ export default function SearchPage() {
 
   // One-click sample selector
   const handleSelectSample = useCallback(async (sample: CatalogJersey) => {
+    if (searchInFlightRef.current) return;
+    searchInFlightRef.current = true;
+    setLoading(true);
+    setDragging(false);
+    setResult(null);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
       const res = await fetch(sample.image);
       if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
@@ -63,37 +70,48 @@ export default function SearchPage() {
       setPreview(sample.image);
 
       const { data, error: err } = await searchImage(sampleFile, searchModel);
-      setLoading(false);
       if (err) {
         setError(err);
       } else {
         setResult(data);
       }
     } catch {
-      setLoading(false);
       setError("No se pudo cargar la imagen de prueba seleccionada.");
+    } finally {
+      searchInFlightRef.current = false;
+      setLoading(false);
     }
   }, [searchModel]);
 
   // Trigger search on uploaded file
   const handleSearch = useCallback(async () => {
-    if (!file || loading) return;
+    if (!file || searchInFlightRef.current) return;
+    searchInFlightRef.current = true;
     setLoading(true);
+    setDragging(false);
+    setResult(null);
     setError(null);
-    const { data, error: err } = await searchImage(file, searchModel);
-    setLoading(false);
-    if (err) {
-      setError(err);
-    } else {
-      setResult(data);
+    try {
+      const { data, error: err } = await searchImage(file, searchModel);
+      if (err) {
+        setError(err);
+      } else {
+        setResult(data);
+      }
+    } catch {
+      setError("No se pudo completar la búsqueda. Inténtalo de nuevo.");
+    } finally {
+      searchInFlightRef.current = false;
+      setLoading(false);
     }
-  }, [file, loading, searchModel]);
+  }, [file, searchModel]);
 
   // Handle Drag & Drop
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragging(false);
+      if (searchInFlightRef.current) return;
       const f = e.dataTransfer.files[0];
       if (f) handleFile(f);
     },
@@ -108,19 +126,35 @@ export default function SearchPage() {
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.startsWith("image/")) {
           const blob = items[i].getAsFile();
-          if (blob) handleFile(blob);
+          if (blob) {
+            e.preventDefault();
+            handleFile(blob);
+          }
           break;
         }
       }
     };
+    // Impide que soltar un archivo sobre el navegador abandone la búsqueda.
+    const blockDropDuringSearch = (e: DragEvent) => {
+      if (searchInFlightRef.current) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
+      }
+    };
     window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
+    window.addEventListener("dragover", blockDropDuringSearch);
+    window.addEventListener("drop", blockDropDuringSearch);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+      window.removeEventListener("dragover", blockDropDuringSearch);
+      window.removeEventListener("drop", blockDropDuringSearch);
+    };
   }, [handleFile]);
 
   const resultados = useMemo(() => result?.resultados ?? [], [result]);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12" aria-busy={loading}>
       {/* ── 1. Hero Section ── */}
       <section className="space-y-4 text-left">
         <div className="text-[11px] font-semibold tracking-[0.22em] text-[#C5A880] uppercase">
@@ -152,7 +186,8 @@ export default function SearchPage() {
             <button
               key={sample.id}
               onClick={() => handleSelectSample(sample)}
-              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] hover:border-[#C5A880]/50 transition-all text-left group cursor-pointer active:scale-95 flex flex-col justify-between"
+              disabled={loading}
+              className="p-3 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] hover:border-[#C5A880]/50 transition-all text-left group cursor-pointer active:scale-95 flex flex-col justify-between disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-full aspect-[4/3] rounded-lg overflow-hidden bg-black/20 mb-2.5 relative">
                 <img
@@ -189,7 +224,9 @@ export default function SearchPage() {
             {MODEL_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => setSearchModel(opt.value)}
+                onClick={() => {
+                  if (!searchInFlightRef.current) setSearchModel(opt.value);
+                }}
                 disabled={loading}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                   searchModel === opt.value
@@ -207,6 +244,7 @@ export default function SearchPage() {
         <input
           ref={fileInputRef}
           type="file"
+          disabled={loading}
           accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
@@ -218,18 +256,25 @@ export default function SearchPage() {
             className={`dropzone-atelier p-8 sm:p-12 lg:p-14 text-center flex flex-col items-center justify-center min-h-[260px] sm:min-h-[280px] ${
               dragging ? "is-active" : ""
             }`}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!searchInFlightRef.current) fileInputRef.current?.click();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                fileInputRef.current?.click();
+                if (!searchInFlightRef.current) fileInputRef.current?.click();
               }
             }}
             role="button"
-            tabIndex={0}
+            tabIndex={loading ? -1 : 0}
+            aria-disabled={loading}
             aria-label="Subir imagen para buscar"
             onDragOver={(e) => {
               e.preventDefault();
+              if (searchInFlightRef.current) {
+                e.dataTransfer.dropEffect = "none";
+                return;
+              }
               setDragging(true);
             }}
             onDragLeave={() => setDragging(false)}
@@ -295,6 +340,7 @@ export default function SearchPage() {
 
                 <button
                   onClick={() => {
+                    if (searchInFlightRef.current) return;
                     setFile(null);
                     setPreview(null);
                     setResult(null);

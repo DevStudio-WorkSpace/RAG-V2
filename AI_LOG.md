@@ -1131,3 +1131,127 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 **Prompt:** «subelo».
 
 **Alcance:** commit y push a origin/sala-6 con la identidad Git existente kannodi. Incluye Dockerfile/lockfile del aporte 0f41d2fa, checklist §3.4 y verificación local de §3.5, informe, evidencia e índice documental. Se conservan fuera los borradores de backup/rollback y notas de Microsoft Project ajenas a esta entrega. Verificados remoto, contenido seleccionado, coherencia del lockfile y diff --check. Se reutilizan pruebas ya completadas (build, TypeScript, lint y 17/17 integración); no hay cambios funcionales posteriores que requieran repetirlas. Sin force push.
+
+## Fecha: 2026-11-05 — Material académico de preguntas guía
+
+**Prompt:** Preparar contenido de Canva conservando las cinco preguntas del PDF PDSD-644, notas explicativas y un proyecto Spring muy simple en la carpeta SENATI/SPRINBOOT/trabajos.
+
+**Resultado:** BibliotecaGuia, material de siete diapositivas y notas personales. Proyecto externo al alcance funcional de RAG; no se modificó su API. Demo JSF/CDI/JPA/Hibernate con H2 temporal y perfil MySQL opcional no probado. Compilación correcta; HTTP real con sesión JSF: tres préstamos aceptados, cuarto bloqueado, devolución y nuevo préstamo aceptados. Caché de segundo nivel solo propuesta. Sin commit.
+
+## Fecha: 2026-11-05 — Pregunta 1, entidades de biblioteca
+
+**Prompt:** Corregir explicación para Canva según el PDF y crear solamente el proyecto y paquete con entidades de esta pregunta en SENATI/SPRINBOOT/trabajos.
+
+**Resultado:** BibliotecaPreguntas separado de la demo anterior; entidades Libro, Usuario y Prestamo con relaciones JPA y comentarios. Incluye ISBN, título, autor, cantidad de ejemplares y fechas. Compilación Maven correcta. Sin frontend ni lógica de las otras preguntas; H2 temporal para verificar esquema, no cumplimiento MySQL del sistema final. Sin commit.
+
+## 2026-11-05 — Pregunta 2 JSF/CDI
+**Prompt:** Preparar texto Canva, explicación y código para captura de las anotaciones del ciclo de vida.
+**Resultado:** Ejemplo compilable PrestamoBean con Named, SessionScoped, Inject y PostConstruct; servicio mínimo de mensaje. Ejemplo CDI para lectura/captura, excluido del escaneo Spring; sin nueva interfaz ni persistencia de operaciones. Se utiliza SessionScoped según PDF y se distingue sesión HTTP de préstamo persistido. Compilación Maven correcta; sin commit.
+
+## 2026-11-05 — Pregunta 3, validador de préstamos
+**Prompt:** Preparar la siguiente diapositiva y código para captura.
+**Resultado:** Validador Faces managed con consulta de activos por usuario, servicio JPA con comprobación >=3 y bloqueo del usuario dentro de transacción. Productor CDI/Spring para futura integración. Compilación correcta; sin prueba de interfaz pues no hay formulario ni contenedor CDI configurado. Texto aclara que Transactional no impone por sí mismo el límite. Sin commit.
+
+## 2026-11-05 — Pregunta 4, reporte JPQL
+**Prompt:** Preparar la siguiente diapositiva y código para captura.
+**Resultado:** ReporteService con rango del mes calendario anterior, agrupación por ID y título y orden descendente por cantidad; desempate por ID. Sin límite arbitrario de diez. Compilación Maven; sin pantalla ni datos de prueba nuevos. Sin commit.
+
+## 2026-11-05 — Pregunta 5, Hibernate
+**Prompt:** Preparar última diapositiva y ejemplo para captura.
+**Resultado:** BusquedaLibroService con consulta por prefijo y paginación de veinte resultados; compilación correcta. EJEMPLO_CACHE.md explica configuración propuesta de segundo nivel, proveedor y selección de entidad; no activada ni medida. Sin interfaz conectada ni afirmación de rendimiento validado. Sin commit.
+
+## 2026-11-05 — PDF de guion de exposición
+**Prompt:** Dar un PDF del guion para leerlo cómodamente.
+**Resultado:** PDF de seis páginas con introducción, cinco preguntas y cierre, alineado a las once diapositivas; notas para señalar código en color distinto. Generado con ReportLab y renderizado para revisión visual. Sin cambios funcionales ni commit.
+
+## Fecha: 2026-11-06 — Comprobación SSH para pruebas de frontend
+
+**Prompt:** «Bien hace falta conectar ssh, prueba ahora».
+
+**Resultado:** acceso SSH a Ubuntu-Docker correcto; cuatro contenedores activos, API healthy. GET /api/health desde VM y desde Windows por túnel local 8080: status ok, backend qdrant, 577 productos/vectores y desfase_detectado false. Túnel abierto para acceso al frontend. Esta comprobación no sustituye las pruebas visuales en navegador/móvil. Sin cambios de código, commit ni push.
+
+## Fecha: 2026-11-06 — Evidencia manual de búsqueda en frontend
+
+**Prompt:** «hecho», con captura del buscador y resultado SBX-01-0001.
+
+**Resultado:** registrada solo la búsqueda conocida como aprobada: resultado único Top1 SBX-01-0001, imagen coincidente, score de similitud 0.8755. Copiada la captura a docs/evidencias/frontend-manual-2026-11-06.png y creado docs/sala6/PRUEBAS_FRONTEND_MANUALES.md con las demás pruebas pendientes. No se infiere estado de carga, errores, móvil ni pruebas no observadas. Sin cambios de código, commit ni push.
+
+## Fecha: 2026-11-06 — Evidencia visual de carga
+
+**Prompt:** captura del buscador durante la búsqueda.
+
+**Resultado:** registrado estado de carga visible (Analizando diseño, mensaje de comparación y tarjetas provisionales). Protección ante envíos repetidos y reactivación al finalizar permanecen pendientes de confirmación. Detectado texto contradictorio Listo para buscar durante carga en panel derecho, registrado como hallazgo sin modificar código. Captura conservada en docs/evidencias/frontend-carga-2026-11-06.png. Sin commit/push.
+
+## Fecha: 2026-11-06 — Aclaración del estado de imagen cargada
+
+**Prompt:** «ese listo para buscar es parte la imagen cargada, acaso esta mal q este alli, porque?».
+
+**Resultado:** el usuario aclara que la etiqueta corresponde a disponibilidad de la imagen, no al progreso de búsqueda. Se corrige el registro manual: no se considera fallo ni condición de cierre. El cambio de etiqueta queda como mejora opcional; sin cambios de interfaz, commit o push.
+
+## Fecha: 2026-11-06 — Reactivación y selección de muestras durante búsqueda
+
+**Prompt:** «Cuando le di a buscar, si se puede seleccionar otros modelos de prueba, y cuando termina y vuelve a habilitarse muestra los resultados».
+
+**Resultado:** registrada como aprobada por confirmación del usuario la reactivación al finalizar y presentación de resultados. La inspección de handleSelectSample confirma que no comprueba loading y puede iniciar otra búsqueda; las respuestas actualizan result/loading sin identificar la petición vigente. Se registra riesgo de respuestas cruzadas, sin afirmar reproducción visual de ese fallo. No se cierra protección global de concurrencia; sin cambios de código, commit ni push.
+
+## Fecha: 2026-11-06 — Bloqueo temporal de entradas de imagen
+
+**Prompt:** «bien, lo puedes implementar y luego lo puedo probar en local?».
+
+**Implementación:** frontend/src/app/search/page.tsx usa ref síncrono compartido en selección de muestras/búsqueda/carga de archivos, controles disabled durante loading y finally para liberar bloqueo ante resultado, error esperado o excepción. Se bloquean pegar y soltar durante espera, incluida prevención de navegación de archivo fuera de la zona de subida; se limpian resultados anteriores al iniciar. No se cambia la etiqueta Listo para buscar. Código sincronizado y frontend reconstruido/activado en VirtualBox.
+
+**Verificación:** documentación Next.js instalada consultada; build y TypeScript correctos, lint 0 errores/4 advertencias existentes. Navegador real mediante CUA: seis muestras, Buscar, Cambiar e input deshabilitados durante petición; habilitados al finalizar con resultado SBX-01-0002. Parada breve controlada de API solo en staging, con recuperación automática de respaldo: error del proxy visible y controles liberados; API restaurada, reintento normal correcto Top1 SBX-01-0001 y controles activos. Capturas en docs/evidencias/frontend-bloqueado-2026-11-06.png y frontend-bloqueo-resultado-2026-11-06.png; registro manual actualizado con alcance exacto. Ctrl+V/arrastre bloqueados por implementación, sin afirmar prueba manual de esas interacciones. Sin nuevo commit/push.
+
+## Fecha: 2026-11-06 — Confirmación del usuario de bloqueo y finalización
+
+**Prompt:** «Mostro resultados, completado», con captura final.
+
+**Resultado:** registradas capturas aportadas por el usuario durante carga y tras finalizar. Confirman bloqueo visual temporal, resultado SBX-01-0001 y botones Buscar/Cambiar reactivados después de la corrección. Prueba cerrada con confirmación del usuario; Ctrl+V/arrastre continúan pendientes de prueba manual. Sin cambios de código ni commit/push.
+
+## Fecha: 2026-11-06 — Nueva consulta y hallazgo de ranking
+
+**Prompt:** «1. selecciona, se bloquea y carga 2. completa la descarga y muestra resultados, ya se puede seleccionar», con dos capturas.
+
+**Resultado:** registrado flujo de nueva consulta SBX-01-0006 con bloqueo/carga, nueva respuesta y reactivación confirmada por el usuario. Capturas conservadas. Se registra aparte un hallazgo de calidad: el resultado correcto SBX-01-0006 aparece segundo (0.5731), detrás de SBX-02-0149 (0.7838); se anuncian tres resultados, pero solo se ven las dos primeras tarjetas. Frontend aprobado para este flujo; no se concluye calidad global del motor ni se modifica ranking. Sin cambios de código, commit o push.
+
+## Fecha: 2026-11-06 — Rechazo visual de archivo inválido
+
+**Prompt:** «no deja», con captura del mensaje de archivo no válido.
+
+**Resultado:** registrada como aprobada la validación visible de archivo inválido; la captura muestra los formatos JPG/PNG/WEBP y conserva la zona de carga. No se infiere extensión concreta ni petición enviada a API. Recuperación cargando imagen válida sin recargar continúa pendiente. Evidencia guardada; sin cambios de código, commit/push.
+
+## Fecha: 2026-11-06 — Foto externa procesada en frontend
+
+**Prompt:** «adjunte la imagen, cargando... luego me salieron los resultados», con dos capturas.
+
+**Resultado:** registrada la carga de foto externa, procesamiento y presentación de respuesta con cinco resultados anunciados; capturas visibles de las dos primeras tarjetas, sin afirmar id correcto o calidad global. No se marca recuperación sin recargar tras archivo inválido porque hubo reinicio de PC entre pruebas. Fixture PNG 16x16 creada en evaluation/fixtures/tiny-16.png para la siguiente prueba de tamaño mínimo. Sin cambios de código de aplicación, commit/push.
+
+## Fecha: 2026-11-06 — Mensaje visible de imagen demasiado pequeña
+
+**Prompt:** captura tras buscar con tiny-16.png.
+
+**Resultado:** registrada validación de tamaño mínimo: mensaje explícito 16x16 y mínimo 32px por lado; controles disponibles. Recuperación con imagen válida sin recargar permanece pendiente. Captura guardada; sin cambios de código, commit/push.
+
+## Fecha: 2026-11-06 — Recuperación tras imagen pequeña confirmada
+
+**Prompt:** «hecho, le di a cambiar y me dejo volver a adjuntar y buscar imagen», con captura final.
+
+**Resultado:** marcada recuperación tras tiny-16.png: Cambiar permite adjuntar foto válida y obtener resultados con controles activos y sin error anterior. Se conserva registro textual de la evidencia sin copiar la captura con pestañas de otras actividades. No se infiere calidad del ranking ni recuperación específica tras archivo no imagen. Sin cambios de código, commit/push.
+
+## Fecha: 2026-11-06 — Arrastre bloqueado durante búsqueda
+
+**Prompt:** «no no me deja adjuntar mas cosas», con captura de arrastre durante carga.
+
+**Resultado:** registrada prueba de arrastre bloqueado: símbolo de prohibición y consulta actual conservada mientras procesa. Ctrl+V sigue pendiente de confirmación específica; no se infiere su prueba de la captura. Sin cambios de código, commit/push.
+
+## Fecha: 2026-11-06 — Pegado bloqueado confirmado
+
+**Prompt:** «si, tambien», en respuesta a si Ctrl+V durante carga conservó la imagen actual.
+
+**Resultado:** marcada como aprobada por declaración explícita del usuario la prueba de bloqueo de pegado durante búsqueda. Quedan comprobados selector, muestras, arrastre y pegado durante espera; no se afirma captura específica del portapapeles. Sin cambios de código, commit/push.
+
+## Fecha: 2026-11-06 — Entrega de bloqueo y tests funcionales
+
+**Prompt:** «añade el que se hicieron tests en el commit, adicionalmente ahora que toca en la parte frontend? haz los cambios».
+
+**Resultado:** preparación de commit enfocado en bloqueo temporal de entradas y registro de tests. Se documentan como verificadas en staging la carga/resultados, bloqueo de muestras/selector/Cambiar/arrastre/pegado, nueva consulta, validaciones de tipo/tamaño, recuperación tras tamaño inválido y caída de API. Se conserva el alcance de cada evidencia (navegador, captura o declaración). Checklist principal e índice enlazan el registro; errores de API se vinculan a comprobaciones ya realizadas. Siguiente trabajo documentado: adaptación estrecha y luego celular real, todavía pendientes. Mensaje de commit incluirá Tests con build/TypeScript, lint 0 errores/4 advertencias, pruebas funcionales y curl. No se afirma nueva suite unitaria ni se repite testing de ejecución por cambios posteriores solo documentales. Borradores de operaciones y archivos ajenos quedan fuera. Esta instrucción autoriza el commit; no solicita un nuevo push.

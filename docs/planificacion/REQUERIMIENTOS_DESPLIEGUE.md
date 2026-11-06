@@ -356,12 +356,29 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] `docker compose config` sin errores.
 - [x] `GET /health` responde 200 y muestra `desfase_detectado=false`.
 - [x] `POST /search/image` con imagen real devuelve Top 5 correcto.
-- [ ] Archivo inválido → 400.
-- [ ] Imagen <32 px → 400.
-- [ ] Imagen externa → 200 sin cerrar el servidor.
+- [x] Archivo inválido → 400 en pruebas de API de staging; mensaje de rechazo comprobado manualmente en frontend. Recuperación específica posterior pendiente.
+- [x] Imagen <32 px → 400 en staging; mensaje visible y recuperación con imagen válida comprobados manualmente.
+- [x] Imagen externa procesada y resultados mostrados sin cerrar el servicio en staging. La calidad de esas coincidencias se evalúa aparte.
+  - [ ] Repetir las comprobaciones anteriores en el entorno definitivo si se publica.
 - [ ] Medir p95 con `clip` y con `fusion`.
 - [x] Verificar en staging que el frontend usa `/api/search` y el proxy server-side llega a `http://api:8000`, sin exigir una API en el localhost del cliente. Comprobado desde Windows a la VM por túnel SSH el 2026-11-05; ver [pruebas y límites](../sala6/FRONTEND_NPM_CI.md).
   - [ ] Repetir con dominio/HTTPS y acceso externo en el despliegue final. La API interna puede permanecer sin exposición pública directa.
+
+#### Pruebas funcionales del frontend en staging
+
+- [x] Estado de carga y presentación de resultados.
+- [x] Bloqueo temporal de muestras, selector, Cambiar, arrastre y Ctrl+V durante búsqueda; reactivación al terminar.
+- [x] Nueva consulta con sustitución de resultados anteriores.
+- [x] Mensaje ante caída de API, controles liberados y reintento correcto tras restaurarla.
+- [ ] Recuperación tras archivo inválido mediante imagen válida, sin recargar.
+- [ ] Adaptación a pantallas estrechas; es el siguiente paso de frontend.
+- [ ] Prueba en celular real (distinta de simular un ancho móvil).
+- [ ] Estado sin resultados y tiempo agotado mediante casos controlados.
+
+Registro y capturas: [pruebas manuales del frontend](../sala6/PRUEBAS_FRONTEND_MANUALES.md).
+Build Next.js/TypeScript correcto; lint con 0 errores y 4 advertencias preexistentes.
+Se realizaron pruebas de navegador, pruebas manuales del usuario y curl de imagen real;
+no se declara una suite nueva de tests unitarios ni validación de producción.
 
 ### 3.6 Solo si es Hito 3
 
