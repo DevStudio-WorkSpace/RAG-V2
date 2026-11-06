@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { CATALOG_JERSEYS, type CatalogJersey } from "@/lib/catalog";
+import { type CatalogJersey } from "@/lib/catalog";
+import { useCatalog } from "@/lib/catalog-context";
 import { identifyCountry } from "@/lib/countries";
 import type { SearchResult, ApiResult } from "@/lib/types";
 import { searchImage, imageUrl } from "@/lib/api";
@@ -15,6 +16,7 @@ const MODEL_OPTIONS: Array<{ value: SearchModel; label: string; desc: string }> 
 ];
 
 export default function SearchPage() {
+  const { catalog } = useCatalog();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<SearchResult | null>(null);
@@ -148,7 +150,7 @@ export default function SearchPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {CATALOG_JERSEYS.slice(0, 6).map((sample) => (
+          {catalog.slice(0, 6).map((sample) => (
             <button
               key={sample.id}
               onClick={() => handleSelectSample(sample)}
@@ -410,12 +412,8 @@ export default function SearchPage() {
               const pct = Math.max(0, Math.min(100, scoreValue * 100));
               const imgSrc = imageUrl(r.imagen);
               const country = identifyCountry(r.nombre, r.id);
-              const matchedJersey = CATALOG_JERSEYS.find(
+              const matchedJersey = catalog.find(
                 (j) => j.id === r.id || r.nombre.includes(j.team) || j.name.includes(r.nombre)
-              );
-
-              const whatsappText = encodeURIComponent(
-                `Hola Atelier Sublitex, vi la camiseta ${r.nombre} (ID: ${r.id}) en su buscador con score de similitud ${scoreValue.toFixed(4)} y deseo cotizar la confección para mi equipo.`
               );
 
               return (
@@ -541,6 +539,18 @@ export default function SearchPage() {
                 <Icons.Info className="w-3.5 h-3.5" />
                 <span>Ver modelo</span>
               </button>
+            )}
+
+            {r.url && (
+              <a
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-lg text-xs font-semibold border border-[var(--border)] bg-[var(--input-bg)] hover:border-[#C5A880]/50 text-[var(--foreground)] flex items-center gap-1.5 transition-all"
+              >
+                <Icons.ExternalLink className="w-3.5 h-3.5 text-[#C5A880]" />
+                <span>Ver producto</span>
+              </a>
             )}
                       </div>
 

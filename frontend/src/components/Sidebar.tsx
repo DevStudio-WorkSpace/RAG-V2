@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Icons } from "./Icons";
-import { CATALOG_JERSEYS } from "@/lib/catalog";
+import { useCatalog } from "@/lib/catalog-context";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -12,6 +12,7 @@ interface SidebarProps {
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
 
 export default function Sidebar({ sidebarOpen, onClose }: SidebarProps) {
+  const { catalog } = useCatalog();
   const [productId, setProductId] = useState<string>("");
   const [quantity, setQuantity] = useState(12);
   const [sizes, setSizes] = useState<Record<string, number>>({
@@ -28,7 +29,7 @@ export default function Sidebar({ sidebarOpen, onClose }: SidebarProps) {
   const totalQty = Object.values(sizes).reduce((a, b) => a + b, 0);
   const qty = totalQty > 0 ? totalQty : quantity;
 
-  const selectedProduct = CATALOG_JERSEYS.find((j) => j.id === productId);
+  const selectedProduct = catalog.find((j) => j.id === productId);
 
   const toggleSize = (s: string, delta: number) => {
     setSizes((prev) => {
@@ -102,7 +103,7 @@ export default function Sidebar({ sidebarOpen, onClose }: SidebarProps) {
               className="w-full px-3 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:outline-none focus:border-[#C5A880]/60"
             >
               <option value="">Por definir (enviar imagen/referencia)</option>
-              {CATALOG_JERSEYS.slice(0, 80).map((j) => (
+              {catalog.slice(0, 80).map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.id} - {j.name}
                 </option>

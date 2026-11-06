@@ -25,11 +25,12 @@ export async function GET(
 
     // Candidate directories to look for images
     const candidateDirs = [
+      process.env.IMAGES_DIR,
       path.join(process.cwd(), 'public', 'images'),
       path.join(process.cwd(), 'public'),
       path.join(process.cwd(), 'src', 'assets', 'images'),
       path.join(process.cwd(), '..', 'data', 'images_normalized'),
-    ];
+    ].filter((dir): dir is string => Boolean(dir));
 
     let foundPath: string | null = null;
 

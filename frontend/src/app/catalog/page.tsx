@@ -2,26 +2,28 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { CATALOG_JERSEYS, type CatalogJersey } from "@/lib/catalog";
+import { type CatalogJersey } from "@/lib/catalog";
+import { useCatalog } from "@/lib/catalog-context";
 import { Icons } from "@/components/Icons";
 
 const ITEMS_PER_PAGE = 24;
 
 export default function CatalogPage() {
+  const { catalog, loading } = useCatalog();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedJersey, setSelectedJersey] = useState<CatalogJersey | null>(null);
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (q === "") return CATALOG_JERSEYS;
-    return CATALOG_JERSEYS.filter((jersey) => {
+    if (q === "") return catalog;
+    return catalog.filter((jersey) => {
       return (
         jersey.id.toLowerCase().includes(q) ||
         jersey.name.toLowerCase().includes(q)
       );
     });
-  }, [searchQuery]);
+  }, [searchQuery, catalog]);
 
   useEffect(() => {
     setPage(1);
@@ -72,7 +74,7 @@ export default function CatalogPage() {
 
         <div className="flex items-center gap-2 text-xs text-[var(--foreground-muted)]">
           <span className="px-2.5 py-1 rounded-lg border border-[var(--border)] bg-[var(--input-bg)]">
-            {filtered.length} modelos · Página {safePage} / {totalPages}
+            {loading ? "Cargando catálogo..." : `${filtered.length} modelos · Página ${safePage} / ${totalPages}`}
           </span>
         </div>
       </section>
@@ -80,10 +82,6 @@ export default function CatalogPage() {
       {/* ── Product Grid ── */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {paged.map((jersey) => {
-          const whatsappQuote = encodeURIComponent(
-            `Hola Atelier Sublitex, me interesa cotizar la camiseta ${jersey.name} (Código: ${jersey.id}) que vi en su catálogo para mi equipo.`
-          );
-
           return (
             <div
               key={jersey.id}
@@ -295,6 +293,17 @@ export default function CatalogPage() {
               >
                 Cerrar
               </button>
+              {selectedJersey.url && (
+                <a
+                  href={selectedJersey.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-[var(--border)] text-[var(--foreground)] hover:border-[#C5A880]/50 flex items-center gap-2"
+                >
+                  <Icons.ExternalLink className="w-3.5 h-3.5 text-[#C5A880]" />
+                  <span>Ver producto</span>
+                </a>
+              )}
               <a
                 href={`https://wa.me/?text=${encodeURIComponent(
                   `Hola Atelier Sublitex, vi la ficha técnica de la camiseta ${selectedJersey.name} (Código: ${selectedJersey.id}) y deseo cotizarla.`
