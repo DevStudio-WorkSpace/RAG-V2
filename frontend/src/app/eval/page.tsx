@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Icons } from "@/components/Icons";
-import { CATALOG_JERSEYS } from "@/lib/catalog";
+import { useCatalog } from "@/lib/catalog-context";
 
 export default function EvalPage() {
-  const samples = CATALOG_JERSEYS.slice(0, 12);
+  const { catalog } = useCatalog();
+  const samples = catalog.slice(0, 12);
 
   return (
     <div className="space-y-10 sm:space-y-12">
@@ -70,7 +71,7 @@ export default function EvalPage() {
           href="/catalog"
           className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-[#C5A880] hover:bg-[#D4AF37] text-[#0A0D14] flex items-center gap-2"
         >
-          <span>Ver catálogo completo ({CATALOG_JERSEYS.length} modelos)</span>
+          <span>Ver catálogo completo ({catalog.length} modelos)</span>
           <Icons.ArrowRight className="w-4 h-4" />
         </Link>
       </div>

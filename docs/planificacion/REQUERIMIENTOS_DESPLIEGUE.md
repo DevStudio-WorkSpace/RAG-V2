@@ -303,7 +303,14 @@ Según `AGENTS.md` y especificaciones del proyecto:
 
 ---
 
-## 3. Checklist mínimo antes de pedir el “go”
+ en requirements _(completado)_.
+- [x] `package-lock.json` + `npm ci` en frontend. Aporte `0f41d2fa` incorporado; instalación, build y TypeScript verificados en Docker el 2026-11-05. Ver [evidencia frontend](../sala6/FRONTEND_NPM_CI.md).
+- [x] Imagen de Qdrant con tag fijo (no `:latest`).
+- [x] `.env` por secretos, sin `COPY .env*`.
+- [x] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
+- [ ] Volumen para caché de Hugging Face en el despliegue principal.
+  - [x] Completado y probado en staging: volumen `hf_cache` en `docker-compose.staging.yml`, permisos de escritura corregidos y descarga/carga de CLIP verificadas (2026-11-04).
+  - [ ] Incorporar y verificar el volumen en la configuración principal antes de cerrar este requisito de despliegue.## 3. Checklist mínimo antes de pedir el “go”
 
 ### 3.1 Producto y datos
 
@@ -314,10 +321,10 @@ Según `AGENTS.md` y especificaciones del proyecto:
 
 ### 3.2 Arquitectura
 
-- [ ] Elegir backend único: `.npy` o Qdrant.
+- [x] Elegir backend único: `.npy` o Qdrant.
 - [ ] Si es Qdrant: migrar, crear snapshot y verificar la colección al arranque.
-- [ ] Eliminar o documentar los endpoints duplicados.
-- [ ] Definir modelo por defecto (`clip` si no hay GPU).
+- [x] Eliminar o documentar los endpoints duplicados.
+- [x] Definir modelo por defecto (`clip` si no hay GPU).
 - [ ] Medir latencia p50/p95 con carga real.
 
 ### 3.3 Seguridad
@@ -336,14 +343,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 
 - [x] `.dockerignore` en raíz y frontend _(completado)_.
 - [x] Torch CPU instalado explícitamente en Dockerfile _(completado)_.
-- [x] Versiones de Python pineadas en requirements _(completado)_.
-- [x] `package-lock.json` + `npm ci` en frontend. Aporte `0f41d2fa` incorporado; instalación, build y TypeScript verificados en Docker el 2026-11-05. Ver [evidencia frontend](../sala6/FRONTEND_NPM_CI.md).
-- [x] Imagen de Qdrant con tag fijo (no `:latest`).
-- [x] `.env` por secretos, sin `COPY .env*`.
-- [x] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
-- [ ] Volumen para caché de Hugging Face en el despliegue principal.
-  - [x] Completado y probado en staging: volumen `hf_cache` en `docker-compose.staging.yml`, permisos de escritura corregidos y descarga/carga de CLIP verificadas (2026-11-04).
-  - [ ] Incorporar y verificar el volumen en la configuración principal antes de cerrar este requisito de despliegue.
+- [x] Versiones de Python pineadas
 - [x] Healthchecks y readiness en `docker-compose.yml`.
 - [ ] Backups de `data/` y `qdrant_data/`.
 - [ ] Monitoreo (escrito; falta probar con Docker/VPS).

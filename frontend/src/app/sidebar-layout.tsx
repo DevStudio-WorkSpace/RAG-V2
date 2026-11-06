@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import { Icons } from "@/components/Icons";
 import { useTheme } from "@/components/ThemeProvider";
+import { CatalogProvider } from "@/lib/catalog-context";
 
 const NAV_LINKS = [
   { href: "/search", label: "Buscador Visual" },
@@ -22,6 +23,7 @@ export default function SidebarLayout({ children }: { children: ReactNode }) {
   const closeMobileNav = () => setMobileNavOpen(false);
 
   return (
+    <CatalogProvider>
     <div className="min-h-screen flex flex-col w-full bg-[var(--bg-main)] text-[var(--foreground)] antialiased">
       {/* Cotizador */}
       <Sidebar
@@ -179,5 +181,6 @@ export default function SidebarLayout({ children }: { children: ReactNode }) {
         </div>
       </footer>
     </div>
+    </CatalogProvider>
   );
 }
