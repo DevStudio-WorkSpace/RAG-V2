@@ -201,7 +201,8 @@ Evidencia:
 - `package-lock.json` en `frontend/` para builds deterministas con `npm ci`.
 - Versión pineada de la imagen de Qdrant (`qdrant/qdrant:latest` sigue sin tag de versión fija).
 - `Dockerfile.api` hace `COPY .env* ./`, lo que puede hornear un `.env` con secretos dentro de la imagen si existe durante el build.
-- El caché de modelos de Hugging Face no se persiste en un volumen: al recrear el contenedor se vuelven a descargar CLIP/OpenCLIP/SigLIP.
+
+Cerrado en esta pasada: el caché de modelos de Hugging Face se persiste en el volumen nombrado `hf_cache` (tanto en `docker-compose.yml` como en el complemento de staging), de modo que al recrear el contenedor no se vuelven a descargar CLIP/OpenCLIP/SigLIP.
 
 ---
 
@@ -308,9 +309,11 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Imagen de Qdrant con tag fijo (no `:latest`).
 - [x] `.env` por secretos, sin `COPY .env*`.
 - [x] `NEXT_PUBLIC_API_URL` como build arg con URL pública o ruta proxy relativa.
-- [ ] Volumen para caché de Hugging Face en el despliegue principal.
+- [x] Volumen para caché de Hugging Face en el despliegue principal.
   - [x] Completado y probado en staging: volumen `hf_cache` en `docker-compose.staging.yml`, permisos de escritura corregidos y descarga/carga de CLIP verificadas (2026-11-04).
-  - [ ] Incorporar y verificar el volumen en la configuración principal antes de cerrar este requisito de despliegue.## 3. Checklist mínimo antes de pedir el “go”
+  - [x] Incorporado a la configuración principal: `docker-compose.yml` monta el volumen nombrado `hf_cache` en `/home/appuser/.cache/huggingface` (`HF_HOME` en `Dockerfile.api`) y lo declara en la sección `volumes` superior. Verificado el 2026-11-06 con `docker compose config` (principal y combinado con staging, sin errores ni montajes duplicados); el daemon no estaba disponible para una prueba de ejecución en esta máquina, por lo que la validación de escritura/descarga sigue siendo la de staging del 2026-11-04 con la misma ruta y el mismo usuario `appuser`.
+
+## 3. Checklist mínimo antes de pedir el “go”
 
 ### 3.1 Producto y datos
 

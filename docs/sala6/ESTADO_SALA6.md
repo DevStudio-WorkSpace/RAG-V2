@@ -37,7 +37,7 @@ Actualización 2026-11-05: el usuario descartó `TRABAJO.md` como requisito vige
 | Protección de recursos | /search/image tiene límite de subida y rate limit | v2 y qdrant no aplican esos mismos controles. La retención se ejecuta con nuevas búsquedas, no con un proceso periódico |
 | TLS | Caddyfile tiene auto_https off y escucha :80 | Dominio/certificado y prueba HTTPS. La casilla TLS marcada no describe esta configuración |
 | Contenedores | API no-root; redes separadas; Qdrant enlazado a localhost; recursos y rotación de logs declarados | Frontend no declara USER. No afirmar que todos son no-root; comprobar permisos de escritura de data para API |
-| Build | Dockerfiles e ignores presentes; Qdrant con versión fija | No existe package-lock.json y se usa npm install; falta volumen persistente HF_HOME y validar build completo |
+| Build | Dockerfiles e ignores presentes; Qdrant con versión fija | No existe package-lock.json y se usa npm install; falta validar build completo (el volumen persistente HF_HOME sí está en `docker-compose.yml`, validado con `docker compose config` el 2026-11-06) |
 | Salud | Healthcheck Compose consulta HTTP de /health | No verifica desfase, carga efectiva del modelo ni disponibilidad de colección Qdrant |
 | Monitoreo | Compose independiente y docs/despliegue/MONITOREO.md presentes | Levantar, configurar monitores y demostrar alerta/recuperación. La alternativa scripts/health_alert.py documentada no existe |
 | Evaluación | JSON guardado: H2 44/50 Top1 (88%), 48/50 Top5 (96%), media 4594.1 ms | H1 tiene n=0: no hay comparación H1/H2. Falta revisión humana vigente y p50/p95; no confundir media con percentiles |

@@ -1282,3 +1282,11 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - Transferido a VirtualBox, build Next.js/TypeScript correcto, lint 0 errores y 1 advertencia previa en app.js. Recreado únicamente frontend; saludable. Curl con imagen real de data/consultas respondió 200.
 - Navegador: consulta SBX-01-0003 devuelve ese ID primero (0.9023); resultado y fichas de búsqueda/catálogo muestran «A consultar». Captura y árboles visibles guardados en docs/evidencias/precios-*; checklist actualizado.
 - Se eliminó únicamente la imagen temporal de lint creada en esta tarea, recuperando espacio; se conservaron datos y servicios existentes. No se hizo commit ni push.
+
+## Fecha: 2026-11-06 - Volumen para cache de Hugging Face en el despliegue principal
+
+- Prompt: «Lo unico que ahora debo hacer es [ ] Volumen para caché de Hugging Face., solo esa parte debo hacer dame esa parte nomás que este al 100% bien para ponerle una "x"».
+- Se añadió a docker-compose.yml el montaje del volumen nombrado hf_cache en /home/appuser/.cache/huggingface (ruta de HF_HOME declarada en Dockerfile.api) dentro del servicio api, junto con la declaración superior `volumes: hf_cache:`, replicando la configuración ya probada en docker-compose.staging.yml.
+- Verificación: `docker compose config` sin errores en la configuración principal y en la combinada principal+staging (un solo montaje en la ruta destino, sin duplicados). El daemon de Docker no estaba disponible en esta máquina, por lo que no se ejecutó el contenedor; la validación de permisos de escritura y de descarga/carga de modelos sigue siendo la de staging del 2026-11-04, con la misma ruta y el mismo usuario appuser (la copia inicial de un volumen nombrado hereda la propiedad del directorio creado en la imagen).
+- Documentación: casilla «Volumen para caché de Hugging Face en el despliegue principal» y su subcasilla marcadas en docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md, retirado el punto de «Qué falta aún» correspondiente y actualizada la fila Build de docs/sala6/ESTADO_SALA6.md.
+- Sin commit ni push.

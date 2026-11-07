@@ -44,6 +44,8 @@ services:
     volumes:
       - ./data:/app/data
       - ./qdrant_data:/app/qdrant_data
+      # Caché de modelos Hugging Face (CLIP/OpenCLIP/SigLIP) persistente entre recreaciones
+      - hf_cache:/home/appuser/.cache/huggingface
     environment:
       - QDRANT_URL=http://qdrant:6333
       - "QDRANT_API_KEY=${QDRANT_API_KEY:?Defina QDRANT_API_KEY en .env}"
@@ -153,3 +155,7 @@ services:
 networks:
   backend:
   frontend_net:
+
+volumes:
+  # Persistencia del caché de modelos de Hugging Face (HF_HOME del contenedor de la API)
+  hf_cache:
