@@ -1296,3 +1296,10 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - Prompt: «hecho» y confirmación posterior de que la imagen válida se adjuntó, cargó y devolvió resultados sin recargar la página.
 - En staging, tras el rechazo de un archivo inválido, se cargó `SBX-01-0010_sin_marco.jpg`; la búsqueda terminó con Top 1 `SBX-01-0010` y score de similitud 0.9454.
 - Checklist manual y requerimientos de frontend actualizados con la prueba observada. No se ejecutaron pruebas automatizadas ni se modificó código funcional.
+
+## Fecha: 2026-11-09 — Verificación responsive del frontend
+
+- Prompt: «bien empecemos», para iniciar el checklist frontend pendiente comenzando por la adaptación a pantallas estrechas.
+- Navegador en staging revisado a 360×800, 390×844 y 768×900. No se observaron cortes; a 360 px carga y resultado Top 1 SBX-01-0002 (0.8508) se mostraron en una columna con botones refluídos; a 768 px se mantuvo la disposición de dos columnas.
+- A 360 px se cargó `tiny-16.png`; el mensaje de error (16×16; mínimo 32 px por lado) se ve completo y legible. Captura guardada en `docs/evidencias/frontend-error-mobile-360-2026-11-09.png`. La acción Cambiar queda arriba del aviso, accesible al desplazarse. `/api/health` respondió 200 con 577 productos/embeddings; una búsqueda tardó más de lo esperado, pero terminó con resultados.
+- Checklist responsive actualizado. No se modificó código ni se hizo commit/push. Siguen pendientes la prueba en celular real, el caso controlado sin resultados y el tiempo agotado.

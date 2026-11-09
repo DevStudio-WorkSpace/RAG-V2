@@ -377,7 +377,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Nueva consulta con sustitución de resultados anteriores.
 - [x] Mensaje ante caída de API, controles liberados y reintento correcto tras restaurarla.
 - [x] Recuperación tras archivo inválido: imagen válida buscada sin recargar en staging el 2026-11-09; Top 1 SBX-01-0010 (0.9454). Ver registro de pruebas manuales frontend.
-- [ ] Adaptación a pantallas estrechas; es el siguiente paso de frontend.
+- [x] Adaptación a pantallas estrechas: revisada a 360, 390 y 768 px sin cortes observados; carga, resultados y error de imagen 16×16 legibles a 360 px. Ver evidencia y alcance en el registro de pruebas manuales frontend.
 - [ ] Prueba en celular real (distinta de simular un ancho móvil).
 - [ ] Estado sin resultados y tiempo agotado mediante casos controlados.
 
