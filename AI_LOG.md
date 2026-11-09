@@ -1290,3 +1290,9 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - Verificación: `docker compose config` sin errores en la configuración principal y en la combinada principal+staging (un solo montaje en la ruta destino, sin duplicados). El daemon de Docker no estaba disponible en esta máquina, por lo que no se ejecutó el contenedor; la validación de permisos de escritura y de descarga/carga de modelos sigue siendo la de staging del 2026-11-04, con la misma ruta y el mismo usuario appuser (la copia inicial de un volumen nombrado hereda la propiedad del directorio creado en la imagen).
 - Documentación: casilla «Volumen para caché de Hugging Face en el despliegue principal» y su subcasilla marcadas en docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md, retirado el punto de «Qué falta aún» correspondiente y actualizada la fila Build de docs/sala6/ESTADO_SALA6.md.
 - Sin commit ni push.
+
+## Fecha: 2026-11-09 — Recuperación de búsqueda tras archivo inválido
+
+- Prompt: «hecho» y confirmación posterior de que la imagen válida se adjuntó, cargó y devolvió resultados sin recargar la página.
+- En staging, tras el rechazo de un archivo inválido, se cargó `SBX-01-0010_sin_marco.jpg`; la búsqueda terminó con Top 1 `SBX-01-0010` y score de similitud 0.9454.
+- Checklist manual y requerimientos de frontend actualizados con la prueba observada. No se ejecutaron pruebas automatizadas ni se modificó código funcional.

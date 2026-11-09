@@ -376,7 +376,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Bloqueo temporal de muestras, selector, Cambiar, arrastre y Ctrl+V durante búsqueda; reactivación al terminar.
 - [x] Nueva consulta con sustitución de resultados anteriores.
 - [x] Mensaje ante caída de API, controles liberados y reintento correcto tras restaurarla.
-- [ ] Recuperación tras archivo inválido mediante imagen válida, sin recargar.
+- [x] Recuperación tras archivo inválido: imagen válida buscada sin recargar en staging el 2026-11-09; Top 1 SBX-01-0010 (0.9454). Ver registro de pruebas manuales frontend.
 - [ ] Adaptación a pantallas estrechas; es el siguiente paso de frontend.
 - [ ] Prueba en celular real (distinta de simular un ancho móvil).
 - [ ] Estado sin resultados y tiempo agotado mediante casos controlados.
