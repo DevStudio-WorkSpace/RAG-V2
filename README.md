@@ -348,9 +348,11 @@ de snapshot solo cuando la colección no existe.
 - `clasico` / `original` / `legacy`: compatibilidad temporal `.npy` del Hito 1,
   solo para comparación histórica.
 
-El modelo soportado por el backend canónico es `clip` (512 dimensiones). Las
-rutas `/search/image/qdrant` y `/search/image/v2` están marcadas como
-deprecated en OpenAPI y apuntan al mismo flujo.
+El modelo soportado por el backend canónico es `clip` (512 dimensiones) y es el
+modelo por defecto en el despliegue sin GPU: la API lo expone como
+`default_model` en `/health` y el frontend lo envía siempre. Las rutas
+`/search/image/qdrant` y `/search/image/v2` están marcadas como deprecated en
+OpenAPI y apuntan al mismo flujo.
 
 ## Reglas de la evaluación (Hito 2)
 

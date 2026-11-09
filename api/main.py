@@ -45,12 +45,16 @@ MODEL_NAME = "clip-ViT-B-32"  # equivalente a openai/clip-vit-base-patch32
 logger = logging.getLogger(__name__)
 _model = None
 
-MODELOS_ETIQUETA = {"clip": "openai/clip-vit-base-patch32"}
+# Modelo por defecto del backend canónico. El despliegue objetivo es CPU
+# (torch sin CUDA), por lo que se usa CLIP de 512 dimensiones: es el único
+# modelo compatible con la colección Qdrant activa.
+DEFAULT_SEARCH_MODEL = "clip"
+MODELOS_ETIQUETA = {DEFAULT_SEARCH_MODEL: "openai/clip-vit-base-patch32"}
 
 
-def _encodificar(imagen, modelo: str = "clip"):
+def _encodificar(imagen, modelo: str = DEFAULT_SEARCH_MODEL):
     """Genera un embedding CLIP compatible con la colección Qdrant activa."""
-    if modelo != "clip":
+    if modelo != DEFAULT_SEARCH_MODEL:
         raise ValueError("La colección Qdrant activa solo admite el modelo CLIP.")
     return get_model().encode(imagen)
 
@@ -111,7 +115,7 @@ def _motor_reranked(
     min_score: float = 0.5,
 ):
     """Recupera candidatos en Qdrant y aplica el reranking visual del Hito 2."""
-    if modelo != "clip":
+    if modelo != DEFAULT_SEARCH_MODEL:
         raise ValueError("La colección Qdrant activa solo admite el modelo CLIP.")
     return search_similar_reranked(
         embedding,
@@ -177,7 +181,8 @@ def health():
             "status": "ok",
             "products": info["products"],
             "embeddings": info["embeddings"],
-            "model": MODELOS_ETIQUETA["clip"],
+            "model": MODELOS_ETIQUETA[DEFAULT_SEARCH_MODEL],
+            "default_model": DEFAULT_SEARCH_MODEL,
             "backend": "qdrant",
             "collection": info["collection"],
             "desfase_detectado": False,
@@ -260,7 +265,7 @@ def search_image(
     request: Request,
     file: UploadFile | None = File(None),
     modo: str = Form("auto"),
-    modelo: str = Form("clip"),
+    modelo: str = Form(DEFAULT_SEARCH_MODEL),
     top_k: int = Form(5, ge=1, le=50),
     color_filtro: str | None = Form(None),
     min_score: float = Form(0.5, ge=-1.0, le=1.0),
@@ -284,7 +289,7 @@ def search_image(
             status_code=400,
             content={"error": f"Modo desconocido: {modo}"},
         )
-    if modelo != "clip":
+    if modelo != DEFAULT_SEARCH_MODEL:
         return JSONResponse(
             status_code=400,
             content={
@@ -312,12 +317,12 @@ def search_image(
         etiqueta_modelo = MODELOS_ETIQUETA[modelo]
         if modo == "legacy":
             logger.warning("modo=legacy usa el índice .npy solo para evaluación histórica.")
-            embedding = _encodificar(imagen, "clip")
+            embedding = _encodificar(imagen, DEFAULT_SEARCH_MODEL)
             return search_similar(embedding, top_k=top_k)
 
         if modo == "original":
             logger.warning("modo=original usa el índice .npy solo como baseline del Hito 1.")
-            embedding = _encodificar(imagen, "clip")
+            embedding = _encodificar(imagen, DEFAULT_SEARCH_MODEL)
             resultados = search_similar(embedding, top_k=top_k)
             return {
                 "query_id": f"q_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}",
@@ -329,7 +334,7 @@ def search_image(
 
         prep = preparar_consulta(imagen)
         procesada = prep["procesada"]
-        embedding = _encodificar(procesada, "clip")
+        embedding = _encodificar(procesada, DEFAULT_SEARCH_MODEL)
 
         if modo == "clasico":
             logger.warning("modo=clasico usa el índice .npy solo como baseline del Hito 1.")

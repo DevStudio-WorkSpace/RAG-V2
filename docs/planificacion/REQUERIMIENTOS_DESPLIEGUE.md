@@ -66,7 +66,7 @@ Sin embargo, **sigue sin estar listo para un despliegue público ni para el Hito
 | **Operación**                     | Poder sostener el servicio               | Responsable de backups, monitoreo, logs, ventana de despliegue, rollback y contacto de incidentes.                                                                                                      |
 | **Repositorio/CI**                | Desplegar de forma reproducible          | Permiso de escritura/merge, deploy key o registry, y secretos de GitHub Actions si se automatiza.                                                                                                       |
 
-1. **Stack desacoplado y funcional:** Motor de búsqueda visual híbrido en FastAPI (`clip`, `openclip`, `fusion`), base de datos vectorial Qdrant y Frontend en Next.js.
+1. **Stack desacoplado y funcional:** Motor de búsqueda visual CLIP en FastAPI, base de datos vectorial Qdrant y Frontend en Next.js.
 2. **Optimizaciones de empaquetado Docker:**
    - `.dockerignore` creados en raíz y `frontend/` (reduce drásticamente el peso del build).
    - `Dockerfile.api` configurado con wheels ligeras de PyTorch CPU (`torch==2.14.1+cpu torchvision==0.29.1+cpu`), evitando descargas innecesarias de CUDA.
@@ -233,7 +233,7 @@ Evidencia:
 - `api/main.py` guarda todas las imágenes subidas en `data/queries_original/` y `data/queries_procesadas/` mediante `_guardar_versiones()`, sin límite ni caducidad.
 - No hay límite de tamaño en servidor: el cliente valida 15 MB, pero `await file.read()` acepta cualquier tamaño por `curl`.
 - No hay rate limit ni cuotas.
-- El frontend usa `fusion` por defecto (`frontend/src/app/search/page.tsx:26`), que en CPU tarda >60 s la primera consulta y ~5–6 s las siguientes.
+- El frontend usa `clip` por defecto (`frontend/src/lib/api.ts` y `frontend/src/app/search/page.tsx`), coherente con la API y la colección Qdrant; la UI ya no ofrece `fusion`. La latencia en CPU se mide por separado.
 - En la prueba local la API llegó a consumir ~2,6 GB de RAM y ~100 % de CPU al cargar/atender.
 
 **Qué falta:**
@@ -242,7 +242,6 @@ Evidencia:
 - Rate limiting.
 - Retención/borrado automático de consultas.
 - Plan de capacidad o GPU.
-- Modelo por defecto `clip` si no hay GPU.
 - Evitar devolver imágenes base64 en `auto` si no son necesarias para el contrato.
 
 ---
@@ -327,7 +326,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Elegir backend único: `.npy` o Qdrant.
 - [ ] Si es Qdrant: migrar, crear snapshot y verificar la colección al arranque.
 - [x] Eliminar o documentar los endpoints duplicados.
-- [x] Definir modelo por defecto (`clip` si no hay GPU).
+- [x] Definir modelo por defecto (`clip` si no hay GPU). Verificado el 2026-11-09: la API define `DEFAULT_SEARCH_MODEL=clip`, `/health` expone `default_model`, y el frontend Next.js y el cliente Streamlit usan `clip`; compilación Python y build/TypeScript correctos.
 - [ ] Medir latencia p50/p95 con carga real.
 
 ### 3.3 Seguridad
@@ -363,7 +362,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Imagen <32 px → 400 en staging; mensaje visible y recuperación con imagen válida comprobados manualmente.
 - [x] Imagen externa procesada y resultados mostrados sin cerrar el servicio en staging. La calidad de esas coincidencias se evalúa aparte.
   - [ ] Repetir las comprobaciones anteriores en el entorno definitivo si se publica.
-- [ ] Medir p95 con `clip` y con `fusion`.
+- [ ] Medir p95 con `clip` (modelo canónico).
 - [x] Verificar en staging que el frontend usa `/api/search` y el proxy server-side llega a `http://api:8000`, sin exigir una API en el localhost del cliente. Comprobado desde Windows a la VM por túnel SSH el 2026-11-05; ver [pruebas y límites](../sala6/FRONTEND_NPM_CI.md).
   - [ ] Repetir con dominio/HTTPS y acceso externo en el despliegue final. La API interna puede permanecer sin exposición pública directa.
 
@@ -459,7 +458,7 @@ Reglas:
 2. ¿Qué infraestructura y presupuesto se autorizan? ¿CPU o GPU?
 3. ¿Qué dominio/subdominio y quién administra DNS/TLS?
 4. ¿Se entregan datos reales y derechos de uso, o se despliega con datos de prueba y aviso explícito?
-5. ¿Backend único: `.npy` o Qdrant? ¿Modelo por defecto: `clip` o `fusion`? ¿Latencia máxima aceptable?
+5. Backend único: Qdrant; modelo por defecto: `clip` (sin GPU). Falta que el supervisor fije la latencia máxima aceptable.
 6. ¿Quién firma la revisión legal/privacidad y quién opera el servicio?
 7. Si aplica Hito 3: ¿quién da acceso al WordPress staging y a las claves de WooCommerce?
 
@@ -471,7 +470,7 @@ Reglas:
 | ------------------------------------- | --------------------------------------------------------------------- |
 | `data/products.csv`                   | 284 URLs `ejemplo.com`, nombres = ID, `imagen` `.png` vs banco `.jpg` |
 | `frontend/src/lib/catalog.ts`         | Catálogo hardcodeado, duplica `products.csv`                          |
-| `frontend/src/app/search/page.tsx:26` | Modelo por defecto `fusion`                                           |
+| `frontend/src/lib/api.ts`             | Modelo por defecto `clip`; única opción compatible con Qdrant         |
 | `frontend/Dockerfile`                 | `npm run build` sin `NEXT_PUBLIC_API_URL` como build arg              |
 | `docker-compose.yml:45`               | `NEXT_PUBLIC_API_URL=http://localhost:8000` en runtime                |
 | `docker-compose.yml`                  | Puertos `3000`, `8000`, `6333`, `6334` publicados; sin healthcheck    |

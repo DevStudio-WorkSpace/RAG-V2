@@ -1,5 +1,8 @@
 import type { HealthInfo, SearchResult, ApiResult } from "./types";
 
+// El despliegue objetivo no tiene GPU y la colección Qdrant solo admite CLIP.
+export const DEFAULT_SEARCH_MODEL = "clip";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -33,7 +36,7 @@ export async function healthCheck(): Promise<{
 
 export async function searchImage(
   file: File,
-  modelo: string = "clip"
+  modelo: string = DEFAULT_SEARCH_MODEL
 ): Promise<{ data: SearchResult | null; error: string | null }> {
   // Validación cliente: tipo y tamaño ANTES de enviar (evita viajes inútiles)
   if (!file.type.startsWith("image/")) {
