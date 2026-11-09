@@ -253,7 +253,7 @@ Evidencia:
 - **Plugin WordPress/WooCommerce:** no está en el repo. Faltan plugin instalable, buscador visual, configuración de URL/timeout y mapeo `design_id → product_id`.
 - **Catálogo duplicado en el frontend:** `frontend/src/lib/catalog.ts` tiene una lista hardcodeada de imágenes y nombres generados. Viola que `products.csv` sea la única fuente; al escalar a 15.000 o cambiar el catálogo habrá que tocar código.
 - **Sin healthchecks ni readiness:** `docker-compose.yml` no tiene `healthcheck`; `depends_on` no espera a que Qdrant/modelos estén listos.
-- **Sin backups, monitoreo, rotación de logs ni rollback:** no hay snapshots de `qdrant_data`, etiquetas de imagen, alertas ni procedimiento de vuelta atrás.
+- **Backups/restauración y monitoreo aún requieren pruebas:** el procedimiento de rollback por tags de imágenes de API/frontend sí quedó probado en VirtualBox el 2026-11-09; no cubre cambios incompatibles de datos o esquema de Qdrant. Ver [evidencia](../evidencias/rollback-2026-11-09.txt).
 - **Sin tests ni CI:** no hay pipeline de CI ni suite de pruebas automatizadas en git.
 - **Sin límites de recursos en compose:** la API corre sin `mem_limit`/`cpus` ni usuario no-root.
 - **Sin validación de bombas de descompresión:** Pillow puede consumir mucha memoria con imágenes maliciosas.
@@ -352,7 +352,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [ ] Monitoreo (escrito; falta probar con Docker/VPS).
 - [x] Alertas.
 - [x] Logs con rotación (responsable: compañero).
-- [ ] Rollback documentado (imagen/tag anterior).
+- [x] Rollback documentado y probado con imagen/tag anterior en staging VirtualBox; health y búsqueda conocidos correctos, Qdrant/datos conservados con `--no-deps`. No valida restauración ni cambios incompatibles de datos. [Guía de rollback](../sala6/ROLLBACK_IMAGENES.md) · [evidencia](../evidencias/rollback-2026-11-09.txt).
 
 ### 3.5 Verificación en el servidor
 

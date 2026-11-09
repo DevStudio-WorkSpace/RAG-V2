@@ -1,0 +1,51 @@
+Simulacro de rollback por tag de imagen — Sala 6
+Fecha: 2026-11-09
+Entorno: Ubuntu 26.04 en VirtualBox, Docker Compose v5.5.1, proyecto ragv2staging.
+
+Preparación y configuración
+- Se transfirió el docker-compose.yml actualizado a la copia de staging.
+- docker compose config -q pasó con la configuración combinada principal+staging.
+- Espacio libre antes de iniciar: 4.3 GB. No se reconstruyeron imágenes; se
+  reutilizaron imágenes locales ya disponibles.
+- Se asignó rollback-base a las imágenes guardadas como
+  ragv2staging-api:before-frontend-task-20261105
+  (sha256:aa612ea2fd00a8cbfbef4e90f7c25525169451b228b9f91eb02e76d3097a133e) y
+  ragv2staging-frontend:before-frontend-task-20261105
+  (sha256:1a403f3886818e7d846413478c152a69d6ce3787ed10220b85fc15e5ca5cec77).
+- Se asignó rollback-candidate a las imágenes que estaban corriendo antes de la
+  prueba: API
+  sha256:b4f580886a46752d1dd5ab30d8d3721fa04f36298291784e7166f670cc945ebd y
+  frontend sha256:cf7e652ec4cdd3601178439584025cedb1c4c26d2384199939810d9814094d1e.
+
+Resultados
+- Configuración de Compose resolvió correctamente las imágenes
+  sublitex_api:rollback-base / sublitex_frontend:rollback-base y
+  sublitex_api:rollback-candidate / sublitex_frontend:rollback-candidate.
+- Con rollback-base: API y frontend quedaron healthy; GET
+  http://127.0.0.1:8080/api/health devolvió HTTP 200, 577 productos, 577
+  embeddings y desfase_detectado=false. Búsqueda de
+  data/consultas/SBX-01-0001_exacta.jpg por /api/search: Top 1
+  SBX-01-0001, score 0.8627.
+- Se restauró rollback-candidate con --no-build --pull never --no-deps. La API
+  y frontend quedaron healthy; health volvió a responder 200 con 577/577 y la
+  búsqueda exacta devolvió Top 1 SBX-01-0001, score 0.8627.
+- En el ciclo repetido con --no-deps, el contenedor Qdrant conservó ID
+  10b9e0cfebb4c3bd5e726419fcfe70cd71599e12ca527e22bec29314d95b712c y hora de
+  inicio 2026-11-09T17:19:10.160908947Z antes, durante rollback-base y después
+  de restaurar rollback-candidate. El bind mount permaneció en
+  /home/vboxuser/Desktop/TRABAJOS/RAG-V2-staging/qdrant_data.
+
+Observación importante
+- La primera aplicación de la configuración nueva se hizo sin --no-deps y
+  Compose recreó Qdrant al reconciliar dependencias. El montaje persistente no
+  cambió; Qdrant volvió a healthy y la API siguió reportando 577/577 con
+  búsqueda correcta. Se repitió el simulacro usando --no-deps y Qdrant no se
+  reinició. Por ello, el procedimiento documentado exige --no-deps y verificar
+  Qdrant previamente.
+
+Alcance
+- Quedó probado el retorno entre imágenes locales anteriores y candidatas sin
+  rebuild, sin pull y sin borrar volúmenes. No se probaron backups/restauración
+  de Qdrant ni rollback de cambios incompatibles de esquema/datos. La etiqueta
+  rollback-candidate quedó configurada en el .env privado de staging para que
+  el próximo Compose use la versión restaurada. No se copiaron secretos aquí.

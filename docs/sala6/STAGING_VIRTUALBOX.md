@@ -64,7 +64,7 @@ Abrir `http://localhost:8080`. El túnel requiere que la VM siga encendida y el 
 docker compose -p ragv2staging -f docker-compose.yml -f docker-compose.staging.yml exec -T api python scripts/verificar_staging.py
 ```
 
-El verificador comprueba datos/IDs, salud, interfaz, autorización, manejo de errores, búsquedas original/auto con CLIP e imágenes servidas por frontend. Genera consultas locales de prueba, sin modificar catálogo o índices. Una búsqueda exacta no reemplaza la evaluación de 50 consultas ni la prueba con imágenes externas. No prueba restauración ni rollback.
+El verificador comprueba datos/IDs, salud, interfaz, autorización, manejo de errores, búsquedas original/auto con CLIP e imágenes servidas por frontend. Genera consultas locales de prueba, sin modificar catálogo o índices. Una búsqueda exacta no reemplaza la evaluación de 50 consultas ni la prueba con imágenes externas. La ejecución inicial no incluyó rollback/restauración; el rollback por tags se probó el 2026-11-09, ver [evidencia](../evidencias/rollback-2026-11-09.txt). La restauración de backup sigue pendiente.
 
 Para guardar evidencias, redirigir la salida a un archivo dentro de `evidence/` en la VM. Los logs de la preparación inicial están allí: `build-original.log` y `start-and-tests.log`. No publicar logs o configuraciones que contengan secretos.
 

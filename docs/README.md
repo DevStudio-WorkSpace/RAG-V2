@@ -11,7 +11,7 @@ Para incorporarse al equipo, leer primero el README de la raíz y después el es
 | Revisar tests funcionales y siguiente paso de frontend | [Pruebas manuales](sala6/PRUEBAS_FRONTEND_MANUALES.md) | Bloqueo/errores y recuperación probados; adaptación estrecha y celular pendientes |
 | Consultar checklist y decisiones | [Requerimientos de despliegue](planificacion/REQUERIMIENTOS_DESPLIEGUE.md) | Contiene discrepancias pendientes señaladas en la auditoría |
 | Preparar monitoreo | [Monitoreo](despliegue/MONITOREO.md) | Guía; alertas con script probadas en local, monitoreo pendiente de validación en VPS |
-| Consultar despliegue y operación | [Servidor de producción](despliegue/PRODUCCION_SERVER.md) | En revisión: respaldo, restauración y rollback pendientes de prueba |
+| Consultar despliegue y operación | [Servidor de producción](despliegue/PRODUCCION_SERVER.md) | Rollback de imágenes probado en staging ([guía](sala6/ROLLBACK_IMAGENES.md)); restauración de backup pendiente |
 | Consultar instrucciones Docker anteriores | [Guía Docker](despliegue/README_DOCKER.md) | Referencia anterior; revisar puertos contra Compose actual |
 | Entender la migración del catálogo | [Informe de producto y datos](informes/Productos_datos_refactorizacion.md) | Informe histórico; no representa por sí solo el estado actual |
 

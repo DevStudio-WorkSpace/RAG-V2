@@ -1303,3 +1303,10 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - Navegador en staging revisado a 360×800, 390×844 y 768×900. No se observaron cortes; a 360 px carga y resultado Top 1 SBX-01-0002 (0.8508) se mostraron en una columna con botones refluídos; a 768 px se mantuvo la disposición de dos columnas.
 - A 360 px se cargó `tiny-16.png`; el mensaje de error (16×16; mínimo 32 px por lado) se ve completo y legible. Captura guardada en `docs/evidencias/frontend-error-mobile-360-2026-11-09.png`. La acción Cambiar queda arriba del aviso, accesible al desplazarse. `/api/health` respondió 200 con 577 productos/embeddings; una búsqueda tardó más de lo esperado, pero terminó con resultados.
 - Checklist responsive actualizado. No se modificó código ni se hizo commit/push. Siguen pendientes la prueba en celular real, el caso controlado sin resultados y el tiempo agotado.
+
+## Fecha: 2026-11-09 — Simulacro de rollback de imágenes en VirtualBox
+
+- Prompt: «acaso puedes tu ejecutar la vm, conectar ssh y testearlo, hazlo».
+- Se probaron tags locales `rollback-base` y `rollback-candidate`; `docker compose config -q` pasó, API/frontend healthy y `/api/health` devolvió 200 con 577 productos/embeddings y sin desfase. Una búsqueda exacta por el proxy dio Top 1 `SBX-01-0001` en ambos tags.
+- El primer `up` sin `--no-deps` recreó Qdrant; se repitió usando `--no-deps`, conservando el ID/hora de inicio y bind mount de Qdrant. El staging quedó en `rollback-candidate` healthy. No se probó restauración de backup ni compatibilidad de cambios de esquema.
+- Guía: `docs/sala6/ROLLBACK_IMAGENES.md`; evidencia sanitizada: `docs/evidencias/rollback-2026-11-09.txt`. Checklist actualizado con estos límites. No se hizo push.
