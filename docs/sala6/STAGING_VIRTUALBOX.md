@@ -4,7 +4,7 @@
 
 VirtualBox aloja el entorno Linux de pruebas y SSH permite administrarlo y abrir un túnel. Ninguno participa en el cálculo de similitud. No son dependencias del buscador: un compañero con Docker puede ejecutar el mismo stack directamente en su equipo Linux o en otro entorno compatible, sin SSH ni VirtualBox.
 
-Para reproducir el comportamiento deben coincidir código, catálogo, IDs, índices, pesos del modelo, imagen consultada, modelo seleccionado, modo de búsqueda y preprocesamiento. Las variables de entorno deben ser equivalentes; las claves pueden ser distintas. Usar CLIP y los modos original/auto para repetir las pruebas verificadas. El frontend mantiene Fusión como selección inicial: cambiarla explícitamente a CLIP.
+Para reproducir el comportamiento deben coincidir código, catálogo, IDs, índices, pesos del modelo, imagen consultada, modelo seleccionado, modo de búsqueda y preprocesamiento. Las variables de entorno deben ser equivalentes; las claves pueden ser distintas. Usar CLIP y los modos original/auto para repetir las pruebas verificadas. CLIP es el modelo canónico y predeterminado de la interfaz y la API.
 
 Se espera el mismo comportamiento funcional bajo esas condiciones, pero no se garantiza igualdad exacta de scores, orden de empates o tiempos entre equipos. Las dependencias aún no están completamente fijadas (falta lockfile del frontend y hay rangos en requirements), por lo que un nuevo build puede resolver versiones diferentes. Ejecutar los mismos contenedores ya construidos reduce esa variación. La ejecución nativa sin Docker también requiere validar versiones y dependencias: no fue probada en esta sesión.
 
@@ -19,6 +19,12 @@ Build de API y frontend completado; stack iniciado; 17/17 comprobaciones de inte
 La consulta exacta SBX-01-0001 recuperó ese ID en Top 1 por el flujo original, auto y Qdrant. Se indexaron 577 puntos en la colección de prueba. Curl con una imagen real de data/consultas respondió 200. Evidencia: [staging-2026-11-04.json](../evidencias/staging-2026-11-04.json).
 
 Mediciones individuales: original 1,066 s; auto 19,93 s en el verificador final y 7,75 s en otra llamada curl. Son muestras aisladas, no p50/p95. Fusión no se probó. La instalación npm reportó 17 vulnerabilidades (16 moderadas, 1 crítica); falta analizar el informe completo y resolver las aplicables antes de producción. Quedan unos 7 GB libres en la VM tras construir: vigilar el espacio antes de nuevas imágenes o respaldos.
+
+## Medición inicial p50/p95 — 2026-11-11
+
+En la copia staging con imágenes `rollback-candidate` y Qdrant 1.20 se usó el medidor existente desde el contenedor API: 10 solicitudes medidas a `/search/image`, CLIP (`modelo=clip`, `modo=auto`), concurrencia 1, una solicitud de calentamiento y timeout de 90 s; consulta `data/consultas/SBX-01-0001_exacta.jpg`. El script recibió 8 respuestas HTTP 200 y registró 2 `ReadTimeout` del cliente (solicitudes 3 y 10). Sobre las 8 respuestas recibidas informó p50 5898.3 ms, p95 9766.8 ms y throughput 0.03 solicitudes/s. Evidencia: [latencia-staging-2026-11-11.txt](../evidencias/latencia-staging-2026-11-11.txt).
+
+Es una medición real y reproducible de una carga secuencial corta, no una caracterización multiusuario ni un SLO: la muestra de éxitos es pequeña y los timeouts forman parte del resultado operativo. API y Qdrant quedaron saludables; el API conservó un reinicio previo de una corrida simultánea, sin OOM. Repetir con más muestras y concurrencia gradual antes de definir objetivos de latencia.
 
 Se corrigieron dos problemas descubiertos al ejecutar: caché Hugging Face sin permisos para appuser (Dockerfile crea ahora su directorio antes del chown; también se verificó un volumen nuevo escribible) y peticiones sin archivo que devolvían 422. Las correcciones están en Windows y en la copia de pruebas, sin commit.
 

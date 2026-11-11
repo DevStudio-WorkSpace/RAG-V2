@@ -32,7 +32,7 @@ Actualización 2026-11-05: el usuario descartó `TRABAJO.md` como requisito vige
 | Catálogo | 577 filas; columnas exactas; las 577 imágenes existen | Los 577 nombres son el ID y las 577 URLs usan ejemplo.com. §3.1 no está totalmente cerrado |
 | Índices | embeddings.npy, clip y openclip: 577×512; siglip: 577×768; ids.npy: 577 elementos | Comprobar contenido y orden de IDs con NumPy y relación con los vectores. Igual cantidad no prueba alineación |
 | Búsqueda | /api/search del frontend llama /search/image; este usa motores .npy | Qdrant existe como ruta separada; elegir y documentar backend canónico antes de migrar o retirar rutas |
-| Modelo | API y frontend usan `clip` por defecto; es la única opción compatible con la colección Qdrant y el arranque solo precarga CLIP. Verificado el 2026-11-09 | Medir CPU antes de fijar valores de latencia (pendiente) |
+| Modelo | API y frontend usan `clip` por defecto; es la única opción compatible con la colección Qdrant y el arranque solo precarga CLIP. Verificado el 2026-11-09 | Medición inicial en staging: p50 5898.3 ms y p95 9766.8 ms entre 8 respuestas exitosas; 2/10 `ReadTimeout`. Ampliar muestra y carga antes de fijar SLO. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt) |
 | Autenticación | Dependencias de cliente/admin, compare_digest, CORS explícito; clave en proxy servidor | Pruebas negativas y de configuración en el despliegue objetivo |
 | Protección de recursos | /search/image tiene límite de subida y rate limit | v2 y qdrant no aplican esos mismos controles. La retención se ejecuta con nuevas búsquedas, no con un proceso periódico |
 | TLS | Caddyfile tiene auto_https off y escucha :80 | Dominio/certificado y prueba HTTPS. La casilla TLS marcada no describe esta configuración |
@@ -40,7 +40,7 @@ Actualización 2026-11-05: el usuario descartó `TRABAJO.md` como requisito vige
 | Build | Dockerfiles e ignores presentes; Qdrant con versión fija | No existe package-lock.json y se usa npm install; falta validar build completo (el volumen persistente HF_HOME sí está en `docker-compose.yml`, validado con `docker compose config` el 2026-11-06) |
 | Salud | Healthcheck Compose consulta HTTP de /health | No verifica desfase, carga efectiva del modelo ni disponibilidad de colección Qdrant |
 | Monitoreo | Compose independiente y docs/despliegue/MONITOREO.md presentes | Levantar, configurar monitores y demostrar alerta/recuperación. La alternativa scripts/health_alert.py documentada no existe |
-| Evaluación | JSON guardado: H2 44/50 Top1 (88%), 48/50 Top5 (96%), media 4594.1 ms | H1 tiene n=0: no hay comparación H1/H2. Falta revisión humana vigente y p50/p95; no confundir media con percentiles |
+| Evaluación | JSON guardado: H2 44/50 Top1 (88%), 48/50 Top5 (96%), media 4594.1 ms; medición adicional p50/p95 en staging con CLIP | H1 tiene n=0: no hay comparación H1/H2. Falta revisión humana vigente; la muestra de latencia es pequeña y tuvo 20% de timeout, no representa SLO ni carga multiusuario. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt) |
 | Banco de evaluación | Hay consultas en data/consultas y 50 filas en comparación | Falta evaluation/consultas_hito2.csv usado por compare_hito1_hito2.py; su fallback apunta a imágenes AIM antiguas |
 | Interfaz de evaluación | api/evaluacion.py existe pero main.py no monta su router; /eval muestra un muestrario | Conectar flujo de evaluación y persistencia canónica; hoy apunta a proyectoA/Search-10 y usa tres juicios distintos de los cuatro requeridos |
 

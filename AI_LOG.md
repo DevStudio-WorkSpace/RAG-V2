@@ -1310,3 +1310,10 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - Se probaron tags locales `rollback-base` y `rollback-candidate`; `docker compose config -q` pasó, API/frontend healthy y `/api/health` devolvió 200 con 577 productos/embeddings y sin desfase. Una búsqueda exacta por el proxy dio Top 1 `SBX-01-0001` en ambos tags.
 - El primer `up` sin `--no-deps` recreó Qdrant; se repitió usando `--no-deps`, conservando el ID/hora de inicio y bind mount de Qdrant. El staging quedó en `rollback-candidate` healthy. No se probó restauración de backup ni compatibilidad de cambios de esquema.
 - Guía: `docs/sala6/ROLLBACK_IMAGENES.md`; evidencia sanitizada: `docs/evidencias/rollback-2026-11-09.txt`. Checklist actualizado con estos límites. No se hizo push.
+
+## Fecha: 2026-11-11 — Medición inicial de latencia p50/p95 en staging
+
+- Prompt: «una ultima vez, con lo queya tenemos en el proyecto actual, intenta ejecutarlo y poder conseguir el checklist».
+- Se usó el script existente `scripts/load_test_qdrant.py` sin cambios, dentro de la copia staging en VirtualBox: 10 solicitudes medidas, concurrencia 1, 1 calentamiento, timeout de 90 s, imagen real `SBX-01-0001_exacta.jpg`, modo auto con modelo CLIP y recuperación Qdrant.
+- Resultado: 8 respuestas HTTP 200 recibidas, 2 errores `ReadTimeout` del cliente (#3 y #10); p50 5898.3 ms y p95 9766.8 ms sobre las 8 respuestas exitosas; throughput 0.03 solicitudes/s. El API y Qdrant quedaron saludables; restart count del API 1 (previo, sin OOM), Qdrant sin reinicios. Detalle y límites: `docs/evidencias/latencia-staging-2026-11-11.txt`.
+- Se marcaron las casillas de medición p50/p95 y p95 de CLIP como medición inicial completada. No significa que se alcance un SLO ni que se valide carga multiusuario: la muestra es pequeña, secuencial y presenta 20% de timeout. Repetir con más muestras y concurrencia gradual antes de fijar objetivos.

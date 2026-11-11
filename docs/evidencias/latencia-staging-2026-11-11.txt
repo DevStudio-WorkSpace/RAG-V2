@@ -1,0 +1,32 @@
+Medición inicial de latencia — staging VirtualBox
+Fecha: 2026-11-11
+
+Entorno
+- VM Ubuntu-Docker por SSH, staging aislado en /home/vboxuser/Desktop/TRABAJOS/RAG-V2-staging.
+- Stack: imágenes locales rollback-candidate; API FastAPI y Qdrant 1.20 saludables.
+- Recursos observados antes de la corrida: VM 2 CPU y 3.3 GiB RAM; límite API 2 GiB; API usaba 909 MiB; disco raíz con 2.8 GB disponibles.
+- Modelo `clip`, modo `auto` (CLIP + Qdrant y reranking), en CPU.
+- Imagen real: `data/consultas/SBX-01-0001_exacta.jpg`.
+
+Comando ejecutado dentro del contenedor API:
+
+```bash
+python scripts/load_test_qdrant.py \
+  --image data/consultas/SBX-01-0001_exacta.jpg \
+  --requests 10 --concurrency 1 --warmup 1 --timeout 90
+```
+
+Resultado del medidor existente:
+- Solicitudes medidas: 10; concurrencia: 1; calentamiento: 1.
+- Respuestas recibidas: 8; errores de cliente: 2 (`ReadTimeout`, solicitudes #3 y #10).
+- p50: 5898.3 ms.
+- p95: 9766.8 ms.
+- Throughput informado: 0.03 solicitudes/s.
+- El script calcula percentiles solo con latencias HTTP 200 recibidas. Por ello, estos p50/p95 describen 8 éxitos, no incluyen las dos solicitudes que excedieron el timeout del cliente. El p95 de ocho muestras equivale a la mayor latencia exitosa según el método de rango más cercano usado por el script.
+- En los logs del API se observaron respuestas HTTP 200; el cliente tuvo dos expiraciones de lectura. Las expiraciones siguen siendo fallos de experiencia aunque el servidor termine procesando una solicitud.
+- Al verificar al final, API y Qdrant permanecían saludables; el API tenía un reinicio previo (restart count 1), sin OOM. Qdrant no se reinició.
+
+Alcance y conclusión
+- Se completó una medición inicial real con CLIP/Qdrant, pero la muestra es pequeña, secuencial y tuvo 20% de timeout. No representa concurrencia multiusuario, no fija un SLO y no prueba disponibilidad bajo carga sostenida.
+- Checklist de medición p50/p95: completado con esta limitación registrada. Para definir objetivos operativos, repetir con más muestras y aumentar concurrencia gradualmente después de investigar los `ReadTimeout`.
+- No se cambió código ni se modificó la configuración del staging durante esta corrida. No se hizo commit ni push.

@@ -327,7 +327,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [ ] Si es Qdrant: migrar, crear snapshot y verificar la colección al arranque.
 - [x] Eliminar o documentar los endpoints duplicados.
 - [x] Definir modelo por defecto (`clip` si no hay GPU). Verificado el 2026-11-09: la API define `DEFAULT_SEARCH_MODEL=clip`, `/health` expone `default_model`, y el frontend Next.js y el cliente Streamlit usan `clip`; compilación Python y build/TypeScript correctos.
-- [ ] Medir latencia p50/p95 con carga real.
+- [x] Medición inicial de latencia en staging VirtualBox: 10 búsquedas con CLIP/Qdrant, concurrencia 1; 8 respuestas recibidas y 2 `ReadTimeout`. p50 5898.3 ms y p95 9766.8 ms entre las 8 respuestas exitosas. Muestra pequeña y secuencial; no es SLO ni acredita carga multiusuario. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt).
 
 ### 3.3 Seguridad
 
@@ -363,7 +363,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Imagen <32 px → 400 en staging; mensaje visible y recuperación con imagen válida comprobados manualmente.
 - [x] Imagen externa procesada y resultados mostrados sin cerrar el servicio en staging. La calidad de esas coincidencias se evalúa aparte.
   - [ ] Repetir las comprobaciones anteriores en el entorno definitivo si se publica.
-- [ ] Medir p95 con `clip` (modelo canónico).
+- [x] Medición inicial p95 con `clip`: 9766.8 ms entre 8 respuestas exitosas de 10 solicitudes; dos expiraron del lado cliente. Staging VirtualBox, modo `auto`/CLIP. Muestra pequeña; ampliar antes de fijar SLO. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt).
 - [x] Verificar en staging que el frontend usa `/api/search` y el proxy server-side llega a `http://api:8000`, sin exigir una API en el localhost del cliente. Comprobado desde Windows a la VM por túnel SSH el 2026-11-05; ver [pruebas y límites](../sala6/FRONTEND_NPM_CI.md).
   - [ ] Repetir con dominio/HTTPS y acceso externo en el despliegue final. La API interna puede permanecer sin exposición pública directa.
 
