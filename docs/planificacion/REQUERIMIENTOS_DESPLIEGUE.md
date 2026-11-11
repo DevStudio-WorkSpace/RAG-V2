@@ -351,7 +351,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Monitoreo.
 - [x] Alertas.
 - [x] Logs con rotación (responsable: compañero).
-- [ ] Rollback documentado (imagen/tag anterior).
+- [x] Rollback documentado (imagen/tag anterior).
 
 ### 3.5 Verificación en el servidor
 
