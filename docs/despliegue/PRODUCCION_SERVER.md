@@ -1,6 +1,6 @@
 # Guía de Despliegue en Servidor de Producción (RAG Sublitex)
 
-> Guía en revisión. Backup, restauración y rollback aún requieren correcciones y pruebas; consultar el [estado de Sala 6](../sala6/ESTADO_SALA6.md) antes de ejecutar procedimientos. Los comandos parten de la raíz del repositorio.
+> Guía en revisión. Backup y restauración aún requieren correcciones y pruebas; el rollback de imágenes se probó en staging VirtualBox, pero falta validarlo en producción. Los comandos parten de la raíz del repositorio.
 
 
 Esta guía detalla el procedimiento estándar para verificar, transferir, configurar y levantar el sistema RAG (FastAPI + Qdrant + Next.js) en un servidor de producción (VPS, AWS, GCP, DigitalOcean, etc.).
@@ -147,12 +147,63 @@ túnel SSH o el propio servidor.
 En la carpeta raíz del proyecto dentro del servidor, ejecuta:
 
 ```bash
-# 1. Construir imágenes y levantar servicios en segundo plano
+# Desarrollo local/staging: construye y levanta los servicios.
+# En producción usa el procedimiento de etiquetas versionadas de abajo.
 docker compose up -d --build
 
-# 2. Verificar que los 3 contenedores estén arriba (status Up)
+# Verificar el estado de los servicios.
 docker compose ps
 ```
+
+En un despliegue de producción, usa etiquetas inmutables por commit para poder
+volver a las imágenes anteriores. No reutilices `local` ni ejecutes `docker
+image prune` como parte del despliegue.
+
+Antes de migrar una instalación existente a imágenes etiquetadas, conserva las
+imágenes actualmente ejecutadas bajo una etiqueta de recuperación y registra
+esa etiqueta en el registro de despliegues:
+
+```bash
+PREVIOUS_TAG="pre-etiquetado-$(date +%Y%m%d%H%M%S)"
+docker image tag "$(docker inspect --format='{{.Image}}' sublitex_api)" "sublitex_api:${PREVIOUS_TAG}"
+docker image tag "$(docker inspect --format='{{.Image}}' sublitex_frontend)" "sublitex_frontend:${PREVIOUS_TAG}"
+printf 'Rollback inicial: %s\n' "$PREVIOUS_TAG"
+```
+
+Para cada versión posterior, registra la etiqueta que está ejecutándose como
+`PREVIOUS_TAG`, actualiza el código a un commit limpio y crea las imágenes con
+el SHA completo de ese commit:
+
+```bash
+export PREVIOUS_TAG="<etiqueta-actual-en-produccion>"
+export APP_IMAGE_TAG="$(git rev-parse --verify HEAD)"
+docker compose build api frontend
+docker compose up -d --no-build --pull never --wait --no-deps api frontend
+docker compose ps
+curl -fsS "https://${SITE_ADDRESS}/api/health"
+```
+
+Antes de aplicar API/frontend, confirma que Qdrant esté sano. `--no-deps` evita recrear Qdrant o el proxy al cambiar solo esas imágenes.
+
+Si la comprobación de salud falla, vuelve a desplegar las imágenes que guardaste
+con `PREVIOUS_TAG`. No reconstruyas durante el rollback:
+
+```bash
+export APP_IMAGE_TAG="$PREVIOUS_TAG"
+docker compose up -d --no-build --pull never --wait --no-deps api frontend
+docker compose ps
+curl -fsS "https://${SITE_ADDRESS}/api/health"
+```
+
+Este procedimiento solo revierte las imágenes de API y frontend. Conserva
+`data/`, `qdrant_data/` y los volúmenes nombrados; no uses `down -v` ni borres
+volúmenes. Si una versión cambió el esquema o los datos de Qdrant, restaurar la
+imagen anterior puede no ser compatible: restaura un snapshot siguiendo la
+sección siguiente y valida primero el procedimiento en staging. Mantén las
+etiquetas anteriores hasta confirmar la versión nueva y la recuperación. El
+simulacro de VirtualBox del 2026-11-09 confirmó salud, búsqueda y conservación
+de Qdrant con `--no-deps`; no valida producción ni restauración de snapshots.
+Ver [evidencia](../evidencias/rollback-2026-11-09.txt).
 
 Deberás ver los tres contenedores activos:
 - `sublitex_qdrant` (Qdrant Vector DB)

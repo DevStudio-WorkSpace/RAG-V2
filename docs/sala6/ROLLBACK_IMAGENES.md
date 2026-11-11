@@ -6,7 +6,7 @@ Esta guía documenta cómo volver a imágenes Docker locales anteriores. El roll
 
 - Ejecutar primero en staging y confirmar Qdrant sano.
 - Usar tags únicos guardados localmente para API y frontend.
-- Preservar las demás variables al cambiar `RELEASE_TAG` en el `.env` privado.
+- Preservar las demás variables al cambiar `APP_IMAGE_TAG` en el `.env` privado.
 - Aplicar solo API/frontend con `--no-deps`; así Compose no reconcilia Qdrant ni el proxy.
 
 ## Guardar la versión actual
@@ -14,11 +14,11 @@ Esta guía documenta cómo volver a imágenes Docker locales anteriores. El roll
 Con los contenedores sanos, desde la raíz del proyecto:
 
 ```bash
-PREVIOUS_RELEASE_TAG=estable-AAAA-MM-DD
+PREVIOUS_TAG=estable-AAAA-MM-DD
 
-docker image tag "$(docker inspect --format='{{.Image}}' sublitex_api)" "sublitex_api:${PREVIOUS_RELEASE_TAG}"
-docker image tag "$(docker inspect --format='{{.Image}}' sublitex_frontend)" "sublitex_frontend:${PREVIOUS_RELEASE_TAG}"
-docker image inspect "sublitex_api:${PREVIOUS_RELEASE_TAG}" "sublitex_frontend:${PREVIOUS_RELEASE_TAG}" --format '{{.RepoTags}} {{.Id}}'
+docker image tag "$(docker inspect --format='{{.Image}}' sublitex_api)" "sublitex_api:${PREVIOUS_TAG}"
+docker image tag "$(docker inspect --format='{{.Image}}' sublitex_frontend)" "sublitex_frontend:${PREVIOUS_TAG}"
+docker image inspect "sublitex_api:${PREVIOUS_TAG}" "sublitex_frontend:${PREVIOUS_TAG}" --format '{{.RepoTags}} {{.Id}}'
 ```
 
 Si no se encuentran ambas imágenes, detenerse y confirmar los nombres/IDs de los contenedores antes de reconstruir o desplegar.
@@ -26,7 +26,7 @@ Si no se encuentran ambas imágenes, detenerse y confirmar los nombres/IDs de lo
 ## Volver a un tag anterior
 
 1. Confirmar que ambos tags existen y que esa versión es compatible con los datos actuales.
-2. Cambiar solo `RELEASE_TAG` en el `.env` privado al tag anterior.
+2. Cambiar solo `APP_IMAGE_TAG` en el `.env` privado al tag anterior.
 3. Aplicar y revisar:
 
 ```bash

@@ -353,6 +353,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Logs con rotación (responsable: compañero).
 - [x] Rollback documentado y probado con imagen/tag anterior en staging VirtualBox; health y búsqueda conocidos correctos, Qdrant/datos conservados con `--no-deps`. No valida restauración ni cambios incompatibles de datos. [Guía de rollback](../sala6/ROLLBACK_IMAGENES.md) · [evidencia](../evidencias/rollback-2026-11-09.txt).
 
+
 ### 3.5 Verificación en el servidor
 
 - [x] `docker compose config` sin errores.
