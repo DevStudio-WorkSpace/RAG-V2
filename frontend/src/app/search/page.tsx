@@ -5,14 +5,14 @@ import { type CatalogJersey } from "@/lib/catalog";
 import { useCatalog } from "@/lib/catalog-context";
 import { identifyCountry } from "@/lib/countries";
 import type { SearchResult, ApiResult } from "@/lib/types";
-import { searchImage, imageUrl } from "@/lib/api";
+import { DEFAULT_SEARCH_MODEL, searchImage, imageUrl } from "@/lib/api";
 import { Icons } from "@/components/Icons";
 import { ResultCardSkeleton } from "@/components/Skeleton";
 
-type SearchModel = "clip";
+type SearchModel = typeof DEFAULT_SEARCH_MODEL;
 
 const MODEL_OPTIONS: Array<{ value: SearchModel; label: string; desc: string }> = [
-  { value: "clip", label: "CLIP + Qdrant", desc: "Índice vectorial canónico" },
+  { value: DEFAULT_SEARCH_MODEL, label: "CLIP + Qdrant", desc: "Índice vectorial canónico" },
 ];
 
 export default function SearchPage() {
@@ -23,7 +23,7 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [searchModel, setSearchModel] = useState<SearchModel>("clip");
+  const [searchModel, setSearchModel] = useState<SearchModel>(DEFAULT_SEARCH_MODEL);
 
   // Modals for details & comparison
   const [selectedJerseyModal, setSelectedJerseyModal] = useState<CatalogJersey | null>(null);

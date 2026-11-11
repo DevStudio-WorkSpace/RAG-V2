@@ -3,6 +3,7 @@ export interface HealthInfo {
   products: number;
   embeddings: number;
   model: string;
+  default_model?: string;
   desfase_detectado?: boolean;
 }
 

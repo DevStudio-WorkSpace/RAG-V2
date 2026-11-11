@@ -32,7 +32,7 @@ Actualización 2026-11-05: el usuario descartó `TRABAJO.md` como requisito vige
 | Catálogo | 577 filas; columnas exactas; las 577 imágenes existen | Los 577 nombres son el ID y las 577 URLs usan ejemplo.com. §3.1 no está totalmente cerrado |
 | Índices | embeddings.npy, clip y openclip: 577×512; siglip: 577×768; ids.npy: 577 elementos | Comprobar contenido y orden de IDs con NumPy y relación con los vectores. Igual cantidad no prueba alineación |
 | Búsqueda | /api/search del frontend llama /search/image; este usa motores .npy | Qdrant existe como ruta separada; elegir y documentar backend canónico antes de migrar o retirar rutas |
-| Modelo | API usa clip por defecto; interfaz usa fusion; el arranque intenta precalentar modelos adicionales | Resolver divergencia respecto de AGENTS.md (un modelo CLIP) y medir CPU antes de fijar valores |
+| Modelo | API y frontend usan `clip` por defecto; es la única opción compatible con la colección Qdrant y el arranque solo precarga CLIP. Verificado el 2026-11-09 | Medir CPU antes de fijar valores de latencia (pendiente) |
 | Autenticación | Dependencias de cliente/admin, compare_digest, CORS explícito; clave en proxy servidor | Pruebas negativas y de configuración en el despliegue objetivo |
 | Protección de recursos | /search/image tiene límite de subida y rate limit | v2 y qdrant no aplican esos mismos controles. La retención se ejecuta con nuevas búsquedas, no con un proceso periódico |
 | TLS | Caddyfile tiene auto_https off y escucha :80 | Dominio/certificado y prueba HTTPS. La casilla TLS marcada no describe esta configuración |

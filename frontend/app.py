@@ -813,7 +813,7 @@ with st.sidebar:
 
     st.divider()
 
-    # Motor de búsqueda - Solo Fusión (ocl CLIP/OpenCLIP)
+    # Motor de búsqueda - CLIP (modelo por defecto sin GPU)
     st.markdown(f"### {ICO['cpu']} Motor de búsqueda")
     st.markdown(
         '<div style="'
@@ -824,19 +824,18 @@ with st.sidebar:
         'margin-bottom: 0.5rem;'
         '">'
         '<div style="font-weight: 700; color: #00d2ff; font-size: 0.95rem; margin-bottom: 0.3rem;">'
-        '⚡ Fusión (CLIP + OpenCLIP + SigLIP)'
+        '⚡ CLIP + Qdrant'
         '</div>'
         '<div style="font-size: 0.82rem; color: #9aa9c4; line-height: 1.5;">'
-        'Motor robusto que combina 3 modelos de visión. '
-        'Si un punto o franja tapa parte del diseño, los otros modelos '
-        'mantienen al producto correcto.'
+        'Modelo por defecto en CPU: CLIP de 512 dimensiones sobre la '
+        'colección vectorial canónica.'
         '</div>'
         '</div>',
         unsafe_allow_html=True,
     )
 
-    # Variable de modelo (siempre fusion)
-    modelo = "fusion"
+    # Modelo por defecto del backend canónico (sin GPU)
+    modelo = "clip"
 
     st.divider()
 
@@ -1000,7 +999,7 @@ st.markdown(
     f'<div class="case-pill">Caso {st.session_state.get("caso_actual", 1)} de {st.session_state.get("total_casos", 10)}</div>'
     '</div>'
     '<div style="display:flex; gap:.5rem; align-items:center; color:#8fb4e8; font-size:.8rem; font-weight:600;">'
-    f'<span>{esc(data.get("modo", "auto"))}</span><span>·</span><span>{esc(data.get("modelo", "fusion"))}</span>'
+    f'<span>{esc(data.get("modo", "auto"))}</span><span>·</span><span>{esc(data.get("modelo", "clip"))}</span>'
     '</div>'
     '</div>',
     unsafe_allow_html=True,
