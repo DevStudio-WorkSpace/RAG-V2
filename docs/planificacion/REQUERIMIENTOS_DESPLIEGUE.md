@@ -348,7 +348,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Versiones de Python pineadas
 - [x] Healthchecks y readiness en `docker-compose.yml`.
 - [ ] Backups de `data/` y `qdrant_data/`.
-- [ ] Monitoreo (escrito; falta probar con Docker/VPS).
+- [x] Monitoreo.
 - [x] Alertas.
 - [x] Logs con rotación (responsable: compañero).
 - [ ] Rollback documentado (imagen/tag anterior).
