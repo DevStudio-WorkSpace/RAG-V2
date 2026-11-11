@@ -200,6 +200,26 @@ class QdrantService:
         punto_uuids = [_id_a_uuid(pid) for pid in ids]
         self.db.delete_vectors(point_ids=punto_uuids)
 
+    def crear_snapshot(self) -> str | None:
+        """Crea un snapshot de la colección en el almacenamiento de Qdrant.
+
+        Returns:
+            Nombre/ruta del snapshot creado, o None si no aplica/está disponible.
+        """
+        if not settings.QDRANT_URL:
+            return None
+        snapshot = self.db.client.create_snapshot(
+            collection_name=self.collection_name,
+            wait=True,
+        )
+        nombre = getattr(snapshot, "name", None) or str(snapshot)
+        logger.info(
+            "Snapshot creado para la colección '%s': %s",
+            self.collection_name,
+            nombre,
+        )
+        return nombre
+
     def vaciar_coleccion(self) -> None:
         """
         Elimina todos los puntos de la colección actual.

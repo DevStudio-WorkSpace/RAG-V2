@@ -57,6 +57,73 @@ def cargar_indice() -> None:
     )
 
 
+def verificar_coleccion() -> dict:
+    """Verifica disponibilidad, esquema y estado de la colección Qdrant."""
+    qdrant = _get_qdrant()
+    salud = qdrant.health()
+    if salud["status"] != "ok":
+        raise RuntimeError(
+            f"Qdrant no está disponible o la colección no está lista: {salud}"
+        )
+    # Fuerza validación de esquema/vector/distancia en el gestor.
+    qdrant.db._validate_collection()
+    info = qdrant.db.client.get_collection(collection_name=qdrant.collection_name)
+    points = info.points_count or 0
+    return {
+        **salud,
+        "status": "ok",
+        "points": points,
+        "verificada": True,
+    }
+
+
+def crear_snapshot_coleccion() -> str | None:
+    """Crea un snapshot de la colección activa en Qdrant."""
+    qdrant = _get_qdrant()
+    return qdrant.crear_snapshot()
+
+
+def preparar_coleccion_arranque(
+    csv_path: str | None = None,
+    embeddings_path: str | None = None,
+) -> dict:
+    """Verifica/crea la colección, migra si está vacía y crea snapshot."""
+    cargar_indice()
+    estado = verificar_coleccion()
+    migrados = 0
+    if estado["points"] == 0:
+        migrados = indexar_productos_desde_csv(
+            csv_path=csv_path,
+            embeddings_path=embeddings_path,
+        )
+        estado = verificar_coleccion()
+        if estado["points"] == 0:
+            raise RuntimeError(
+                "La colección Qdrant está vacía y no se pudieron migrar productos."
+            )
+
+    snapshot = None
+    snapshot_error = None
+    try:
+        snapshot = crear_snapshot_coleccion()
+    except Exception as e:
+        snapshot_error = str(e)
+        logger.warning("No se pudo crear snapshot de arranque: %s", e)
+    if snapshot is None and snapshot_error is None and not settings.QDRANT_URL:
+        logger.info(
+            "Snapshot de arranque omitido en modo Qdrant local; la persistencia usa %s.",
+            settings.QDRANT_DATA_PATH,
+        )
+
+    estado["snapshot"] = snapshot
+    if snapshot_error:
+        estado["snapshot_error"] = snapshot_error
+    estado["migrados"] = migrados
+    estado["products"] = estado["points"]
+    estado["embeddings"] = estado["points"]
+    return estado
+
+
 def search_similar(
     query_embedding,
     top_k: int = 5,

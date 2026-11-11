@@ -324,7 +324,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 ### 3.2 Arquitectura
 
 - [x] Elegir backend único: `.npy` o Qdrant.
-- [ ] Si es Qdrant: migrar, crear snapshot y verificar la colección al arranque.
+- [x] Si es Qdrant: migrar, crear snapshot y verificar la colección al arranque. Implementado en el arranque de FastAPI: `preparar_coleccion_arranque()` valida o crea la colección (512/Cosine), restaura snapshot si aplica, migra `products.csv`/`embeddings.npy`/`ids.npy` cuando está vacía y crea un snapshot en Qdrant servidor tras verificar.
 - [x] Eliminar o documentar los endpoints duplicados.
 - [x] Definir modelo por defecto (`clip` si no hay GPU). Verificado el 2026-11-09: la API define `DEFAULT_SEARCH_MODEL=clip`, `/health` expone `default_model`, y el frontend Next.js y el cliente Streamlit usan `clip`; compilación Python y build/TypeScript correctos.
 - [x] Medición inicial de latencia en staging VirtualBox: 10 búsquedas con CLIP/Qdrant, concurrencia 1; 8 respuestas recibidas y 2 `ReadTimeout`. p50 5898.3 ms y p95 9766.8 ms entre las 8 respuestas exitosas. Muestra pequeña y secuencial; no es SLO ni acredita carga multiusuario. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt).

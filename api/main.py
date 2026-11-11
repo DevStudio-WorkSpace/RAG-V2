@@ -38,6 +38,7 @@ from api.qdrant_engine import (
     info_indice as info_indice_qdrant,
     health as health_qdrant,
     indexar_productos_desde_csv,
+    preparar_coleccion_arranque,
 )
 from core.config import settings
 
@@ -61,19 +62,20 @@ def _encodificar(imagen, modelo: str = DEFAULT_SEARCH_MODEL):
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Verifica Qdrant, migra el índice inicial si está vacío y carga CLIP."""
+    """Verifica Qdrant, migra el índice inicial si está vacío, crea snapshot y carga CLIP."""
     for aviso in advertencias_config_seguridad():
         logger.warning("AVISO DE SEGURIDAD: %s", aviso)
 
-    cargar_indice_qdrant()
-    estado = info_indice_qdrant()
-    if estado["products"] == 0:
-        total = indexar_productos_desde_csv()
-        if total == 0:
-            raise RuntimeError(
-                "La colección Qdrant está vacía y no se pudieron migrar productos."
-            )
-        logger.info("Migrados %s productos a Qdrant durante el arranque.", total)
+    estado = preparar_coleccion_arranque()
+    if estado.get("migrados"):
+        logger.info("Migrados %s productos a Qdrant durante el arranque.", estado["migrados"])
+    if estado.get("snapshot"):
+        logger.info("Snapshot de arranque creado: %s", estado["snapshot"])
+    logger.info(
+        "Colección Qdrant verificada: '%s' con %s puntos.",
+        estado.get("collection"),
+        estado.get("points", estado.get("products", 0)),
+    )
 
     try:
         get_model()
