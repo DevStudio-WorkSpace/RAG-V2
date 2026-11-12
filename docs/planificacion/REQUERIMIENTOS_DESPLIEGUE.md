@@ -347,7 +347,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Torch CPU instalado explícitamente en Dockerfile _(completado)_.
 - [x] Versiones de Python pineadas
 - [x] Healthchecks y readiness en `docker-compose.yml`.
-- [ ] Backups de `data/` y `qdrant_data/`.
+- [x] Backups de `data/` y `qdrant_data/`.
 - [x] Monitoreo.
 - [x] Alertas.
 - [x] Logs con rotación (responsable: compañero).
@@ -364,6 +364,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Imagen externa procesada y resultados mostrados sin cerrar el servicio en staging. La calidad de esas coincidencias se evalúa aparte.
   - [ ] Repetir las comprobaciones anteriores en el entorno definitivo si se publica.
 - [x] Medición inicial p95 con `clip`: 9766.8 ms entre 8 respuestas exitosas de 10 solicitudes; dos expiraron del lado cliente. Staging VirtualBox, modo `auto`/CLIP. Muestra pequeña; ampliar antes de fijar SLO. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt).
+- [~] Medición p95 con `fusion`: **cancelada**. Por decisión de arquitectura del 2026-11-05, Qdrant+CLIP es el único backend activo; la UI y la API ya no ofrecen modo `fusion`. No aplica.
 - [x] Verificar en staging que el frontend usa `/api/search` y el proxy server-side llega a `http://api:8000`, sin exigir una API en el localhost del cliente. Comprobado desde Windows a la VM por túnel SSH el 2026-11-05; ver [pruebas y límites](../sala6/FRONTEND_NPM_CI.md).
   - [ ] Repetir con dominio/HTTPS y acceso externo en el despliegue final. La API interna puede permanecer sin exposición pública directa.
 
@@ -440,7 +441,7 @@ Reglas:
 - Frontend y API en la misma red Docker.
 - Secrets por `.env`/Docker secrets, nunca en la imagen.
 - Healthcheck en API, frontend y Qdrant.
-- Backups de `data/` y `qdrant_data/`.
+- Backups de `data/` y `qdrant_data/` con `scripts/backup.sh` (snapshot Qdrant + tar.gz rotados).
 - Logs con rotación y alertas de latencia/errores.
 
 ---
