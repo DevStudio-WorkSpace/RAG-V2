@@ -619,6 +619,33 @@ export default function SearchPage() {
         </section>
       )}
 
+      {!loading && result && resultados.length === 0 && (
+        <section
+          aria-live="polite"
+          aria-labelledby="search-empty-title"
+          className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 sm:p-8 text-center"
+        >
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-[#C5A880]/30 bg-[#C5A880]/10 text-[#C5A880]">
+            <Icons.Search className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <h2 id="search-empty-title" className="text-lg font-bold text-[var(--foreground-heading)]">
+            No encontramos coincidencias
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--foreground-muted)]">
+            Prueba con otra imagen donde el diseño de la camiseta se vea con más claridad.
+          </p>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            className="mt-5 inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[#C5A880]/50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icons.Upload className="h-4 w-4" aria-hidden="true" />
+            Probar otra imagen
+          </button>
+        </section>
+      )}
+
       {/* ── 5. Comparison Modal ── */}
       {compareModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-fade-in">

@@ -1311,6 +1311,14 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - El primer `up` sin `--no-deps` recreó Qdrant; se repitió usando `--no-deps`, conservando el ID/hora de inicio y bind mount de Qdrant. El staging quedó en `rollback-candidate` healthy. No se probó restauración de backup ni compatibilidad de cambios de esquema.
 - Guía: `docs/sala6/ROLLBACK_IMAGENES.md`; evidencia sanitizada: `docs/evidencias/rollback-2026-11-09.txt`. Checklist actualizado con estos límites. No se hizo push.
 
+
+## Fecha: 2026-11-09 — Estado sin resultados en frontend
+
+- Prompt: «saltemos ese checklist, otro sin el celu».
+- Se añadió el estado vacío en `frontend/src/app/search/page.tsx`: cuando la API devuelve una respuesta válida con lista vacía, informa que no hubo coincidencias y permite seleccionar otra imagen.
+- Verificación en navegador local con build de producción y API simulada aislada: selección de muestra, respuesta HTTP 200 `{"resultados":[]}`, fin de carga, estado vacío accesible y botón «Probar otra imagen». No se llamó al staging ni se afirma que el motor real devuelva cero resultados. Evidencia: `docs/evidencias/frontend-sin-resultados-2026-11-09.txt`.
+- `npm run lint`: sin errores, una advertencia preexistente en `frontend/app.js`; `npx tsc --noEmit`: correcto; `npm run build`: correcto, con advertencias preexistentes sobre trazado dinámico del sistema de archivos en la ruta de imágenes.
+- Checklist de frontend y requerimientos actualizado. No se hizo commit ni push. Sigue pendiente el caso controlado de tiempo agotado; la prueba en celular real se saltó a petición del usuario.
 ## Fecha: 2026-11-11 — Medición inicial de latencia p50/p95 en staging
 
 - Prompt: «una ultima vez, con lo queya tenemos en el proyecto actual, intenta ejecutarlo y poder conseguir el checklist».
