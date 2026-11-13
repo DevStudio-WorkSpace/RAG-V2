@@ -1,0 +1,19 @@
+Prueba funcional controlada: estado sin resultados del buscador
+Fecha: 2026-11-09
+
+Entorno: build local del frontend en http://localhost:3001/search. La variable
+API_URL apuntó a un servidor temporal aislado en 127.0.0.1:8765. Ese servidor
+respondía POST /search/image con HTTP 200 y el JSON {"resultados": []}; no se
+conectó a la API de staging ni a servicios externos.
+
+Acción: se seleccionó la muestra SBX-01-0001 desde la página de búsqueda.
+
+Resultado observado: la tarjeta mostró la imagen de consulta y el estado de
+disponibilidad; tras terminar la carga, la página mostró “No encontramos
+coincidencias”, recomendó probar otra imagen y ofreció el botón “Probar otra
+imagen”. No se mostró un error de API y la carga terminó. La verificación se
+hizo visualmente y en el árbol de accesibilidad del navegador.
+
+Alcance: valida la interpretación de una respuesta exitosa vacía en la interfaz.
+No demuestra que el motor real produzca cero resultados ni evalúa la calidad del
+ranking. El caso de tiempo agotado continúa pendiente.

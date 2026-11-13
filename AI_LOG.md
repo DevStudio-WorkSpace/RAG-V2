@@ -1311,9 +1311,36 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - El primer `up` sin `--no-deps` recreó Qdrant; se repitió usando `--no-deps`, conservando el ID/hora de inicio y bind mount de Qdrant. El staging quedó en `rollback-candidate` healthy. No se probó restauración de backup ni compatibilidad de cambios de esquema.
 - Guía: `docs/sala6/ROLLBACK_IMAGENES.md`; evidencia sanitizada: `docs/evidencias/rollback-2026-11-09.txt`. Checklist actualizado con estos límites. No se hizo push.
 
+
+## Fecha: 2026-11-09 — Estado sin resultados en frontend
+
+- Prompt: «saltemos ese checklist, otro sin el celu».
+- Se añadió el estado vacío en `frontend/src/app/search/page.tsx`: cuando la API devuelve una respuesta válida con lista vacía, informa que no hubo coincidencias y permite seleccionar otra imagen.
+- Verificación en navegador local con build de producción y API simulada aislada: selección de muestra, respuesta HTTP 200 `{"resultados":[]}`, fin de carga, estado vacío accesible y botón «Probar otra imagen». No se llamó al staging ni se afirma que el motor real devuelva cero resultados. Evidencia: `docs/evidencias/frontend-sin-resultados-2026-11-09.txt`.
+- `npm run lint`: sin errores, una advertencia preexistente en `frontend/app.js`; `npx tsc --noEmit`: correcto; `npm run build`: correcto, con advertencias preexistentes sobre trazado dinámico del sistema de archivos en la ruta de imágenes.
+- Checklist de frontend y requerimientos actualizado. No se hizo commit ni push. Sigue pendiente el caso controlado de tiempo agotado; la prueba en celular real se saltó a petición del usuario.
 ## Fecha: 2026-11-11 — Medición inicial de latencia p50/p95 en staging
 
 - Prompt: «una ultima vez, con lo queya tenemos en el proyecto actual, intenta ejecutarlo y poder conseguir el checklist».
 - Se usó el script existente `scripts/load_test_qdrant.py` sin cambios, dentro de la copia staging en VirtualBox: 10 solicitudes medidas, concurrencia 1, 1 calentamiento, timeout de 90 s, imagen real `SBX-01-0001_exacta.jpg`, modo auto con modelo CLIP y recuperación Qdrant.
 - Resultado: 8 respuestas HTTP 200 recibidas, 2 errores `ReadTimeout` del cliente (#3 y #10); p50 5898.3 ms y p95 9766.8 ms sobre las 8 respuestas exitosas; throughput 0.03 solicitudes/s. El API y Qdrant quedaron saludables; restart count del API 1 (previo, sin OOM), Qdrant sin reinicios. Detalle y límites: `docs/evidencias/latencia-staging-2026-11-11.txt`.
 - Se marcaron las casillas de medición p50/p95 y p95 de CLIP como medición inicial completada. No significa que se alcance un SLO ni que se valide carga multiusuario: la muestra es pequeña, secuencial y presenta 20% de timeout. Repetir con más muestras y concurrencia gradual antes de fijar objetivos.
+
+## Fecha: 2026-11-12 — Script de backup y actualización de checklist
+
+- Prompt: «de todo esto cual falta? 3.4 Volumen para caché de Hugging Face. 3.5 Archivo inválido → 400. 3.5 Imagen <32 px → 400. 3.5 Medir p95 con clip y con fusion. Rollback documentado. Backups de data/ y qdrant_data/» seguido de «hazlo lo que falta».
+- Diagnóstico: volumen HF cache (hf_cache en docker-compose.yml), validaciones 400 (api/main.py _leer_imagen_subida) y rollback documentado (docs/sala6/ROLLBACK_IMAGENES.md) ya estaban implementados. El p95 con fusión queda cancelado por decisión de arquitectura del 2026-11-05 (Qdrant+CLIP como único backend activo; la UI y la API ya no ofrecen modo fusion). Solo faltaba el script de backup.
+- Se creó `scripts/backup.sh`: solicita snapshot Qdrant activo antes de comprimir, genera `data_TIMESTAMP.tar.gz` (excluyendo images_original) y `qdrant_data_TIMESTAMP.tar.gz`, rota conservando los 7 backups más recientes por carpeta. Admite directorio de destino como argumento y todas las credenciales Qdrant como variables de entorno. Uso directo: `bash scripts/backup.sh [dir]`; para cron: `0 2 * * * /bin/bash /ruta/proyecto/scripts/backup.sh >> /var/log/sublitex_backup.log 2>&1`.
+- Se actualizó `docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md`: ítem de backups marcado `[x]` con referencia al script; p95 fusion marcado `[~]` como cancelado con justificación; descripción breve del script añadida en la sección de reglas de arquitectura.
+- Pendiente que el usuario ejecute el primer backup real (`bash scripts/backup.sh`) y valide la restauración en staging.
+
+## Fecha: 2026-11-12 — Confirmación de ítems resueltos y balance de pendientes
+
+- Prompt: «ya esta hecho todo esto: 3.2 Elegir backend único: .npy o Qdrant. 3.2 Si es Qdrant: migrar, crear snapshot y verificar la colección al arranque. 3.2 Eliminar o documentar los endpoints duplicados. 3.2 Medir latencia p50/p95 con carga real. 3.4 Volumen para caché de Hugging Face. 3.5 Archivo inválido → 400. 3.5 Imagen <32 px → 400. 3.5 Medir p95 con clip y con fusion. Backups de data/ y qdrant_data/. Rollback documentado».
+- Revisión y contraste contra `docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md`, `docs/sala6/ESTADO_SALA6.md` y `AGENTS.md`.
+- Se confirmó el estado de los 10 puntos indicados y se desglosó el mapa de lo que verdaderamente resta antes de producción/go-live:
+  1. Catálogo definitivo (URLs y nombres reales en `data/products.csv`).
+  2. Infraestructura definitiva y Red/Proxy TLS (VPS/dominio real, HTTPS con Caddy/Nginx, cierre de puertos internos).
+  3. Pruebas pendientes de verificación final (dispositivo móvil real, caso sin resultados/timeout, prueba de restauración del backup generado por `scripts/backup.sh`).
+  4. WordPress/WooCommerce y 15.000 diseños (fuera del alcance actual según `AGENTS.md`).
+
