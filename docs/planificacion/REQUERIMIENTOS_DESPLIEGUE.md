@@ -379,7 +379,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Recuperación tras archivo inválido: imagen válida buscada sin recargar en staging el 2026-11-09; Top 1 SBX-01-0010 (0.9454). Ver registro de pruebas manuales frontend.
 - [x] Adaptación a pantallas estrechas: revisada a 360, 390 y 768 px sin cortes observados; carga, resultados y error de imagen 16×16 legibles a 360 px. Ver evidencia y alcance en el registro de pruebas manuales frontend.
 - [ ] Prueba en celular real (distinta de simular un ancho móvil).
-- [ ] Estado sin resultados y tiempo agotado mediante casos controlados.
+- [x] Estado sin resultados y tiempo agotado mediante casos controlados: panel sin resultados verificado con una respuesta vacía controlada y estado de tiempo agotado verificado contra la API real con `SEARCH_TIMEOUT_MS=4000`; ambos en el build de producción del frontend el 2026-11-13. Ver detalle, capturas y límites en el registro de pruebas manuales frontend.
 
 Registro y capturas: [pruebas manuales del frontend](../sala6/PRUEBAS_FRONTEND_MANUALES.md).
 Build Next.js/TypeScript correcto; lint con 0 errores y 4 advertencias preexistentes.

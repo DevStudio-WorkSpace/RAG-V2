@@ -1,0 +1,107 @@
+Verificación de estados del frontend — 2026-11-13
+================================================
+
+Entorno
+-------
+- Windows 11, Node v24.18.0, Microsoft Edge 157.0.4341.46 (headless vía CDP).
+- Frontend Next.js 16.3.5 con build de producción (`npm run build` / `npm start`)
+  en `http://localhost:3000/search`.
+- API real del repositorio ejecutada en local con `uvicorn api.main:app`
+  (Qdrant en modo local: `QDRANT_URL` vacío y `QDRANT_DATA_PATH` temporal),
+  colección `sublitex_fashion_v1` con 577 puntos, modelo CLIP
+  `clip-ViT-B-32`. `GET /health` respondió 200 con `desfase_detectado=false`.
+- No se modificó el catálogo, los índices del repositorio ni `qdrant_data/`.
+- Verificación de interfaz con navegador real (Edge headless) mediante
+  DevTools Protocol: carga de archivo, clic en «Buscar en Catálogo» y captura.
+
+Cambios de código necesarios para poder observar estos estados
+--------------------------------------------------------------
+1. `frontend/src/app/search/page.tsx`: no existía ningún estado visual para
+   `resultados: []`; el bloque «Sin resultados para esta imagen» es nuevo.
+   También se separó el estado de tiempo agotado del error genérico.
+2. `frontend/src/app/api/search/route.ts`: el timeout del proxy ahora se
+   configura con `SEARCH_TIMEOUT_MS` (por defecto 180000 ms) y las respuestas
+   de error incluyen `code: "timeout" | "upstream_unreachable"`.
+3. `frontend/src/lib/api.ts`: el cliente devuelve `error.kind` para distinguir
+   timeout, red, HTTP, validación y respuesta inválida; el timeout del cliente
+   queda en 190 s para que gobierne el mensaje del proxy.
+
+Estado 1 — Tiempo agotado (API real con presupuesto corto)
+----------------------------------------------------------
+- Frontend arrancado con `SEARCH_TIMEOUT_MS=4000`.
+- Consulta: `data/consultas/SBX-01-0001_exacta.jpg`, `modo=auto`, `modelo=clip`.
+- Una búsqueda real en CPU tarda ~10–30 s, así que el proxy `/api/search`
+  aborta a los 4 s y responde 504 con `code=timeout`.
+- Observado en el navegador:
+  - Encabezado «Tiempo de espera agotado».
+  - Mensaje «La búsqueda superó el tiempo máximo de espera (4 segundos) y se
+    canceló. La API no respondió a tiempo.».
+  - La imagen de consulta se conserva y aparecen «Reintentar búsqueda» y
+    «Elegir otra imagen».
+  - Sin resultados parciales ni tarjetas de resultados.
+- Evidencia: `frontend-timeout-2026-11-13.png` y `.txt` (árbol visible).
+
+Estado 2 — Sin resultados (respuesta vacía controlada)
+------------------------------------------------------
+- Hallazgo del motor: con las imágenes de prueba el motor **no** devolvió 0
+  resultados. La normalización min-max del score de embeddings asigna 1.0 al
+  mejor candidato y el embedding pesa 0.50 del score final, por lo que el piso
+  del score es ~0.50; el umbral absoluto `UMBRAL_MINIMO_SIMILARIDAD = 0.40`
+  nunca filtra mientras Qdrant devuelva candidatos. Probado con una imagen
+  sintética sin prenda, una captura de UI y sólidos negro/blanco y ruido:
+  todas devolvieron entre 1 y 5 resultados (scores 0.50–0.83).
+- Por eso el estado se verificó con un upstream controlado que responde
+  exactamente el contrato de la API cuando no hay coincidencias:
+  `200 {"resultados": [], "modo": "auto", "modelo": "clip"}`.
+- Observado en el navegador:
+  - «Sin resultados para esta imagen» con explicación del umbral y sugerencias.
+  - Botones «Reintentar búsqueda» y «Probar con otra imagen».
+  - Sin encabezado «Modelos Coincidentes Encontrados» ni tarjetas.
+- Evidencia: `frontend-sin-resultados-2026-11-13.png` y `.txt`.
+
+Regresión — búsqueda normal contra la API real
+----------------------------------------------
+- Consulta `SBX-01-0001_exacta.jpg` con timeout por defecto: 1 resultado,
+  Top 1 `SBX-01-0001`, tarjeta completa con score de similitud y controles
+  habilitados.
+- Evidencia: `frontend-resultado-real-2026-11-13.png` y `.txt`.
+
+Reproducción del upstream controlado
+------------------------------------
+Script usado (Node, escucha en 8100; `STUB_MODE=empty|hang`):
+
+```js
+const http = require("http");
+const mode = process.env.STUB_MODE || "empty";
+http.createServer((req, res) => {
+  if (req.method === "POST" && req.url.startsWith("/search/image")) {
+    req.resume();
+    if (mode === "hang") return; // dispara el timeout del proxy
+    req.on("end", () => setTimeout(() => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ resultados: [], modo: "auto", modelo: "clip" }));
+    }, 300));
+    return;
+  }
+  res.writeHead(404); res.end("{}");
+}).listen(8100, "127.0.0.1");
+```
+
+Con `API_URL=http://127.0.0.1:8100` y `API_CLIENT_KEY` cualquiera en el
+frontend. Para el caso de tiempo agotado se usó `STUB_MODE=hang` y
+`SEARCH_TIMEOUT_MS=3000` durante el desarrollo del estado.
+
+Build y lint
+------------
+- `npm run build`: correcto (Next.js/TypeScript).
+- `npm run lint`: 0 errores; 1 advertencia previa en `frontend/app.js`
+  (`evaluarResultado` sin uso), no relacionada.
+
+Alcance y límites
+-----------------
+- La verificación se hizo en Windows con la API real local (Qdrant en modo
+  local), no en la VM de staging de VirtualBox (no estaba encendida).
+- El caso «sin resultados» usó un upstream de prueba; no demuestra que el
+  motor real pueda devolver 0 resultados, de hecho el hallazgo indica lo
+  contrario con el umbral actual.
+- No se certifican cargas concurrentes ni HTTPS de producción.

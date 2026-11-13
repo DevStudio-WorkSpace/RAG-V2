@@ -5,7 +5,12 @@ import { type CatalogJersey } from "@/lib/catalog";
 import { useCatalog } from "@/lib/catalog-context";
 import { identifyCountry } from "@/lib/countries";
 import type { SearchResult, ApiResult } from "@/lib/types";
-import { DEFAULT_SEARCH_MODEL, searchImage, imageUrl } from "@/lib/api";
+import {
+  DEFAULT_SEARCH_MODEL,
+  searchImage,
+  imageUrl,
+  type SearchErrorKind,
+} from "@/lib/api";
 import { Icons } from "@/components/Icons";
 import { ResultCardSkeleton } from "@/components/Skeleton";
 
@@ -21,6 +26,7 @@ export default function SearchPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<SearchErrorKind | null>(null);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [searchModel, setSearchModel] = useState<SearchModel>(DEFAULT_SEARCH_MODEL);
@@ -52,6 +58,16 @@ export default function SearchPage() {
     setPreview(URL.createObjectURL(f));
     setResult(null);
     setError(null);
+    setErrorKind(null);
+  }, []);
+
+  const clearQuery = useCallback(() => {
+    if (searchInFlightRef.current) return;
+    setFile(null);
+    setPreview(null);
+    setResult(null);
+    setError(null);
+    setErrorKind(null);
   }, []);
 
   // One-click sample selector
@@ -62,6 +78,7 @@ export default function SearchPage() {
     setDragging(false);
     setResult(null);
     setError(null);
+    setErrorKind(null);
     try {
       const res = await fetch(sample.image);
       if (!res.ok) throw new Error("fetch failed");
@@ -73,12 +90,14 @@ export default function SearchPage() {
 
       const { data, error: err } = await searchImage(sampleFile, searchModel);
       if (err) {
-        setError(err);
+        setError(err.message);
+        setErrorKind(err.kind);
       } else {
         setResult(data);
       }
     } catch {
       setError("No se pudo cargar la imagen de prueba seleccionada.");
+      setErrorKind("network");
     } finally {
       searchInFlightRef.current = false;
       setLoading(false);
@@ -93,15 +112,18 @@ export default function SearchPage() {
     setDragging(false);
     setResult(null);
     setError(null);
+    setErrorKind(null);
     try {
       const { data, error: err } = await searchImage(file, searchModel);
       if (err) {
-        setError(err);
+        setError(err.message);
+        setErrorKind(err.kind);
       } else {
         setResult(data);
       }
     } catch {
       setError("No se pudo completar la búsqueda. Inténtalo de nuevo.");
+      setErrorKind("network");
     } finally {
       searchInFlightRef.current = false;
       setLoading(false);
@@ -341,13 +363,7 @@ export default function SearchPage() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    if (searchInFlightRef.current) return;
-                    setFile(null);
-                    setPreview(null);
-                    setResult(null);
-                    setError(null);
-                  }}
+                  onClick={clearQuery}
                   disabled={loading}
                   className="px-4 py-2.5 sm:py-3 rounded-xl text-xs font-semibold uppercase tracking-wider border border-[var(--border)] bg-[var(--input-bg)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer disabled:opacity-50"
                 >
@@ -405,7 +421,39 @@ export default function SearchPage() {
       </section>
 
       {/* ── Error Notification ── */}
-      {error && (
+      {error && errorKind === "timeout" && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-100 text-sm flex items-start gap-3"
+        >
+          <Icons.AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-400" />
+          <div className="space-y-2">
+            <div className="font-semibold text-amber-200">Tiempo de espera agotado</div>
+            <div className="text-amber-100/90">{error}</div>
+            <div className="text-xs text-amber-100/70">
+              La consulta no se perdió: la imagen sigue cargada y podés reintentar sin volver a subirla.
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                onClick={handleSearch}
+                disabled={loading || !file}
+                className="px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#C5A880] hover:bg-[#D4AF37] text-[#0A0D14] transition-all cursor-pointer disabled:opacity-50"
+              >
+                Reintentar búsqueda
+              </button>
+              <button
+                onClick={clearQuery}
+                className="px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border border-amber-500/30 text-amber-200 hover:bg-amber-500/10 transition-all cursor-pointer"
+              >
+                Elegir otra imagen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && errorKind !== "timeout" && (
         <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-sm flex items-start gap-3">
           <Icons.AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div className="space-y-1">
@@ -437,9 +485,56 @@ export default function SearchPage() {
         </section>
       )}
 
-      {/* ── 4. Search Results ── */}
+      {/* ── 4. Empty state: respuesta sin resultados ── */}
+      {!loading && !error && result && resultados.length === 0 && (
+        <section
+          role="status"
+          aria-live="polite"
+          className="p-6 sm:p-8 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] space-y-4"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[rgba(197,168,128,0.08)] border border-[rgba(197,168,128,0.25)] flex items-center justify-center text-[#C5A880] flex-shrink-0">
+              <Icons.Search className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5 min-w-0">
+              <h2 className="text-xl font-bold text-[var(--foreground-heading)]">
+                Sin resultados para esta imagen
+              </h2>
+              <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
+                Ningún diseño del catálogo superó el umbral mínimo de similitud con tu foto.
+                El motor devuelve cero resultados en lugar de rellenar el Top 5 con diseños
+                poco parecidos.
+              </p>
+            </div>
+          </div>
+
+          <ul className="text-xs text-[var(--foreground-muted)] list-disc pl-5 space-y-1">
+            <li>Usá la camiseta completa, de frente y sin recortes.</li>
+            <li>Evitá fondos con otras prendas, personas o texto grande.</li>
+            <li>Probá con mejor iluminación o una foto de mayor resolución.</li>
+          </ul>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              onClick={handleSearch}
+              disabled={loading || !file}
+              className="px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#C5A880] hover:bg-[#D4AF37] text-[#0A0D14] transition-all cursor-pointer disabled:opacity-50"
+            >
+              Reintentar búsqueda
+            </button>
+            <button
+              onClick={clearQuery}
+              className="px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider border border-[var(--border)] bg-[var(--input-bg)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-all cursor-pointer"
+            >
+              Probar con otra imagen
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* ── 5. Search Results ── */}
       {!loading && resultados.length > 0 && (
-        <section className="space-y-6">
+        <section className="space-y-6" aria-live="polite">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
             <div>
               <h2 className="text-xl font-bold text-[var(--foreground-heading)]">
