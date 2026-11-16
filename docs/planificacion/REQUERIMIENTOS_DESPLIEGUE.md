@@ -317,7 +317,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 ### 3.1 Producto y datos
 
 - [ ] Congelar alcance: demo privada, producción pública o Hito 3.
-- [x] Entregar nombres comerciales, URLs reales y archivos correctos.
+- [ ] Entregar nombres comerciales, URLs reales y archivos correctos.
 - [x] Corregir `imagen` en `products.csv` (`.png` vs `.jpg`).
 - [x] Regenerar índices y validar alineación `ids.npy` ↔ `products.csv` ↔ `embeddings.npy`.
 
