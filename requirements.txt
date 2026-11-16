@@ -20,7 +20,6 @@ opencv-python-headless==4.10.0.84
 
 # ── Visión por computadora ──
 rembg==2.0.59
-ultralytics==8.3.0
 scikit-learn==1.5.2
 
 # ── Interfaz (Sala 2) ──
