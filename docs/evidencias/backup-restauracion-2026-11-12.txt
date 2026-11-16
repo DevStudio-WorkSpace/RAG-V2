@@ -1,0 +1,31 @@
+Prueba de backup y restauración en VirtualBox
+Fecha: 2026-11-12
+
+Entorno
+- VM Ubuntu 26.04.1 LTS; copia de staging: /home/vboxuser/Desktop/TRABAJOS/RAG-V2-staging.
+- Qdrant 1.20.0; API y frontend en imágenes rollback-candidate.
+- Antes de empezar: API/frontend/Qdrant healthy; /api/health devolvió 577 productos, 577 embeddings, backend qdrant y desfase_detectado=false.
+- Espacio en disco: 2.7 GiB libres al iniciar. Tras crear el backup: 2.2 GiB libres (93 % de uso).
+
+Backup
+- La copia de staging tenía una versión anterior de scripts/backup.sh; se transfirió la versión revisada del repositorio. No se modificó el .env ni se imprimieron claves.
+- bash -n scripts/backup.sh: correcto.
+- Se cargó el .env únicamente en el entorno de la sesión SSH y se ejecutó el script desde staging.
+- Qdrant creó su snapshot oficial; el archivo descargado no estaba vacío. Se empaquetaron products.csv, embeddings.npy, ids.npy, images_normalized/ y el snapshot. Se excluyeron imágenes originales, imágenes de consultas y secretos.
+- tar -tzf verificó la legibilidad; solo después se eliminó el snapshot temporal del Qdrant activo.
+- Archivo: backups/ragv2_20261112T150131Z.tar.gz, tamaño 526 MiB.
+- SHA-256: 3fa8ae27af0215163b241938eb4d543141c93406540969e0e238f9a1fefc67aa.
+- Prueba negativa sin QDRANT_API_KEY: salida 1 y no se creó el directorio de backup.
+
+Restauración aislada
+- Se extrajo el archivo bajo /var/tmp y se creó un volumen y un contenedor Qdrant nuevos, separados de la colección de staging. Qdrant 1.20.0 recuperó el snapshot por el endpoint de recuperación de colección.
+- El primer intento usó POST y recibió 404; se corrigió al método PUT requerido por la API de Qdrant. No se modificó la colección original.
+- La colección restaurada tenía 577 puntos. El conjunto de los 577 IDs coincidió exactamente entre Qdrant, products.csv e ids.npy; las 577 imágenes referidas por el CSV estaban presentes.
+- Consulta del vector de prueba asociado a ids.npy[0]: Top 1 SBX-01-0001, score 0.9999999.
+- Prueba aparte del flujo activo por el proxy/frontend de staging con SBX-01-0001_exacta.jpg: HTTP exitoso, un resultado y Top 1 SBX-01-0001, score 0.8627.
+- Tras retirar únicamente el contenedor, volumen y carpeta temporal de esta prueba, /api/health siguió respondiendo 200 con 577/577 y desfase_detectado=false.
+
+Alcance pendiente
+- La prueba acredita un backup y una restauración aislada local; no acredita copias fuera de la VM, programación periódica, objetivos RPO/RTO ni recuperación en un servidor de producción.
+- El archivo de 526 MiB se conserva en la carpeta backups/ de la VM. Debe copiarse a un destino independiente antes de considerarlo protección ante pérdida de la VM.
+- No se marcó como completado el despliegue operativo de backups fuera del servidor.

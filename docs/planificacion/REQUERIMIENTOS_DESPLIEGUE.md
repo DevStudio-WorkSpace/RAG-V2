@@ -317,7 +317,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 ### 3.1 Producto y datos
 
 - [ ] Congelar alcance: demo privada, producción pública o Hito 3.
-- [ ] Entregar nombres comerciales, URLs reales y archivos correctos.
+- [ ] Entregar nombres comerciales y URLs reales acordados: el CSV aún usa IDs SBX y enlaces `ejemplo.com`. Las imágenes referidas por los 577 registros existen; falta aprobar su contenido/destino comercial.
 - [x] Corregir `imagen` en `products.csv` (`.png` vs `.jpg`).
 - [x] Regenerar índices y validar alineación `ids.npy` ↔ `products.csv` ↔ `embeddings.npy`.
 
@@ -347,7 +347,8 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Torch CPU instalado explícitamente en Dockerfile _(completado)_.
 - [x] Versiones de Python pineadas
 - [x] Healthchecks y readiness en `docker-compose.yml`.
-- [x] Backups de `data/` y `qdrant_data/`.
+- [x] Crear backup local de catálogo, índices, imágenes normalizadas y snapshot oficial de Qdrant; restaurarlo en un Qdrant aislado y validar 577 puntos, IDs y búsqueda. Staging VirtualBox, 2026-11-12. [Evidencia](../evidencias/backup-restauracion-2026-11-12.txt).
+  - [ ] Programar la ejecución y guardar copias fuera de la VM/servidor; probar la recuperación en el entorno definitivo.
 - [x] Monitoreo.
 - [x] Alertas.
 - [x] Logs con rotación (responsable: compañero).
@@ -441,7 +442,7 @@ Reglas:
 - Frontend y API en la misma red Docker.
 - Secrets por `.env`/Docker secrets, nunca en la imagen.
 - Healthcheck en API, frontend y Qdrant.
-- Backups de `data/` y `qdrant_data/` con `scripts/backup.sh` (snapshot Qdrant + tar.gz rotados).
+- Backup local verificado con `scripts/backup.sh`: datos de catálogo/índices/imágenes normalizadas más snapshot oficial Qdrant en un tar.gz; rotación por `BACKUP_RETENTION`. Evidencia de restauración aislada del 2026-11-12. Programación y copia externa siguen pendientes.
 - Logs con rotación y alertas de latencia/errores.
 
 ---

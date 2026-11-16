@@ -1,0 +1,39 @@
+Prueba controlada de timeout del frontend
+Fecha: 2026-11-12
+
+Objetivo
+Verificar que el frontend muestre un error claro al superar el timeout de búsqueda,
+libere los controles y permita volver a intentar.
+
+Entorno aislado
+- Staging VirtualBox Ubuntu, acceso SSH por puerto 2222.
+- Copia temporal de la imagen `sublitex_frontend:rollback-candidate`, publicada solo
+  en `127.0.0.1:8081` de la VM y abierta desde Windows mediante túnel SSH local.
+- Simulador HTTP efímero en la red de frontend; API_URL apuntó al simulador.
+- Demora configurada: 200 segundos. Timeouts cliente y proxy: 180 segundos.
+- No se detuvo ni reconfiguró la API ni Qdrant de staging.
+
+Observaciones
+1. Se inició una búsqueda desde el modelo de muestra SBX-01-0001. Mientras cargaba,
+   las muestras, Buscar y Cambiar aparecieron deshabilitados.
+2. Después del límite, la interfaz mostró “Error al buscar” y “La API tardó más de
+   3 minutos en responder. Verificá que el proxy /api/search y la API estén activos.”
+3. Sin recargar la página, las seis muestras, Buscar y Cambiar volvieron a estar
+   habilitados.
+4. El primer reintento se hizo mientras el primer handler del stub aún terminaba.
+   Ese stub no consumía el cuerpo multipart y cerró la conexión; por eso devolvió
+   un error de conexión. Se corrigió el stub para leer el cuerpo completo.
+5. Con el simulador sano, `POST /api/search` respondió HTTP 200 con
+   `{"resultados":[]}`. Un nuevo intento desde Buscar completó el ciclo: se quitó
+   el error anterior, no quedó spinner activo y los controles permanecieron
+   disponibles. La prueba previa de respuesta vacía, de 2026-11-09, conserva la
+   validación del panel “No encontramos coincidencias”.
+
+Conclusión
+El timeout, el error legible, la liberación de controles y la posibilidad de
+reintentar quedaron verificados. Se marca el ítem de timeout controlado. Esta
+prueba acredita el comportamiento del frontend con un simulador local, no latencia
+de la API real ni estabilidad de producción.
+
+Limpieza
+Se eliminaron los contenedores efímeros y el túnel SSH tras recoger las evidencias.

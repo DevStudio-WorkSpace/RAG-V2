@@ -1,6 +1,6 @@
 # Guía de Despliegue en Servidor de Producción (RAG Sublitex)
 
-> Guía en revisión. Backup y restauración aún requieren correcciones y pruebas; el rollback de imágenes se probó en staging VirtualBox, pero falta validarlo en producción. Los comandos parten de la raíz del repositorio.
+> Guía en revisión. El 2026-11-12 se probó un backup y su restauración aislada en VirtualBox. La programación, la copia fuera del servidor y la recuperación en producción siguen pendientes. El rollback de imágenes se probó en staging, no en producción. Los comandos parten de la raíz del repositorio.
 
 
 Esta guía detalla el procedimiento estándar para verificar, transferir, configurar y levantar el sistema RAG (FastAPI + Qdrant + Next.js) en un servidor de producción (VPS, AWS, GCP, DigitalOcean, etc.).
@@ -249,6 +249,39 @@ Los snapshots deben crearse y copiarse al volumen como parte del procedimiento
 de backup; `QDRANT_SNAPSHOT_PATH` solo automatiza la recuperación en el arranque.
 Valida una restauración en staging antes de usarla como procedimiento de
 recuperación de producción.
+
+### Backup probado en staging
+
+El script `scripts/backup.sh` requiere `QDRANT_API_KEY` en el entorno. Desde la
+raíz del proyecto en Linux, se puede cargar el `.env` privado solo en la sesión
+actual y crear el archivo:
+
+```bash
+set -a
+source .env
+set +a
+bash scripts/backup.sh
+```
+
+El script falla si no tiene clave, no puede crear o descargar el snapshot, o
+faltan `products.csv`, `embeddings.npy`, `ids.npy` o `images_normalized/`.
+Empaqueta esos datos junto al snapshot oficial de Qdrant, valida que el tar sea
+legible y publica el archivo final solo después de terminar. Excluye
+`images_original/`, imágenes de consultas y secretos. No hace una copia en
+caliente de `qdrant_data/`.
+
+La prueba del 2026-11-12 produjo un archivo de 526 MiB, restaurado en un Qdrant
+temporal separado de staging. La colección restaurada tuvo 577 puntos; sus IDs
+coincidieron con `products.csv` e `ids.npy`, y una consulta vectorial de control
+recuperó `SBX-01-0001`. La búsqueda separada por el proxy/frontend activo también
+devolvió `SBX-01-0001` como Top 1. Ver [evidencia de backup y restauración](../evidencias/backup-restauracion-2026-11-12.txt).
+
+Para una recuperación real, extrae el archivo primero en un directorio aislado,
+restaura el snapshot en una instancia/colección Qdrant aislada y comprueba
+conteos, conjunto de IDs y una búsqueda antes de cambiar el servicio. No
+restaures sobre la colección activa durante un simulacro. La prueba local no
+cubre automatización periódica, copia externa, RPO/RTO ni producción; conserva
+una copia del archivo en un almacenamiento independiente de la VM.
 
 ---
 

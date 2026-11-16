@@ -1108,6 +1108,7 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 
 **Verificación:** `py_compile` pasó para los módulos Python tocados; Pylance no encontró errores de sintaxis en los archivos modificados y confirmó compatibilidad de los call sites de `search_similar_reranked`. La firma local de `recover_snapshot` acepta `priority` y `SnapshotPriority.SNAPSHOT`. `docker compose config -q` pasó con valores temporales de validación y `git diff --check` quedó limpio. Se conservaron las verificaciones previas del catálogo (577 filas, `(577, 512)` y IDs alineados), Qdrant local, aliases, y carga contra un servidor HTTP simulado. No se validó la restauración contra un servidor Qdrant real ni se midió p50/p95 del endpoint real: la API no está activa y el intérprete local carece de `sentence-transformers` y `pydantic-settings`. Sin commit ni push.
 
+
 ## Fecha: 2026-11-05 — Revisión de evolución y dirección del proyecto
 
 **Prompt:** «Lee los cambios que hemos estado haciendo desde hace muchos commits, es el camino correcto para seguir avanzando?».
@@ -1304,14 +1305,6 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - A 360 px se cargó `tiny-16.png`; el mensaje de error (16×16; mínimo 32 px por lado) se ve completo y legible. Captura guardada en `docs/evidencias/frontend-error-mobile-360-2026-11-09.png`. La acción Cambiar queda arriba del aviso, accesible al desplazarse. `/api/health` respondió 200 con 577 productos/embeddings; una búsqueda tardó más de lo esperado, pero terminó con resultados.
 - Checklist responsive actualizado. No se modificó código ni se hizo commit/push. Siguen pendientes la prueba en celular real, el caso controlado sin resultados y el tiempo agotado.
 
-## Fecha: 2026-11-09 — Simulacro de rollback de imágenes en VirtualBox
-
-- Prompt: «acaso puedes tu ejecutar la vm, conectar ssh y testearlo, hazlo».
-- Se probaron tags locales `rollback-base` y `rollback-candidate`; `docker compose config -q` pasó, API/frontend healthy y `/api/health` devolvió 200 con 577 productos/embeddings y sin desfase. Una búsqueda exacta por el proxy dio Top 1 `SBX-01-0001` en ambos tags.
-- El primer `up` sin `--no-deps` recreó Qdrant; se repitió usando `--no-deps`, conservando el ID/hora de inicio y bind mount de Qdrant. El staging quedó en `rollback-candidate` healthy. No se probó restauración de backup ni compatibilidad de cambios de esquema.
-- Guía: `docs/sala6/ROLLBACK_IMAGENES.md`; evidencia sanitizada: `docs/evidencias/rollback-2026-11-09.txt`. Checklist actualizado con estos límites. No se hizo push.
-
-
 ## Fecha: 2026-11-09 — Estado sin resultados en frontend
 
 - Prompt: «saltemos ese checklist, otro sin el celu».
@@ -1319,6 +1312,23 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
 - Verificación en navegador local con build de producción y API simulada aislada: selección de muestra, respuesta HTTP 200 `{"resultados":[]}`, fin de carga, estado vacío accesible y botón «Probar otra imagen». No se llamó al staging ni se afirma que el motor real devuelva cero resultados. Evidencia: `docs/evidencias/frontend-sin-resultados-2026-11-09.txt`.
 - `npm run lint`: sin errores, una advertencia preexistente en `frontend/app.js`; `npx tsc --noEmit`: correcto; `npm run build`: correcto, con advertencias preexistentes sobre trazado dinámico del sistema de archivos en la ruta de imágenes.
 - Checklist de frontend y requerimientos actualizado. No se hizo commit ni push. Sigue pendiente el caso controlado de tiempo agotado; la prueba en celular real se saltó a petición del usuario.
+
+## Fecha: 2026-11-09 — Preparación del procedimiento de rollback
+
+- Prompt: «mi compañero me ha delegado esto: tu haz el - [ ] Rollback documentado (imagen/tag anterior). ... dame los pasos y si luego marcamos la checklist».
+- Compose define tags configurables para imágenes de API y frontend mediante `RELEASE_TAG`. Se reemplazó la guía insegura de checkout + rebuild por adopción de tags del contenedor existente, despliegue de tags únicos y retorno sin rebuild, pull ni eliminación de volúmenes. Se añadió un simulacro aislado para VirtualBox y se aclaró que restaurar imagen no revierte cambios incompatibles de datos/Qdrant.
+- La casilla sigue abierta: Windows no tiene Docker CLI y este turno preparó la configuración/documentación, pero no ejecutó `docker compose config` ni el simulacro. Tras transferir Compose a `/home/vboxuser/Desktop/TRABAJOS/RAG-V2-staging`, revisar espacio, validar configuración, construir un candidato, volver a `rollback-base`, comprobar salud/búsqueda y conservar evidencia sanitizada, podrá cerrarse.
+- No se hizo commit ni push.
+
+## Fecha: 2026-11-09 — Simulacro de rollback de imágenes en VirtualBox
+
+- Prompt: «acaso puedes tu ejecutar la vm, conectar ssh y testearlo, hazlo».
+- SSH a `vboxuser@127.0.0.1:2222`; se transfirió el Compose actualizado a la copia aislada. Compose v5.5.1; 4.3 GB libres. No se reconstruyeron imágenes por el espacio disponible: se usaron las imágenes locales anteriores (`before-frontend-task-20261105`) y las que estaban activas, etiquetadas `rollback-base` y `rollback-candidate`.
+- `docker compose config -q` correcto. Con `rollback-base`, API/frontend healthy, `/api/health` 200, 577 productos/embeddings, desfase false; búsqueda `SBX-01-0001_exacta.jpg` por el proxy dio Top 1 SBX-01-0001 (0.8627). Al restaurar `rollback-candidate`, salud y búsqueda fueron correctas con el mismo Top 1/score.
+- Una primera aplicación sin `--no-deps` recreó Qdrant debido a reconciliación de la configuración; el bind mount persistió y el servicio recuperó health 577/577 y búsqueda correcta. Se repitió el rollback con `--no-deps`: Qdrant conservó su ID `10b9e0cf...` y hora de inicio `2026-11-09T17:19:10.160908947Z` en rollback y reactivación. Por ello se corrigió la guía para usar `--no-deps` tras comprobar Qdrant sano.
+- Se actualizó el `.env` privado de staging para dejar `RELEASE_TAG=rollback-candidate`; los servicios quedaron en las imágenes candidatas healthy. Evidencia sanitizada: `docs/evidencias/rollback-2026-11-09.txt`. Checklist §3.4 marcado con el alcance de esta prueba; no prueba restauración de backups ni rollback de datos/esquema.
+- No se hizo commit ni push.
+
 ## Fecha: 2026-11-11 — Medición inicial de latencia p50/p95 en staging
 
 - Prompt: «una ultima vez, con lo queya tenemos en el proyecto actual, intenta ejecutarlo y poder conseguir el checklist».
@@ -1344,6 +1354,22 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
   3. Pruebas pendientes de verificación final (dispositivo móvil real, caso sin resultados/timeout, prueba de restauración del backup generado por `scripts/backup.sh`).
   4. WordPress/WooCommerce y 15.000 diseños (fuera del alcance actual según `AGENTS.md`).
 
+## Fecha: 2026-11-12 — Backup y restauración aislada en VirtualBox
+
+- Prompt: «Ejecutalo tu y documenta lo que vayas encontrado, luego al finalizar toda la tarea del checklist se hara una documentación».
+- Se conectó a la VM por SSH y se inspeccionó staging antes de operar. API, frontend y Qdrant estaban sanos con 577 productos/vectores; el disco tenía 2.7 GiB libres. La copia de staging contenía una versión anterior de `scripts/backup.sh`, por lo que se transfirió el script actualizado desde el repositorio.
+- El script actualizado exige `QDRANT_API_KEY`, usa snapshot oficial de Qdrant, incluye productos/índices/imágenes normalizadas, excluye fotos de consulta y secretos, valida el tar y publica el archivo solo al completarse. `bash -n` pasó. La falta de clave se probó: el script terminó con error y no creó salida.
+- Backup generado: `backups/ragv2_20261112T150131Z.tar.gz`, 526 MiB; SHA-256 `3fa8ae27af0215163b241938eb4d543141c93406540969e0e238f9a1fefc67aa`. El snapshot temporal se eliminó de Qdrant después de verificar el archivo.
+- Se restauró el snapshot en un Qdrant temporal aislado (v1.20.0). Los 577 IDs coincidieron exactamente entre Qdrant, `products.csv` e `ids.npy`; las 577 imágenes referidas por CSV estaban presentes. Una consulta vectorial recuperó `SBX-01-0001` como Top 1 (0.9999999). La búsqueda real separada por el proxy/frontend staging devolvió `SBX-01-0001` como Top 1 (0.8627). El staging permaneció healthy y se eliminaron únicamente los recursos temporales creados para el simulacro.
+- Evidencia completa: `docs/evidencias/backup-restauracion-2026-11-12.txt`. Se actualizó la guía y el checklist para marcar la creación/restauración local probada; quedan pendientes la programación, copia fuera de la VM y restauración en el entorno definitivo. No se hizo commit ni push.
+
+## Fecha: 2026-11-12 — Prueba controlada de timeout del frontend
+
+- Prompt: «bien puedes ejecutar lo tuyo para alcanzar el punto 1. Probar un timeout controlado: verificar que la interfaz muestre un error claro si la búsqueda supera el límite de espera, libere los controles y permita reintentar. ¿Qué uso harás?»; luego: «Bien ahora, empieza.»
+- Se usó una copia temporal del frontend en el puerto 8081 por túnel SSH, enlazada a un simulador HTTP temporal en una red Docker aislada. El simulador demoró la primera respuesta 200 s frente al timeout configurado en 180 s. La API y Qdrant de staging no se alteraron.
+- En el navegador, el frontend mostró el error de timeout con el texto “La API tardó más de 3 minutos en responder…”. Se comprobó que las seis muestras, Buscar y Cambiar quedaron habilitados sin recargar.
+- El primer reintento alcanzó al stub defectuoso, que cerraba la conexión al no consumir el multipart. Se corrigió para leer el cuerpo completo. Luego se verificó `/api/search` HTTP 200 con `{"resultados":[]}` y el botón Buscar volvió a completar el ciclo sin spinner ni error; la UI dejó disponibles los controles. El panel de resultados vacíos no se volvió a certificar aquí; cuenta con evidencia previa separada.
+- Registro: `docs/evidencias/frontend-timeout-2026-11-12.txt`. No se hizo commit ni push.
 
 ## Fecha: 2026-11-15
 

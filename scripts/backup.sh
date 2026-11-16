@@ -1,109 +1,86 @@
 #!/usr/bin/env bash
-# backup.sh — Backup de data/ y qdrant_data/ con snapshot Qdrant opcional
-#
-# Uso:
-#   bash scripts/backup.sh                  # backup completo al directorio por defecto
-#   bash scripts/backup.sh /ruta/destino    # directorio de destino personalizado
-#   QDRANT_URL=http://... bash scripts/backup.sh   # Qdrant en otra URL
-#
-# Qué hace:
-#   1. Crea un snapshot de la colección Qdrant activa (si Qdrant está disponible).
-#   2. Comprime data/ en un .tar.gz con fecha+hora.
-#   3. Comprime qdrant_data/ (almacenamiento de Qdrant, incluye snapshots) en otro .tar.gz.
-#   4. Rota: mantiene los últimos RETENER backups, borra los más antiguos.
-#
-# Requisitos: bash ≥4, curl, tar (disponibles en cualquier instalación Linux estándar).
-# Para cron: 0 2 * * * /bin/bash /ruta/proyecto/scripts/backup.sh >> /var/log/sublitex_backup.log 2>&1
+# Creates a consistent business-data archive and an official Qdrant snapshot.
+# Run from any directory. Requires bash, curl, python3, and tar.
+set -Eeuo pipefail
 
-set -euo pipefail
-
-# ── Configuración ────────────────────────────────────────────────────────────
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BACKUP_DIR="${1:-${PROJECT_ROOT}/backups}"
+BACKUP_DIR="${BACKUP_DIR:-${PROJECT_ROOT}/backups}"
 QDRANT_URL="${QDRANT_URL:-http://127.0.0.1:6333}"
-QDRANT_API_KEY="${QDRANT_API_KEY:-}"
 QDRANT_COLLECTION="${QDRANT_COLLECTION_NAME:-sublitex_fashion_v1}"
-RETENER=7          # número de backups comprimidos a conservar por carpeta
+RETENTION="${BACKUP_RETENTION:-7}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-LOG_PREFIX="[backup ${TIMESTAMP}]"
+FINAL_ARCHIVE="${BACKUP_DIR}/ragv2_${TIMESTAMP}.tar.gz"
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
-log()  { echo "${LOG_PREFIX} $*"; }
-warn() { echo "${LOG_PREFIX} AVISO: $*" >&2; }
-die()  { echo "${LOG_PREFIX} ERROR: $*" >&2; exit 1; }
+log() { printf '[backup %s] %s\n' "${TIMESTAMP}" "$*"; }
+die() { log "ERROR: $*" >&2; exit 1; }
 
-rotar() {
-    local dir="$1" prefijo="$2"
-    # Elimina los archivos más antiguos si hay más de RETENER
-    local count
-    count=$(find "${dir}" -maxdepth 1 -name "${prefijo}*.tar.gz" | wc -l)
-    if (( count > RETENER )); then
-        find "${dir}" -maxdepth 1 -name "${prefijo}*.tar.gz" \
-            | sort | head -n $(( count - RETENER )) \
-            | xargs rm -f
-        log "Rotación: se eliminaron $(( count - RETENER )) backup(s) antiguo(s) de '${prefijo}'."
-    fi
-}
-
-# ── Verificaciones previas ───────────────────────────────────────────────────
-[[ -d "${PROJECT_ROOT}/data" ]]        || die "No se encontró data/ en ${PROJECT_ROOT}"
-[[ -d "${PROJECT_ROOT}/qdrant_data" ]] || warn "qdrant_data/ no existe; se omitirá ese backup."
+[[ "${RETENTION}" =~ ^[1-9][0-9]*$ ]] || die "BACKUP_RETENTION debe ser un entero mayor que cero."
+[[ -n "${QDRANT_API_KEY:-}" ]] || die "QDRANT_API_KEY no está configurada en el entorno."
+[[ -f "${PROJECT_ROOT}/data/products.csv" ]] || die "Falta data/products.csv."
+[[ -f "${PROJECT_ROOT}/data/embeddings.npy" ]] || die "Falta data/embeddings.npy."
+[[ -f "${PROJECT_ROOT}/data/ids.npy" ]] || die "Falta data/ids.npy."
+[[ -d "${PROJECT_ROOT}/data/images_normalized" ]] || die "Falta data/images_normalized/."
 
 mkdir -p "${BACKUP_DIR}"
-log "Directorio de backups: ${BACKUP_DIR}"
-log "Raíz del proyecto:     ${PROJECT_ROOT}"
+WORK_DIR="$(mktemp -d "${BACKUP_DIR}/.ragv2-backup-${TIMESTAMP}.XXXXXX")"
+ARCHIVE_TMP="${BACKUP_DIR}/.ragv2_${TIMESTAMP}.tar.gz.tmp"
+cleanup() { rm -rf -- "${WORK_DIR}"; rm -f -- "${ARCHIVE_TMP}"; }
+trap cleanup EXIT
 
-# ── 1. Snapshot de Qdrant ────────────────────────────────────────────────────
-SNAPSHOT_OK=false
-CURL_ARGS=(-s -S --max-time 60)
-[[ -n "${QDRANT_API_KEY}" ]] && CURL_ARGS+=(-H "api-key: ${QDRANT_API_KEY}")
+log "Solicitando snapshot oficial de Qdrant: ${QDRANT_COLLECTION}."
+SNAPSHOT_JSON="$(curl --fail --silent --show-error --max-time 120 \
+  -H "api-key: ${QDRANT_API_KEY}" -X POST \
+  "${QDRANT_URL}/collections/${QDRANT_COLLECTION}/snapshots")" \
+  || die "Qdrant no creó el snapshot; backup cancelado."
+SNAPSHOT_NAME="$(printf '%s' "${SNAPSHOT_JSON}" | python3 -c \
+  'import json,sys; print(json.load(sys.stdin).get("result",{}).get("name", ""))')" \
+  || die "Qdrant devolvió una respuesta de snapshot inválida."
+[[ -n "${SNAPSHOT_NAME}" && "${SNAPSHOT_NAME}" != */* ]] \
+  || die "El nombre del snapshot está vacío o no es seguro."
 
-log "Solicitando snapshot de colección '${QDRANT_COLLECTION}' en ${QDRANT_URL} …"
-SNAP_RESPONSE=$(curl "${CURL_ARGS[@]}" \
-    -X POST \
-    "${QDRANT_URL}/collections/${QDRANT_COLLECTION}/snapshots" \
-    -o - 2>&1) || true
+SNAPSHOT_FILE="${WORK_DIR}/${SNAPSHOT_NAME}"
+curl --fail --silent --show-error --max-time 600 \
+  -H "api-key: ${QDRANT_API_KEY}" \
+  "${QDRANT_URL}/collections/${QDRANT_COLLECTION}/snapshots/${SNAPSHOT_NAME}" \
+  -o "${SNAPSHOT_FILE}" || die "No se pudo descargar el snapshot."
+[[ -s "${SNAPSHOT_FILE}" ]] || die "El snapshot descargado está vacío."
 
-if echo "${SNAP_RESPONSE}" | grep -q '"status":"ok"'; then
-    SNAP_NAME=$(echo "${SNAP_RESPONSE}" | grep -o '"name":"[^"]*"' | head -1 | cut -d'"' -f4)
-    log "Snapshot creado: ${SNAP_NAME}"
-    SNAPSHOT_OK=true
+mkdir -p "${WORK_DIR}/payload/data" "${WORK_DIR}/payload/qdrant_snapshots"
+cp -- "${PROJECT_ROOT}/data/products.csv" "${WORK_DIR}/payload/data/"
+cp -- "${PROJECT_ROOT}/data/embeddings.npy" "${WORK_DIR}/payload/data/"
+cp -- "${PROJECT_ROOT}/data/ids.npy" "${WORK_DIR}/payload/data/"
+cp -a -- "${PROJECT_ROOT}/data/images_normalized" "${WORK_DIR}/payload/data/"
+mv -- "${SNAPSHOT_FILE}" "${WORK_DIR}/payload/qdrant_snapshots/"
+
+cat > "${WORK_DIR}/payload/BACKUP_MANIFEST.txt" <<EOF
+created_utc=${TIMESTAMP}
+qdrant_collection=${QDRANT_COLLECTION}
+qdrant_url=${QDRANT_URL}
+contents=data/products.csv,data/embeddings.npy,data/ids.npy,data/images_normalized,qdrant_snapshots/${SNAPSHOT_NAME}
+excluded=data/images_original,data/queries_original,data/queries_procesadas,.env
+EOF
+
+log "Empaquetando catálogo, índices e imágenes normalizadas (sin fotos de consulta)."
+tar -czf "${ARCHIVE_TMP}" -C "${WORK_DIR}/payload" . \
+  || die "Falló la compresión del respaldo."
+tar -tzf "${ARCHIVE_TMP}" >/dev/null \
+  || die "El archivo comprimido no pasó la verificación."
+mv -- "${ARCHIVE_TMP}" "${FINAL_ARCHIVE}"
+
+# Delete the server-side snapshot only after the downloaded copy is verified.
+if curl --fail --silent --show-error --max-time 120 \
+  -H "api-key: ${QDRANT_API_KEY}" -X DELETE \
+  "${QDRANT_URL}/collections/${QDRANT_COLLECTION}/snapshots/${SNAPSHOT_NAME}" >/dev/null; then
+  log "Snapshot temporal eliminado de Qdrant tras verificar el archivo."
 else
-    warn "No se pudo crear snapshot Qdrant (Qdrant podría estar apagado). Se continúa sin snapshot."
-    warn "Respuesta: ${SNAP_RESPONSE:0:200}"
+  log "AVISO: el respaldo está verificado, pero no se pudo borrar el snapshot temporal de Qdrant." >&2
 fi
 
-# ── 2. Backup de data/ ───────────────────────────────────────────────────────
-DATA_DEST="${BACKUP_DIR}/data_${TIMESTAMP}.tar.gz"
-log "Comprimiendo data/ → ${DATA_DEST} …"
-tar -czf "${DATA_DEST}" \
-    --exclude="data/images_original" \
-    -C "${PROJECT_ROOT}" data
-DATA_SIZE=$(du -sh "${DATA_DEST}" | cut -f1)
-log "Backup data/ completado: ${DATA_SIZE}"
-rotar "${BACKUP_DIR}" "data_"
-
-# ── 3. Backup de qdrant_data/ ────────────────────────────────────────────────
-if [[ -d "${PROJECT_ROOT}/qdrant_data" ]]; then
-    QDRANT_DEST="${BACKUP_DIR}/qdrant_data_${TIMESTAMP}.tar.gz"
-    log "Comprimiendo qdrant_data/ → ${QDRANT_DEST} …"
-    tar -czf "${QDRANT_DEST}" \
-        -C "${PROJECT_ROOT}" qdrant_data
-    QDRANT_SIZE=$(du -sh "${QDRANT_DEST}" | cut -f1)
-    log "Backup qdrant_data/ completado: ${QDRANT_SIZE}"
-    rotar "${BACKUP_DIR}" "qdrant_data_"
-else
-    warn "qdrant_data/ no existe; backup omitido."
+mapfile -t ARCHIVES < <(find "${BACKUP_DIR}" -maxdepth 1 -type f -name 'ragv2_*.tar.gz' -printf '%f\n' | sort -r)
+if (( ${#ARCHIVES[@]} > RETENTION )); then
+  for old in "${ARCHIVES[@]:RETENTION}"; do
+    rm -f -- "${BACKUP_DIR}/${old}"
+  done
 fi
 
-# ── 4. Resumen ───────────────────────────────────────────────────────────────
-log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-log "Backup finalizado."
-log "  Snapshot Qdrant : $( ${SNAPSHOT_OK} && echo 'OK' || echo 'omitido (Qdrant inaccesible)')"
-log "  data/           : ${DATA_DEST} (${DATA_SIZE})"
-if [[ -d "${PROJECT_ROOT}/qdrant_data" ]]; then
-    log "  qdrant_data/    : ${QDRANT_DEST} (${QDRANT_SIZE})"
-fi
-log "  Retención       : últimos ${RETENER} backups por carpeta"
-log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
+log "Backup verificado: ${FINAL_ARCHIVE} ($(du -h "${FINAL_ARCHIVE}" | cut -f1))."
