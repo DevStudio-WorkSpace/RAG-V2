@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -195,8 +195,11 @@ def veredictos():
 
 
 @router.get("/estado")
-def estado():
+def estado(request: Request):
     _garantizar_casos_csv()
+
+    # Construir la URL base a partir de la petición entrante (sin hardcodear host/puerto)
+    base_url = str(request.base_url).rstrip("/")
 
     resultados_rows = _leer_resultados()
     juicios_por_caso: dict[str, dict[int, str]] = {}
@@ -220,7 +223,7 @@ def estado():
         casos.append({
             "caso": caso,
             "archivo": archivo,
-            "imagen_url": f"http://localhost:8000/casos/{quote(archivo)}",
+            "imagen_url": f"{base_url}casos/{quote(archivo)}",
             "id_correcto": meta.get("id_correcto", ""),
             "tipo": meta.get("tipo", "dificil"),
             "juicios": {str(k): v for k, v in j.items()},

@@ -1344,3 +1344,33 @@ Servicios activos al finalizar: API FastAPI en http://localhost:8000 (uvicorn en
   3. Pruebas pendientes de verificación final (dispositivo móvil real, caso sin resultados/timeout, prueba de restauración del backup generado por `scripts/backup.sh`).
   4. WordPress/WooCommerce y 15.000 diseños (fuera del alcance actual según `AGENTS.md`).
 
+
+## Fecha: 2026-11-15
+
+### Prompt - Eliminación de URLs hardcoded y parametrización
+
+**Propósito:** Escanear y reemplazar todas las URLs de ejemplo, IPs locales
+(localhost:8000, 0.0.0.0) y dominios genéricos (example.com) por variables de
+entorno configurables, para que el proyecto no dependa de valores quemados al
+desplegar en staging/producción.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `frontend/app.js` | URL `http://localhost:8000/search/image` → parametrizada via `window.__API_URL__` con fallback a `/api/search` |
+| `api/evaluacion.py` | URL hardcoded `http://localhost:8000/casos/...` → construida dinámicamente con `request.base_url` de FastAPI |
+| `scripts/verificar_staging.py` | URL `http://localhost:8000` → parametrizada via `os.getenv("API_BASE_URL", ...)` |
+| `.env.example` | Documentada nueva variable `API_BASE_URL` y mejorados comentarios de CORS/SITE_ADDRESS para producción |
+| `frontend/.env.example` | Mejorados comentarios para distinguir Docker vs desarrollo local vs producción |
+
+**Archivos intencionalmente NO modificados (ya parametrizados):**
+- `frontend/src/app/api/health/route.ts` y `search/route.ts` — ya usan `process.env.API_URL` con fallback localhost
+- `core/config.py` — defaults de desarrollo sobreescritos por `.env`
+- `scripts/compare_hito1_hito2.py` — usa argparse `--url`
+- `scripts/health_alert.py` — usa env var `HEALTH_URL`
+- `scripts/load_test_qdrant.py` — usa argparse `--url`
+- `docker-compose.yml` — healthchecks usan localhost internamente al contenedor (correcto)
+- `frontend/app.py` — Streamlit legacy, campo editable en sidebar
+
+**Resultado:** Compilación verificada con `py_compile`. YAML de Docker validado.

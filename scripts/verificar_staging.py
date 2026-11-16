@@ -18,7 +18,7 @@ from PIL import Image
 
 def main():
     base = os.getenv("STAGING_TEST_URL", "http://proxy").rstrip("/")
-    api = "http://localhost:8000"
+    api = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
     root = Path(__file__).resolve().parent.parent
     rows = pd.read_csv(root / "data/products.csv")
     ids = np.load(root / "data/ids.npy", allow_pickle=True).astype(str)

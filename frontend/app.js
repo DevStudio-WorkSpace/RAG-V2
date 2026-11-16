@@ -49,9 +49,13 @@ async function buscarImagen(archivo) {
         formulario.append("modelo", "clip");
 
 
+        // URL de la API: usa el proxy server-side /api/search cuando existe,
+        // o la variable global window.__API_URL__ inyectada desde el backend.
+        const apiSearchUrl = (window.__API_URL__ || "/api/search").replace(/\/+$/, "");
+
         // Enviamos la imagen a la API existente
         const respuesta = await fetch(
-            "http://localhost:8000/search/image",
+            apiSearchUrl,
             {
                 method: "POST",
                 body: formulario
