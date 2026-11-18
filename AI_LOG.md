@@ -1400,3 +1400,76 @@ desplegar en staging/producción.
 - `frontend/app.py` — Streamlit legacy, campo editable en sidebar
 
 **Resultado:** Compilación verificada con `py_compile`. YAML de Docker validado.
+
+## Fecha: 2026-11-18 (integración de 306 imágenes SBX-06)
+
+### Prompt - Nuevas imágenes en la página de analizar
+**Propósito:** Que las 306 imágenes nuevas subidas a `data/DATA_NEW`
+(SBX-06-0001 a SBX-06-0313) se integren al catálogo y a la búsqueda visual de
+la página Analizar, sin agregar funciones ni rutas nuevas, y eliminar una
+imagen duplicada.
+
+**Trabajo realizado (solo pipeline existente):**
+
+| Paso | Script | Resultado |
+|------|--------|-----------|
+| Duplicado | — | `SBX-04-0042(1).png` era idéntico (SHA256) a `SBX-04-0042.png`; se apartó a la papelera temporal. |
+| Normalización | `scripts/normalizar_data_new.py` | 883 PNG en `data/images_normalized/` (577 previas + 306 nuevas). |
+| Catálogo | `scripts/crear_csv_data_new.py` | `data/products.csv` con 883 filas, 883 IDs únicos, 0 imágenes inexistentes. |
+| Embeddings | `scripts/generar_embeddings.py` | `embeddings.npy` (883, 512) + `ids.npy` (883), alineados con el CSV, norma L2 = 1.0. |
+| Índices comparativos | `scripts/generar_indices_comparativos.py` | CLIP y OpenCLIP regenerados a 883 filas; SigLIP regenerado en la misma ejecución. |
+| Qdrant | `scripts/migrar_a_qdrant.py` | Colección `sublitex_fashion_v1` recreada con 883 puntos. |
+
+**Cambio de código mínimo:** `scripts/normalizar_data_new.py` ahora permite
+abrir PNG de resolución extrema (`Image.MAX_IMAGE_PIXELS = None`) y reduce a
+2000 px de lado mayor (`MAX_LADO`), igual que el banco canónico. Motivo: 9
+imágenes nuevas venían a 30000 px y PIL las rechazaba como decompression bomb;
+sin este ajuste quedaban fuera del catálogo.
+
+**Verificación end-to-end (uvicorn local + Qdrant local):**
+- `GET /health` → 200, `products=883`, `embeddings=883`, `desfase_detectado=false`.
+- `POST /search/image` con `SBX-06-0005.png` → Top 1 `SBX-06-0005` (0.83).
+- `POST /search/image` con `SBX-01-0001.png` → Top 1 `SBX-01-0001` (0.88).
+- Consulta vectorial con los embeddings indexados: `SBX-06-0001` y
+  `SBX-06-0313` devuelven score 1.0 contra sí mismos.
+
+### Prompt - Límite de subida de 15 MB
+**Propósito:** El usuario reporta que algunas imágenes no se pueden subir por
+el máximo de 15 MB.
+
+**Causa:** el límite estaba repetido e inconsistente: proxy `Caddyfile`
+(`max_size 15MB`), API (`MAX_UPLOAD_SIZE`), y dos validaciones del frontend.
+
+**Cambios:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `Caddyfile` | `max_size` 15MB → 50MB |
+| `api/main.py` | `MAX_UPLOAD_SIZE` → 50MB; tope de 80 MP (`MAX_IMAGE_PIXELS`) con 400 explicativo en vez de "imagen no válida" |
+| `frontend/src/lib/api.ts` | límite 50MB + `optimizeImageForUpload()`: reescala a 2000 px y recomprime en JPEG las imágenes de más de 4MB antes de enviarlas |
+| `frontend/src/app/search/page.tsx` | límite 50MB y texto de ayuda actualizado |
+| `docs/planificacion/REQUERIMIENTOS_DESPLIEGUE.md` | evidencia y pendientes actualizados |
+
+**Verificación:** `py_compile` de la API, `eslint` y `tsc --noEmit` del frontend
+sin errores. Contra la API local: imagen de 29MB → 200; PNG de 30MB con
+516 MP → 400 con mensaje de píxeles; PNG de 109MB → 413 con mensaje de 50MB.
+La misma imagen de 29MB a través del proxy Next `/api/search` → 200.
+
+## Fecha: 2026-11-18 — Desbloqueo del push con Git LFS
+
+**Prompt:** «git push origin sala-6» falla con `GH001` porque
+`data/DATA_NEW/SBX-06-0034.png` pesa 104,72 MB y supera el límite de 100 MB de
+GitHub; después `git reset --soft HEAD~1` dejó el merge pendiente.
+
+**Causa:** el commit local añadía las 202 imágenes nuevas de `data/DATA_NEW`
+(421,6 MB), pero `.gitattributes` declaraba LFS para `SBX-06-0034.png` sin que
+el archivo se hubiera añadido realmente como puntero: Git guardó el blob
+completo.
+
+**Solución:** se re-añadió `data/DATA_NEW/SBX-06-0034.png` a través del filtro
+LFS (queda como puntero de 134 bytes; el objeto de 104,72 MB viaja por LFS), se
+rehízo el commit local y se integró `origin/sala-6` (2 commits) conservando la
+resolución de los 11 archivos de documentación. `SBX-06-0306.png` (64,56 MB)
+sigue como blob normal: GitHub solo emite un aviso, no lo bloquea. Esta entrada
+también restaura las dos entradas anteriores de `AI_LOG.md`, que se perdieron
+al resolver el merge.
