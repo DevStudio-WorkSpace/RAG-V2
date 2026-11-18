@@ -23,6 +23,13 @@ IMAGES_NORM = os.path.join(BASE_DIR, "data", "images_normalized")
 
 PATRON = re.compile(r"^(SBX-\d{2}-\d{4})\.png$")
 
+# Las descargas de DATA_NEW pueden venir en resoluciones muy altas (hasta
+# 30000 px por lado). Se permite abrirlas sin que PIL las bloquee y se
+# reducen al tamaño del catálogo canónico (2000 px de lado mayor) para que
+# el banco quede homogéneo y el embedding no dependa del tamaño original.
+Image.MAX_IMAGE_PIXELS = None
+MAX_LADO = 2000
+
 
 def main():
     if not os.path.isdir(DATA_NEW):
@@ -48,6 +55,8 @@ def main():
 
         try:
             img = Image.open(ruta_origen).convert("RGB")
+            if max(img.size) > MAX_LADO:
+                img.thumbnail((MAX_LADO, MAX_LADO), Image.LANCZOS)
             img.save(ruta_destino, "PNG")
             copiadas += 1
         except Exception as e:

@@ -50,8 +50,8 @@ export default function SearchPage() {
       setError("El archivo está vacío.");
       return;
     }
-    if (f.size > 15 * 1024 * 1024) {
-      setError("La imagen supera el máximo de 15 MB.");
+    if (f.size > 50 * 1024 * 1024) {
+      setError("La imagen supera el máximo de 50 MB.");
       return;
     }
     setFile(f);
@@ -316,7 +316,7 @@ export default function SearchPage() {
               Compatible con JPG, PNG y WEBP. También puedes presionar <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[11px]">Ctrl+V</kbd> para pegar directamente.
             </p>
             <p className="text-[11px] text-[var(--foreground-subtle)] mt-2">
-              Máximo 15 MB
+              Máximo 50 MB · las imágenes grandes se optimizan automáticamente
             </p>
           </div>
         ) : (

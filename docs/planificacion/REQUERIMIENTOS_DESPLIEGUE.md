@@ -231,14 +231,13 @@ Evidencia:
 Evidencia:
 
 - `api/main.py` guarda todas las imágenes subidas en `data/queries_original/` y `data/queries_procesadas/` mediante `_guardar_versiones()`, sin límite ni caducidad.
-- No hay límite de tamaño en servidor: el cliente valida 15 MB, pero `await file.read()` acepta cualquier tamaño por `curl`.
+- La subida está limitada a 50 MB de forma coherente en el navegador, el proxy Caddy y `api/main.py`; además la API rechaza con 400 las imágenes de más de 80 MP antes de decodificarlas. El frontend reescala a 2000 px y recomprime en JPEG las imágenes de más de 4 MB antes de enviarlas.
 - No hay rate limit ni cuotas.
 - El frontend usa `clip` por defecto (`frontend/src/lib/api.ts` y `frontend/src/app/search/page.tsx`), coherente con la API y la colección Qdrant; la UI ya no ofrece `fusion`. La latencia en CPU se mide por separado.
 - En la prueba local la API llegó a consumir ~2,6 GB de RAM y ~100 % de CPU al cargar/atender.
 
 **Qué falta:**
 
-- Límite de subida en servidor y en proxy.
 - Rate limiting.
 - Retención/borrado automático de consultas.
 - Plan de capacidad o GPU.
@@ -255,7 +254,7 @@ Evidencia:
 - **Backups/restauración y monitoreo aún requieren pruebas:** el procedimiento de rollback por tags de imágenes de API/frontend sí quedó probado en VirtualBox el 2026-11-09; no cubre cambios incompatibles de datos o esquema de Qdrant. Ver [evidencia](../evidencias/rollback-2026-11-09.txt).
 - **Sin tests ni CI:** no hay pipeline de CI ni suite de pruebas automatizadas en git.
 - **Sin límites de recursos en compose:** la API corre sin `mem_limit`/`cpus` ni usuario no-root.
-- **Sin validación de bombas de descompresión:** Pillow puede consumir mucha memoria con imágenes maliciosas.
+- **Bombas de descompresión:** la API ya limita a 80 MP antes de decodificar, pero los scripts locales que abren imágenes (normalización, descriptores) no tienen ese tope.
 - **Proxy de imágenes frágil:** `frontend/src/app/api/images/[filename]/route.ts` resuelve `../data/images_normalized` según el `cwd`. Funciona con el volumen de Compose, pero se rompe si se usa `output: standalone` o se cambia el directorio de ejecución.
 - **Documentación desactualizada:** `README.md` menciona scripts/archivos eliminados (`validate_dataset.py`, `generar_consultas_hito2.py`, etc.).
 - **Licencia AGPL en requirements:** `ultralytics` sigue en `requirements.txt` (AGPL-3.0), aunque no se importe. Conviene limpiarlo para evitar contingencias legales.
@@ -317,7 +316,7 @@ Según `AGENTS.md` y especificaciones del proyecto:
 ### 3.1 Producto y datos
 
 - [ ] Congelar alcance: demo privada, producción pública o Hito 3.
-- [ ] Entregar nombres comerciales, URLs reales y archivos correctos.
+- [ ] Entregar nombres comerciales y URLs reales acordados: el CSV aún usa IDs SBX y enlaces `ejemplo.com`. Las imágenes referidas por los 577 registros existen; falta aprobar su contenido/destino comercial.
 - [x] Corregir `imagen` en `products.csv` (`.png` vs `.jpg`).
 - [x] Regenerar índices y validar alineación `ids.npy` ↔ `products.csv` ↔ `embeddings.npy`.
 
@@ -347,7 +346,8 @@ Según `AGENTS.md` y especificaciones del proyecto:
 - [x] Torch CPU instalado explícitamente en Dockerfile _(completado)_.
 - [x] Versiones de Python pineadas
 - [x] Healthchecks y readiness en `docker-compose.yml`.
-- [x] Backups de `data/` y `qdrant_data/`.
+- [x] Crear backup local de catálogo, índices, imágenes normalizadas y snapshot oficial de Qdrant; restaurarlo en un Qdrant aislado y validar 577 puntos, IDs y búsqueda. Staging VirtualBox, 2026-11-12. [Evidencia](../evidencias/backup-restauracion-2026-11-12.txt).
+  - [ ] Programar la ejecución y guardar copias fuera de la VM/servidor; probar la recuperación en el entorno definitivo.
 - [x] Monitoreo.
 - [x] Alertas.
 - [x] Logs con rotación (responsable: compañero).
@@ -441,7 +441,7 @@ Reglas:
 - Frontend y API en la misma red Docker.
 - Secrets por `.env`/Docker secrets, nunca en la imagen.
 - Healthcheck en API, frontend y Qdrant.
-- Backups de `data/` y `qdrant_data/` con `scripts/backup.sh` (snapshot Qdrant + tar.gz rotados).
+- Backup local verificado con `scripts/backup.sh`: datos de catálogo/índices/imágenes normalizadas más snapshot oficial Qdrant en un tar.gz; rotación por `BACKUP_RETENTION`. Evidencia de restauración aislada del 2026-11-12. Programación y copia externa siguen pendientes.
 - Logs con rotación y alertas de latencia/errores.
 
 ---

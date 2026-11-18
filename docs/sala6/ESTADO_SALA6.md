@@ -30,15 +30,15 @@ Actualización 2026-11-05: el usuario descartó `TRABAJO.md` como requisito vige
 | Área | Evidencia actual | Qué falta para cerrarla |
 | --- | --- | --- |
 | Catálogo | 577 filas; columnas exactas; las 577 imágenes existen | Los 577 nombres son el ID y las 577 URLs usan ejemplo.com. §3.1 no está totalmente cerrado |
-| Índices | embeddings.npy, clip y openclip: 577×512; siglip: 577×768; ids.npy: 577 elementos | Comprobar contenido y orden de IDs con NumPy y relación con los vectores. Igual cantidad no prueba alineación |
-| Búsqueda | /api/search del frontend llama /search/image; este usa motores .npy | Qdrant existe como ruta separada; elegir y documentar backend canónico antes de migrar o retirar rutas |
+| Índices | En el backup restaurado se comprobó que los 577 IDs de `ids.npy` coinciden en orden con `products.csv`; Qdrant restauró 577 puntos y la búsqueda vectorial controlada recuperó el primer ID. | No se volvió a auditar en esta sesión la calidad de todos los índices comparativos ni H1 vs. H2. |
+| Búsqueda | El frontend llama /search/image mediante el proxy; el flujo normal usa CLIP y Qdrant. Staging informó 577 productos/vectores, sin desfase. | Los modos `.npy` permanecen para baseline histórico; contrato y cobertura de rutas antiguas aún requieren revisión. |
 | Modelo | API y frontend usan `clip` por defecto; es la única opción compatible con la colección Qdrant y el arranque solo precarga CLIP. Verificado el 2026-11-09 | Medición inicial en staging: p50 5898.3 ms y p95 9766.8 ms entre 8 respuestas exitosas; 2/10 `ReadTimeout`. Ampliar muestra y carga antes de fijar SLO. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt) |
 | Autenticación | Dependencias de cliente/admin, compare_digest, CORS explícito; clave en proxy servidor | Pruebas negativas y de configuración en el despliegue objetivo |
-| Protección de recursos | /search/image tiene límite de subida y rate limit | v2 y qdrant no aplican esos mismos controles. La retención se ejecuta con nuevas búsquedas, no con un proceso periódico |
+| Protección de recursos | `/search/image` aplica límite de subida y rate limit; los aliases `/search/image/qdrant` y `/search/image/v2` comparten la misma función protegida. | Rate limit en memoria por IP; confirmar comportamiento detrás de proxy y diseñar retención periódica de consultas si se requiere operación continua. |
 | TLS | Caddyfile tiene auto_https off y escucha :80 | Dominio/certificado y prueba HTTPS. La casilla TLS marcada no describe esta configuración |
 | Contenedores | API no-root; redes separadas; Qdrant enlazado a localhost; recursos y rotación de logs declarados | Frontend no declara USER. No afirmar que todos son no-root; comprobar permisos de escritura de data para API |
-| Build | Dockerfiles e ignores presentes; Qdrant con versión fija | No existe package-lock.json y se usa npm install; falta validar build completo (el volumen persistente HF_HOME sí está en `docker-compose.yml`, validado con `docker compose config` el 2026-11-06) |
-| Salud | Healthcheck Compose consulta HTTP de /health | No verifica desfase, carga efectiva del modelo ni disponibilidad de colección Qdrant |
+| Build | `frontend/package-lock.json` existe y el Dockerfile ejecuta `npm ci`; API y frontend declaran usuario no-root; Qdrant tiene versión fija. | La evidencia del build limpio es histórica; repetir build completo con el estado actual antes de publicar. |
+| Salud | El endpoint `/health` consulta Qdrant y reporta conteo de puntos; Compose usa HTTP 200 como healthcheck. | La respuesta actual fija `desfase_detectado=false` por contrato y no demuestra la carga efectiva de CLIP; verificarlo explícitamente en el despliegue objetivo. |
 | Monitoreo | Compose independiente y docs/despliegue/MONITOREO.md presentes | Levantar, configurar monitores y demostrar alerta/recuperación. La alternativa scripts/health_alert.py documentada no existe |
 | Evaluación | JSON guardado: H2 44/50 Top1 (88%), 48/50 Top5 (96%), media 4594.1 ms; medición adicional p50/p95 en staging con CLIP | H1 tiene n=0: no hay comparación H1/H2. Falta revisión humana vigente; la muestra de latencia es pequeña y tuvo 20% de timeout, no representa SLO ni carga multiusuario. [Evidencia](../evidencias/latencia-staging-2026-11-11.txt) |
 | Banco de evaluación | Hay consultas en data/consultas y 50 filas en comparación | Falta evaluation/consultas_hito2.csv usado por compare_hito1_hito2.py; su fallback apunta a imágenes AIM antiguas |
@@ -49,12 +49,12 @@ También hay divergencias de contrato: /search/image devuelve un objeto con resu
 ## Revisión de los cinco archivos pendientes originales
 
 1. `.gitignore` y `.dockerignore`: exclusiones de backups coherentes con el objetivo; `*.tar.gz` es una exclusión global, más amplia que backups/. Pueden aislarse en un commit pequeño tras revisión del equipo.
-2. `scripts/backup.sh`: propuesta útil, pero pendiente de prueba Bash/Linux y simulacro de recuperación. Omite Qdrant y termina con éxito si no responde readiness, lo que puede producir un respaldo incompleto sin fallo. No carga .env: la clave debe exportarse al entorno del proceso programado. No exige todos los componentes del catálogo; basta con encontrar alguno. Falta programación, copia fuera del servidor, manifiesto/checksum y validación de MAX_BACKUPS (0 puede borrar todos). La rotación con ls/xargs falla con rutas con espacios. Conviene escribir archivo temporal y publicar solo al completar para no dejar respaldos parciales tras fallos. Parsear JSON por entrada estándar, sin incrustar la respuesta en código Python.
-3. `docs/despliegue/PRODUCCION_SERVER.md`: dice que se comprime qdrant_data/, pero el script usa un snapshot y no incluye esa carpeta. Extraer el tar no importa el snapshot a Qdrant. Falta el procedimiento de recuperación del snapshot y una prueba con colección vacía. Los ejemplos localhost:8000 no corresponden a la API de Compose, que solo tiene expose; usar la ruta pública /api/health o una comprobación interna. curl -I usa HEAD y no sustituye la prueba GET. Los objetivos de latencia y memoria añadidos no tienen medición adjunta y contradicen docs/despliegue/MONITOREO.md.
+2. `scripts/backup.sh`: se corrigió y probó el 2026-11-12 en la VM. Crea y descarga un snapshot oficial de Qdrant, empaqueta catálogo/índices/imágenes normalizadas, comprueba el tar y publica el archivo final al terminar. Falla si falta `QDRANT_API_KEY` o el snapshot/datos requeridos; no copia `qdrant_data/` en caliente. Se restauró el snapshot en un Qdrant temporal y se verificaron 577 puntos, el conjunto exacto de IDs, imágenes citadas por CSV y una búsqueda vectorial. Pendiente programar el backup, guardar una copia fuera de la VM y repetir la recuperación en el entorno final. [Evidencia](../evidencias/backup-restauracion-2026-11-12.txt).
+3. `docs/despliegue/PRODUCCION_SERVER.md`: se actualizó el 2026-11-12 para describir el backup por snapshot y la restauración aislada probada. La restauración no debe hacerse sobre la colección activa durante un simulacro. Sigue pendiente probar recuperación en el entorno definitivo. Revisar aparte los comandos históricos de localhost:8000, porque Compose solo expone la API dentro de la red Docker.
 4. `docs/propuestas/PROPUESTA_OPERACIONES_BACKUP_ROLLBACK.md`: contiene otra implementación, menos estricta, que copia almacenamiento Qdrant en caliente y tolera errores. Dejar una única guía vigente y retirar o identificar claramente la propuesta como obsoleta.
-5. Rollback: Compose asigna tags configurables a API/frontend. El 2026-11-09 se probó en VirtualBox el retorno entre `rollback-candidate` y `rollback-base` con `--no-build --pull never --no-deps`; health 200, 577 productos/embeddings y Top 1 SBX-01-0001 antes y después. Qdrant conservó ID, hora de inicio y bind mount durante el ciclo con `--no-deps`. La primera reconciliación sin `--no-deps` sí recreó Qdrant, por lo que la guía ahora exige esa opción y health previo. No se probaron restauración de backup ni cambios incompatibles de esquema/datos. [Evidencia](../evidencias/rollback-2026-11-09.txt).
+5. Rollback: Compose asigna tags configurables a API/frontend. El 2026-11-09 se probó en VirtualBox el retorno entre `rollback-candidate` y `rollback-base` con `--no-build --pull never --no-deps`; health 200, 577 productos/embeddings y Top 1 SBX-01-0001 antes y después. Qdrant conservó ID, hora de inicio y bind mount durante el ciclo con `--no-deps`. La primera reconciliación sin `--no-deps` sí recreó Qdrant, por lo que la guía ahora exige esa opción y health previo. La restauración aislada del backup se comprobó el 2026-11-12; siguen sin probarse producción y compatibilidad ante cambios incompatibles de esquema/datos. [Evidencia](../evidencias/rollback-2026-11-09.txt).
 
-**Recomendación de commit:** no presentar el lote actual como “backups, restauración y monitoreo completos”. El rollback por tags sí quedó probado en staging; separar ese cambio del trabajo pendiente de respaldos/restauración y monitoreo. Esta revisión no hizo commit ni push.
+**Recomendación de commit:** separar el backup/restauración local validado de los pendientes de operación externa. No declarar completos programación, copia fuera del servidor ni monitoreo de producción. El rollback por tags y la restauración aislada tienen evidencias distintas. Esta revisión no hizo commit ni push.
 
 ## Reparto propuesto y criterios de aceptación
 
@@ -82,6 +82,25 @@ Las tareas 2–6 pueden prepararse en paralelo por personas, después del acuerd
 
 Ese es el primer corte para repartir Sala 6 con una referencia común; la recuperación probada y las alertas son condiciones posteriores para cerrar operación. No hace falta volver a empezar ni regenerar índices solo por cambiar nombres/URLs.
 
-## Límites de verificación de esta sesión
+## Límites de verificación de la auditoría inicial (2026-11-04)
 
-Windows/PowerShell: Python 3.14 disponible; sin .venv, Docker ni Bash en PATH. Validación sintáctica AST de api/, core/ y scripts/ correcta; git diff --check sin errores de whitespace. Leídos encabezados NPY sin deserializar ids.npy (dtype object); no se afirma validación del orden de sus valores. No se ejecutó inferencia, lint/build frontend ni restauración. El servicio en localhost:80 no respondió; no fue posible subir una consulta real con curl. Los resultados de calidad citados provienen de archivos históricos, no de una ejecución nueva ni necesariamente del código actual.
+## Actualización — backup y restauración aislada (2026-11-12)
+
+- VM accesible por SSH; staging activo. El backup se generó desde la copia de
+  pruebas con un script sincronizado desde el repositorio. Archivo de 526 MiB,
+  con SHA-256 registrado en la evidencia; no se expusieron claves.
+- Se extrajo el archivo y se restauró la colección en un contenedor Qdrant
+  temporal, separado de la colección de staging. Los 577 IDs restaurados
+  coincidieron con `products.csv` e `ids.npy`; las 577 imágenes referidas por
+  CSV estaban presentes. El vector correspondiente al primer ID recuperó
+  `SBX-01-0001` como Top 1. La búsqueda normal por el proxy/frontend activo
+  también devolvió `SBX-01-0001`.
+- Se retiraron solo el contenedor, volumen y carpeta temporal creados para el
+  simulacro. El staging siguió saludable; el archivo de backup se conserva en
+  `backups/` dentro de la VM. El disco quedó al 93 % (2.2 GiB libres): copiar el
+  backup a almacenamiento externo y revisar capacidad antes de nuevos ciclos.
+- Esta prueba cierra la validación local de creación/restauración; no cierra
+  programación, copia fuera del servidor, objetivos RPO/RTO ni restauración en
+  producción. Ver [evidencia](../evidencias/backup-restauracion-2026-11-12.txt).
+
+En aquella auditoría inicial de Windows/PowerShell no había `.venv`, Docker ni Bash en PATH. No se ejecutó inferencia ni restauración en ese turno. Esta limitación histórica quedó superada para la prueba de backup/restauración del 2026-11-12 en la VM; no implica que se hayan repetido allí todas las pruebas de la aplicación.

@@ -1,6 +1,6 @@
 {$SITE_ADDRESS:localhost} {
 	request_body {
-		max_size 15MB
+		max_size 50MB
 	}
 
 	handle_path /images_normalized/* {

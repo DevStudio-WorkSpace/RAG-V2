@@ -8,10 +8,10 @@ Para incorporarse al equipo, leer primero el README de la raíz y después el es
 | Repetir las pruebas y entender su alcance | [Staging en VirtualBox o Docker directo](sala6/STAGING_VIRTUALBOX.md) | Entorno probado; 17/17 comprobaciones |
 | Consultar los resultados registrados | [Evidencia de staging](evidencias/staging-2026-11-04.json) | Datos de la ejecución; no sustituye la evaluación completa |
 | Revisar la entrega de frontend §3.4/§3.5 | [npm ci y proxy de API](sala6/FRONTEND_NPM_CI.md) | Build e integración verificados; dominio/HTTPS final pendiente |
-| Revisar tests funcionales y siguiente paso de frontend | [Pruebas manuales](sala6/PRUEBAS_FRONTEND_MANUALES.md) | Bloqueo/errores y recuperación probados; adaptación estrecha y celular pendientes |
+| Revisar tests funcionales y siguiente paso de frontend | [Pruebas manuales](sala6/PRUEBAS_FRONTEND_MANUALES.md) | Bloqueo/errores, adaptación estrecha y prueba en celular documentados |
 | Consultar checklist y decisiones | [Requerimientos de despliegue](planificacion/REQUERIMIENTOS_DESPLIEGUE.md) | Contiene discrepancias pendientes señaladas en la auditoría |
 | Preparar monitoreo | [Monitoreo](despliegue/MONITOREO.md) | Guía; alertas con script probadas en local, monitoreo pendiente de validación en VPS |
-| Consultar despliegue y operación | [Servidor de producción](despliegue/PRODUCCION_SERVER.md) | Rollback de imágenes probado en staging ([guía](sala6/ROLLBACK_IMAGENES.md)); restauración de backup pendiente |
+| Consultar despliegue y operación | [Servidor de producción](despliegue/PRODUCCION_SERVER.md) | Backup y restauración aislada probados en VirtualBox; programación/copia externa y recuperación en producción pendientes |
 | Consultar instrucciones Docker anteriores | [Guía Docker](despliegue/README_DOCKER.md) | Referencia anterior; revisar puertos contra Compose actual |
 | Entender la migración del catálogo | [Informe de producto y datos](informes/Productos_datos_refactorizacion.md) | Informe histórico; no representa por sí solo el estado actual |
 

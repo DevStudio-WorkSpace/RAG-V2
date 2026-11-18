@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import uuid
+import warnings
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from threading import Lock
@@ -136,7 +137,13 @@ def _motor_reranked(
 MIN_DIM = 32
 
 # Límite del archivo subido para evitar lecturas sin cota en el servidor.
-MAX_UPLOAD_SIZE = 15 * 1024 * 1024  # 15 MB límite de tamaño de subida
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB límite de tamaño de subida
+
+# Tope de píxeles para no decodificar imágenes gigantes que agoten la memoria
+# del servidor. 80 MP cubren fotos de móvil/cámara; el frontend ya reescala a
+# 2000 px antes de subir, así que este límite solo afecta a clientes directos.
+MAX_IMAGE_PIXELS = 80_000_000
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 # Control básico de Rate Limiting en memoria por IP
 _request_counts = {}
@@ -228,13 +235,22 @@ def _leer_imagen_subida(file: UploadFile | None):
         )
 
     try:
-        imagen = Image.open(io.BytesIO(contents)).convert("RGB")
-    except (
-        OSError,
-        ValueError,
-        UnidentifiedImageError,
-        Image.DecompressionBombError,
-    ):
+        with warnings.catch_warnings():
+            # Si la imagen supera MAX_IMAGE_PIXELS se trata como error, no como
+            # warning: así no se decodifica y no consume memoria sin control.
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            imagen = Image.open(io.BytesIO(contents)).convert("RGB")
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning):
+        return None, JSONResponse(
+            status_code=400,
+            content={
+                "error": (
+                    "La imagen tiene demasiados píxeles para procesarla. "
+                    "Redúcela a un máximo de 2000 px por lado e inténtalo de nuevo."
+                )
+            },
+        )
+    except (OSError, ValueError, UnidentifiedImageError):
         return None, JSONResponse(
             status_code=400,
             content={"error": "El archivo enviado no es una imagen válida"},
